@@ -1,0 +1,7 @@
+{
+  "name": "gen-AI",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "react-vite"
+}
