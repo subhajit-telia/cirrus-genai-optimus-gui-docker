@@ -12,8 +12,8 @@ const AppHeader: React.FC<ContainerProps> = () => {
             </IonToolbar>
         </div>
         <div className='grow'>
-            <IonLabel className='mx-1.5 text-sm cursor-pointer border-b-2 border-[#990ae3] pb-1 text-[#990ae3] font-bold'>B2B</IonLabel>
-            <IonLabel className='mx-1.5 text-sm cursor-pointer'>B2C</IonLabel>
+            <IonLabel className='mx-1.5 text-sm cursor-pointer border-b-2 border-[#990ae3] pb-1 text-[#990ae3] font-bold'>B2C</IonLabel>
+            <IonLabel className='mx-1.5 text-sm cursor-pointer'>B2B</IonLabel>
         </div>
         <div>
             <IonItem id="cover-trigger" button detail={false} lines="none">

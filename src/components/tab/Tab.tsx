@@ -18,7 +18,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs }) => {
   };
 
   return (
-    <div className="border-b border-gray-200">
+    <div className="">
       <div className="flex">
         {tabs.map((tab) => (
           <button
@@ -26,15 +26,15 @@ const Tabs: React.FC<TabsProps> = ({ tabs }) => {
             onClick={() => changeTab(tab.id)}
             className={`${
               activeTab === tab.id
-                ? 'border-indigo-500 text-indigo-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm focus:outline-none`}
+                ? '!bg-white'
+                : ''
+            } bg-[#eaeaea] rounded-md rounded-tr-3xl rounded-br-none whitespace-nowrap py-1 px-4 border-b-2 font-medium text-sm focus:outline-none`}
           >
             {tab.label}
           </button>
         ))}
       </div>
-      <div className="mt-4">
+      <div className="bg-white p-4 rounded-md">
         {tabs.map((tab) => (
           <div key={tab.id} className={activeTab === tab.id ? 'block' : 'hidden'}>
             {tab.content}

@@ -35,12 +35,16 @@ import Home from './pages/home/Home';
 
 setupIonicReact();
 import './theme/variables.css';
+import { Conversation } from './pages/Conversation';
 const App: React.FC = () => (
   <IonApp>
     <IonReactRouter>
       <IonRouterOutlet>
         <Route exact path="/home">
           <Home />
+        </Route>
+        <Route exact path="/conversation">
+          <Conversation selectedTopic=""  addressBarValue=""   selectedModel="" />
         </Route>
         <Route exact path="/">
           <Redirect to="/home" />
