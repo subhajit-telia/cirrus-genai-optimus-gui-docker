@@ -1,0 +1,34 @@
+
+name: Build React App 
+
+description: Checkout, run tests and build the app
+
+env:
+  JFROG_USER: ${{ secrets.CIRRUS_JFROG_WRITER_USERNAME }}
+  JFROG_PASSWORD: ${{ secrets.CIRRUS_JFROG_WRITER_PASSWORD }}
+
+jobs:
+  build-app:
+    name: Build App
+    permissions:
+      id-"removed": write
+      contents: read
+    runs-on: [ec2, linux, small]  
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+        shell: bash
+
+      # - name: Run unit tests
+      #   run: npm run test
+      #   shell: bash
+
+      - name: Build application
+        run: npm run build
