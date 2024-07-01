@@ -1,0 +1,45 @@
+{
+    "formatData" : [
+        { "name": "SMS" },
+        { "name": "Email S" },
+        { "name": "Email M" },
+        { "name": "Email L" },
+        { "name": "Email XL" },
+        { "name": "Product Text S" },
+        { "name": "Product Text M" },
+        { "name": "Product Text L" },
+        { "name": "Campaign Text S" },
+        { "name": "Campaign Text L" },
+        { "name": "Product Card" },
+        { "name": "Product Area Intro" },
+        { "name": "Article" },
+        { "name": "Banner" },
+        { "name": "SEO Meta Data" },
+        { "name": "Microcopy Resource Open Pages" },
+        { "name": "Microcopy Sales Flow" },
+        { "name": "USP" },
+        { "name": "FAQ" },
+        { "name": "Guide Stepper" },
+        { "name": "Guide Article" },
+        { "name": "Tips" },
+        { "name": "Teaser Cards" },
+        { "name": "Banner" }
+    ],
+    "purposeData" : [
+        { "name": "New Customer" },
+        { "name": "Retention" },
+        { "name": "Upsell" },
+        { "name": "X-sell" },
+        { "name": "Deepsell" },
+        { "name": "Engagment" },
+        { "name": "Information" },
+        { "name": "Winback" },
+        { "name": "Current Customer" }
+    ],
+    "segmentData" : [
+        { "name": "Families with Children", "isActive": false },
+        { "name": "Seniors", "isActive": false },
+        { "name": "Young Adults", "isActive": false },
+        { "name": "Adults without Children", "isActive": false }
+    ]
+}

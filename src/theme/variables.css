@@ -7,6 +7,7 @@ http://ionicframework.com/docs/theming/ */
 @layer base {
     :root {
       --color-primary: #990AE3;
+      --color-white: #fff;
       --ion-color-primary: #990AE3;
     }
 }
@@ -58,4 +59,10 @@ ion-chip.true {
 
 ion-popover.profile-popover {
     --max-width: 180px;
+}
+
+ion-loading.custom-loading .loading-wrapper {
+    --background: var(--color-white);
+    padding: 10px;
+    border-radius: 6px;
 }
