@@ -36,12 +36,36 @@ import Home from './pages/home/Home';
 setupIonicReact();
 import './theme/variables.css';
 import { Conversation } from './pages/Conversation';
+import Login from './pages/auth/login';
+import Channels from './pages/admin/channels/Channels';
+import Prompts from './pages/admin/prompts/Prompts';
+import Purpose from './pages/admin/purpose/Purpose';
+import Segments from './pages/admin/segments/Segments';
+import Users from './pages/admin/users/Users';
 const App: React.FC = () => (
   <IonApp>
     <IonReactRouter>
       <IonRouterOutlet>
         <Route exact path="/home">
           <Home />
+        </Route>
+        <Route exact path="/login">
+          <Login />
+        </Route>
+        <Route exact path="/channels">
+          <Channels />
+        </Route>
+        <Route exact path="/prompts">
+          <Prompts />
+        </Route>
+        <Route exact path="/purpose">
+          <Purpose />
+        </Route>
+        <Route exact path="/segments">
+          <Segments />
+        </Route>
+        <Route exact path="/users">
+          <Users />
         </Route>
         <Route exact path="/conversation">
           <Conversation selectedTopic=""  addressBarValue=""   selectedModel="" />
