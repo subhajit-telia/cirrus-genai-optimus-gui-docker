@@ -1,4 +1,4 @@
-import { IonAvatar, IonCol, IonContent, IonGrid, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonPage, IonPopover, IonRow, IonTitle, IonToolbar } from '@ionic/react';
+import { IonAvatar, IonButtons, IonCol, IonContent, IonGrid, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonMenuButton, IonPage, IonPopover, IonRow, IonTitle, IonToolbar } from '@ionic/react';
 import './Header.css';
 import { person, power } from 'ionicons/icons';
 interface ContainerProps { }
@@ -9,6 +9,9 @@ const AppHeader: React.FC<ContainerProps> = () => {
         <div>
             <IonToolbar>
                 <IonTitle><img className="w-20" src='src/theme/assets/logo.png'/></IonTitle>
+                <IonButtons slot="end">
+                    <IonMenuButton />
+                </IonButtons>
             </IonToolbar>
         </div>
         <div className='grow'>
