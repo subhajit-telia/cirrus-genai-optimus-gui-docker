@@ -1,4 +1,4 @@
-import { IonButton, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonChip, IonCol, IonContent, IonGrid, IonHeader, IonIcon, IonInput, IonLoading, IonPage, IonRow, IonSelect, IonSelectOption, IonTextarea, IonTitle, IonToolbar } from '@ionic/react';
+import { IonButton, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonChip, IonCol, IonContent, IonGrid, IonHeader, IonIcon, IonInput, IonLoading, IonPage, IonRow, IonSelect, IonSelectOption, IonSpinner, IonTextarea, IonTitle, IonToolbar } from '@ionic/react';
 import ExploreContainer from '../../components/ExploreContainer';
 import './Home.css';
 import AppHeader from '../../components/header/Header';
@@ -133,7 +133,7 @@ const Home: React.FC = () => {
 
     let payload = {
       bucket: '',
-      use_case: '',
+      use_case: 'content_creation_b2c',
       chat: data
     }
     console.log('payload', payload);
@@ -243,10 +243,13 @@ const Home: React.FC = () => {
               ))}
             </div>
             <div className='text-center mt-6'>
-              <IonButton type='submit' className='btn-primary' shape="round">Start the magic</IonButton>
+              <IonButton type='submit' className='btn-primary' shape="round">
+              {loading && <IonSpinner className='mr-2' name="bubbles"></IonSpinner>}
+                Start the magic
+              </IonButton>
             </div>
             
-            {/* <IonGrid>
+            <IonGrid>
               <IonRow>
                 <IonCol>
                   <div className="mx-2.5 mt-16">
@@ -254,7 +257,7 @@ const Home: React.FC = () => {
                   </div>
                 </IonCol>
               </IonRow>
-            </IonGrid> */}
+            </IonGrid>
 
             
             <div className='h-28'></div>
