@@ -1,29 +1,28 @@
-import { IonButton, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonChip, IonCol, IonContent, IonGrid, IonHeader, IonIcon, IonInput, IonLoading, IonPage, IonRow, IonSelect, IonSelectOption, IonSpinner, IonTextarea, IonTitle, IonToolbar } from '@ionic/react';
+import { IonButton, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonChip, IonCol, IonContent, IonFab, IonFabButton, IonFabList, IonGrid, IonHeader, IonIcon, IonInput, IonLoading, IonPage, IonPopover, IonRow, IonSelect, IonSelectOption, IonSpinner, IonTextarea, IonTitle, IonToast, IonToolbar } from '@ionic/react';
 import ExploreContainer from '../../components/ExploreContainer';
 import './Home.css';
 import AppHeader from '../../components/header/Header';
-import { lockClosed, send, sync } from 'ionicons/icons';
+import { chevronUpCircle, colorPalette, globe, information, link, lockClosed, send, sync, thumbsDownOutline, thumbsUpOutline } from 'ionicons/icons';
 import { useEffect, useState } from 'react';
 import Tabs from '../../components/tab/Tab';
 import templateData from '../../template.json';
 import { useForm } from "react-hook-form";
 import AWS from 'aws-sdk';
 import { HTTPMethod, NetworkInfo } from '../../routes/network';
+import DOMPurify from 'dompurify';
+import packageJson from '../../../package.json';
+import Multiselect from 'multiselect-react-dropdown';
+import optimusLogo from '../../theme/assets/optimus-logo.png'
 
-***REMOVED***
-***REMOVED***
-***REMOVED***
-***REMOVED***
-***REMOVED***
-// });
-
-// const s3 = new AWS.S3();
-
-
-interface Tab {
-  id: number;
-  label: string;
-  content: JSX.Element; // Assuming content is JSX.Element (React node)
+type Tab = {
+  segment_id: string;
+  segment_name: string;
+  data: [innerTab]
+}
+interface innerTab {
+  format_id: string,
+  format_name: string,
+  answer: string
 }
 
 interface UserAddModel {
@@ -34,59 +33,119 @@ interface UserAddModel {
 }
 
 interface Segment {
-  name: string;
+  segment_name: string;
+  segment_id: string;
   isActive: boolean;
+}
+interface Purposes {
+  purpose_name: string;
+  purpose_id: string;
+}
+interface Products {
+  product_id: string;
+  product_name: string;
+}
+interface Formats {
+  format_name: string;
+  format_id: string;
 }
 
 const Home: React.FC = () => {
   /* Variables start */
   const [segments, setSegments] = useState<Segment[]>([]);
+  const [purposes, setPurposes] = useState<Purposes[]>([]);
+  const [purposeIds, setPurposeIds] = useState<string[]>([]);
+  const [products, setProducts] = useState<Products[]>([]);
+  const [formats, setFormats] = useState<Formats[]>([]);
+  const [tabs, setTabs] = useState<Tab[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
-  // const [error, setError] = useState<string | null>(null);
   
 
-  const tabs: Tab[] = [
-    {
-      id: 1,
-      label: 'Maximisers copy',
-      content: <div>Content of Tab 1</div>,
-    },
-    {
-      id: 2,
-      label: 'Segment 2 copy',
-      content: <div>Content of Tab 2</div>,
-    },
-    {
-      id: 3,
-      label: 'Segment 3 copy',
-      content: <div>Content of Tab 3</div>,
-    },
-  ];
-
   useEffect(() => {
-
-    setSegments(templateData.segmentData);
-    // const params = {
-    //   Bucket: 'YOUR_BUCKET_NAME',
-    //   Key: 'YOUR_JSON_FILE_KEY.json',
-    // };
- 
-    
-    // s3.getObject(params, (err, data:any) => {
-    //   if (err) {
-    //     setError('Error fetching data from S3');
-    //     console.error(err);
-    //   } else {
-    //     try {
-    //       const jsonData = JSON.parse(data.Body.toString('utf-8'));
-    //       setSegments(jsonData.segments); 
-    //     } catch (parseError) {
-    //       setError('Error parsing JSON data');
-    //       console.error(parseError);
-    //     }
-    //   }
-    // });
+    getSegmentsData();
+    getPurposesData();
+    getFormatsData();
+    getProductsData();
   }, [setSegments]);
+
+  const onSelect = (selectedList:any, selectedItem:any) => {
+    setPurposeIds([]);
+    console.log('onSelect', selectedList);
+    console.log('onSelect', selectedItem);
+    
+    const ids = selectedList.map((product: { product_id: any; }) => product.product_id);
+    setPurposeIds(ids);
+    console.log('purposeIds', purposeIds);
+  };
+
+  const onRemove = (selectedList:any, removedItem:any) => {
+    setPurposeIds([]);
+    console.log('onRemove', selectedList);
+    console.log('onRemove', removedItem);
+    const ids = selectedList.map((product: { product_id: any; }) => product.product_id);
+    setPurposeIds(ids);
+    console.log('purposeIds', purposeIds);
+  };
+  
+  /* -------------get segments data start------------- */
+  const getSegmentsData = async () => {
+    try {
+      const urlData =NetworkInfo.URL + '/resource/get?table=segments&use_case=content_creation_b2c&columns=segment_id&columns=segment_name';
+
+      const response = await fetch(urlData);
+      const responseData = await response.json();
+      console.log("Success:", responseData);
+      setSegments(responseData);
+    } catch (error: any) {
+      console.error("catch failed:", error);
+    }
+  };
+  /* get segments data end */
+
+  /* -------------get purposes data start------------- */
+  const getPurposesData = async () => {
+    try {
+      const urlData =NetworkInfo.URL + '/resource/get?table=purposes&use_case=content_creation_b2c&columns=purpose_id&columns=purpose_name';
+
+      const response = await fetch(urlData);
+      const responseData = await response.json();
+      console.log("Success:", responseData);
+      setPurposes(responseData);
+    } catch (error: any) {
+      console.error("catch failed:", error);
+    }
+  };
+  /* get purposes data end */
+
+  /* -------------get products data start------------- */
+  const getProductsData = async () => {
+    try {
+      const urlData =NetworkInfo.URL + '/resource/get?table=products&use_case=content_creation_b2c&columns=product_id&columns=product_name';
+
+      const response = await fetch(urlData);
+      const responseData = await response.json();
+      console.log("Success:", responseData);
+      setProducts(responseData);
+    } catch (error: any) {
+      console.error("catch failed:", error);
+    }
+  };
+  /* get products data end */
+
+  /* -------------get formats data start------------- */
+  const getFormatsData = async () => {
+    try {
+      const urlData =NetworkInfo.URL + '/resource/get?table=formats&use_case=content_creation_b2c&columns=format_id&columns=format_name';
+
+      const response = await fetch(urlData);
+      const responseData = await response.json();
+      console.log("Success:", responseData);
+      setFormats(responseData);
+    } catch (error: any) {
+      console.error("catch failed:", error);
+    }
+  };
+  /* get formats data end */
 
   /* onClickSegment start */
   const onClickSegment = async (index: number) => {
@@ -102,6 +161,20 @@ const Home: React.FC = () => {
 
   /* onClickSegment end */
 
+  /* Function to generate dynamic string using current date and time */
+  const generateDateTimeString = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0'); // Months are zero-indexed
+    const date = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+    const milliseconds = String(now.getMilliseconds()).padStart(3, '0');
+
+    return `${year}${month}${date}${hours}${minutes}${seconds}${milliseconds}`;
+  };
+
   /* Function to show loading indicator */
   const showLoadingIndicator = (_isLoading:boolean) => {
     setLoading(_isLoading);
@@ -109,34 +182,46 @@ const Home: React.FC = () => {
   };
 
   /* -----------Handle form submit start----------- */
-  const handleFormSubmit = (event:any) => {
-    // event.preventDefault();
-    // formData.forEach(data => handleApiCall(data));
-
-    for (const key in event) {
-      if (event.hasOwnProperty(key)) {
-        let eachItem = {
-          [key] : event[key]
-        };
-        handleApiCall(eachItem)
-          console.log('eachItem', eachItem);
-      }
-    }
-  };
-  const handleApiCall = async (data: any) => {
-    console.log('data',data);
-    setLoading(true);
-    let formUrl = NetworkInfo.URL + '/api/queryGPT';
+  let arrayTab:any;
+  const handleFormSubmit = (data:any) => {
+    console.log('purposeIds', purposeIds);
     data.segment = segments
     .filter(segment => segment.isActive)
-    .map(segment => segment.name);
+    .map(segment => segment.segment_id);
 
-    let payload = {
-      bucket: '',
-      use_case: 'content_creation_b2c',
-      chat: data
-    }
-    console.log('payload', payload);
+    console.log('data', data);
+
+    arrayTab  =  data.segment.map((segment: any) => ({
+      segment_id: segment,
+      data: data.format.map((format: any) => ({
+        format_id: format,
+      }))
+    }));
+
+    console.log('arrayTab', arrayTab);
+
+    data.format.forEach((format: any) => {
+      data.segment.forEach((segment: any) => {
+        console.log('call>>>>',format, segment);
+        let eachItem = {
+          user : 'ibu4416',
+          session_id : generateDateTimeString(),
+          qid : generateDateTimeString(),
+          use_case : 'content_creation_b2c',
+          product_ids : purposeIds,
+          question: data.question,
+          purpose_id: data.purpose,
+          segment_id: segment,
+          format_id: format
+        }
+        handleApiCall(eachItem);
+      });
+    });
+  };
+  const handleApiCall = async (data: any) => {
+    setLoading(true);
+    let formUrl = NetworkInfo.URL + '/process_json';
+    console.log('payload', data);
     try {
       const response = await fetch(formUrl, {
         method: HTTPMethod.POST,
@@ -144,10 +229,43 @@ const Home: React.FC = () => {
           Authorization: `Bearer`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(data),
       });
       const responseData = await response.json();
       console.log("Success:", responseData);
+
+      if (response.ok) {
+        console.log('arrayTab>>>', arrayTab);
+        let updatedDataArray = tabs;
+        updatedDataArray = arrayTab.map((segment: { segment_id: any; segment_name: any; data: any[]; }) => {
+          if (segment.segment_id === responseData.input_params.segment_id) {
+            segment.segment_name = responseData.input_params.segment_name;
+            segment.data = segment.data.map(format => {
+              if (format.format_id === responseData.input_params.format_id) {
+                return {
+                  ...format,
+                  answer: DOMPurify.sanitize(responseData.answer),
+                  format_name: responseData.input_params.format_name
+                };
+              }
+              return format;
+            });
+          }
+          return segment;
+        });
+        console.log('updatedDataArray', updatedDataArray);
+        // let responseObject:Tab = {
+        //   id: data.qid,
+        //   label: data.segment_id,
+        //   content: DOMPurify.sanitize(responseData.answer)
+        // }
+
+        setTabs(updatedDataArray);
+
+        console.log('tabs', tabs);
+        setLoading(false);
+        showLoadingIndicator(false);
+      }
       
     } catch (error: any) {
       console.error("Login failed:", error);
@@ -169,8 +287,27 @@ const Home: React.FC = () => {
     defaultValues: {
     },
   });
+  /* Handle form input field changes end */
 
+  /* ---------------Reset form start--------------- */
+  const handleReset = () => {
+    reset();
 
+    const updatedSegments = segments.map(segment => ({
+      ...segment,
+      isActive: false
+    }));
+
+    setSegments(updatedSegments);
+    setTabs([]);
+    setPurposeIds([]);
+    setValue("format", '');
+    setValue("purpose", '');
+    setValue("products", '');
+    setValue("question", '');
+  };
+
+  /*  Reset form end */
 
   return (
     <IonPage>
@@ -179,89 +316,71 @@ const Home: React.FC = () => {
         <div className='max-w-[80%] m-auto relative'>
           <form onSubmit={handleSubmit(handleFormSubmit)} className="w-full">
             <div className='text-center'>
-              <img className='m-auto' src='src/theme/assets/optimus-logo.png' />
+              <img className='m-auto' src={optimusLogo} />
               <p>AI-assistance</p>
             </div>
             <IonGrid>
               <IonRow>
-                <IonCol size="4">
-                  <IonCard className='rounded-xl text-[#000]'>
-                    <IonCardHeader>
-                      <IonCardSubtitle className='font-bold'>I want to create a...</IonCardSubtitle>
-                    </IonCardHeader>
-
-                    <IonCardContent>
-                      <IonSelect className='min-h-10 field-item' label="Select desired format below" multiple={true} interface="popover" labelPlacement="floating" fill="outline"
-                      {...register("format", {
-                        validate: {},
-                      })}>
-                        {templateData.formatData.map((item, index) => (
-                          <IonSelectOption key={index} value={item.name}>{item.name}</IonSelectOption>
-                        ))}
-                      </IonSelect>
-                    </IonCardContent>
-                  </IonCard>
+                <IonCol size="12" size-lg="4" size-md="4" size-sm="12">
+                  <div className='rounded-xl text-[#000] bg-white shadow-md'>
+                    <div className='font-bold p-4 text-sm'>I want to create a...</div>
+                    <div className='px-4 pb-3.5'>
+                      <IonSelect placeholder="Select formats" disabled={formats.length === 0} className='min-h-10 field-item' label="Select desired format below" multiple={true} interface="popover" labelPlacement="stacked" fill="outline"
+                        {...register("format", {
+                          validate: {},
+                        })}>
+                          {formats.map((item, index) => (
+                            <IonSelectOption key={index} value={item.format_id}>{item.format_name}</IonSelectOption>
+                          ))}
+                        </IonSelect>
+                    </div>
+                  </div>
                 </IonCol>
-                <IonCol size="4">
-                  <IonCard className='rounded-xl text-[#000]'>
-                    <IonCardHeader>
-                      <IonCardSubtitle className='font-bold'>With the purpose...</IonCardSubtitle>
-                    </IonCardHeader>
-
-                    <IonCardContent>
-                      <IonSelect className='min-h-10 field-item' label="Which product/offer do you want to report on?" interface="popover" labelPlacement="floating" fill="outline"
-                      {...register("purpose", {
-                        validate: {},
-                      })}>
-                        {templateData.purposeData.map((item, index) => (
-                          <IonSelectOption key={index} value={item.name}>{item.name}</IonSelectOption>
-                        ))}
-                      </IonSelect>
-                    </IonCardContent>
-                  </IonCard>
+                <IonCol size="12" size-lg="4" size-md="4" size-sm="12">
+                  <div className='rounded-xl text-[#000] bg-white shadow-md'>
+                    <div className='font-bold p-4 text-sm'>With the purpose...</div>
+                    <div className='px-4 pb-3.5'>
+                      <IonSelect placeholder="Select purpose" disabled={purposes.length === 0} className='min-h-10 field-item' label="Which product/offer do you want to report on?" interface="popover" labelPlacement="stacked" fill="outline"
+                        {...register("purpose", {
+                          validate: {},
+                        })}>
+                          {purposes.map((item, index) => (
+                            <IonSelectOption key={index} value={item.purpose_id}>{item.purpose_name}</IonSelectOption>
+                          ))}
+                        </IonSelect>
+                    </div>
+                  </div>
                 </IonCol>
-                <IonCol size="4">
-                  <IonCard className='rounded-xl text-[#000]'>
-                    <IonCardHeader>
-                      <IonCardSubtitle className='font-bold'>About...</IonCardSubtitle>
-                    </IonCardHeader>
-
-                    <IonCardContent>
-                      <IonInput className='!min-h-10 field-item' label="Which product/offer do you want to report on?" labelPlacement="floating" fill="outline" placeholder="Enter text"
-                      {...register("products", {
-                        validate: {},
-                      })}></IonInput>
-                    </IonCardContent>
-                  </IonCard>
-                </IonCol>
-              </IonRow>
-            </IonGrid>
-            <p className='text-center'>I want to create versions to the following segments</p>
-            <div className='segments flex items-center justify-center mt-2.5'>
-              {segments.map((item, index) => (
-                <IonChip key={index} onClick={() => onClickSegment(index)} className={`${item.isActive} mx-2.5 min-h-6 py-0 bg-[#f5e0ff] text-[#4a2a59]`}>{item.name}</IonChip>
-              ))}
-            </div>
-            <div className='text-center mt-6'>
-              <IonButton type='submit' className='btn-primary' shape="round">
-              {loading && <IonSpinner className='mr-2' name="bubbles"></IonSpinner>}
-                Start the magic
-              </IonButton>
-            </div>
-            
-            <IonGrid>
-              <IonRow>
-                <IonCol>
-                  <div className="mx-2.5 mt-16">
-                    <Tabs tabs={tabs} />
+                <IonCol size="12" size-lg="4" size-md="4" size-sm="12">
+                  <div className='rounded-xl text-[#000] bg-white shadow-md'>
+                    <div className='font-bold p-4 text-sm'>About...</div>
+                    <div className='px-4 pb-3.5 custom-search relative'>
+                      <p>Which product/offer do you want to report on?</p>
+                      <Multiselect
+                        displayValue="product_name"
+                        placeholder="Select products"
+                        options={products} // Options to display in the dropdown
+                        onKeyPressFn={function noRefCheck(){}}
+                        onRemove={onRemove}
+                        onSearch={function noRefCheck(){}}
+                        onSelect={onSelect}
+                        {...register("products", {
+                          validate: {},
+                        })}
+                      />
+                    </div>
                   </div>
                 </IonCol>
               </IonRow>
             </IonGrid>
+            <p className='text-center mt-2.5'>I want to create versions to the following segments</p>
+            <div className='segments flex max-sm:flex-col max-md:flex-col items-center justify-center mt-2.5'>
+              {segments.map((item, index) => (
+                <IonChip key={index} onClick={() => onClickSegment(index)} className={`${item.isActive} mx-2.5 min-h-6 py-0 bg-[#f5e0ff] text-[#4a2a59]`}>{item.segment_name}</IonChip>
+              ))}
+            </div>
 
-            
-            <div className='h-28'></div>
-            <IonGrid className='fixed bottom-0 left-0 right-0 max-w-[80%] m-auto'>
+            <IonGrid className='mt-7'>
               <IonRow>
                 <IonCol>
                   <IonTextarea
@@ -282,6 +401,39 @@ const Home: React.FC = () => {
                 </IonCol>
               </IonRow>
             </IonGrid>
+            
+            
+            {tabs.length > 0 ?
+            <IonGrid>
+              <IonRow>
+                <IonCol>
+                  <div className="mx-2.5 mt-7">
+                    <Tabs tabs={tabs} />
+                    <div className="flex mt-3 items-center justify-between">
+                      <div>
+                        <IonIcon className='mr-2.5 cursor-pointer hover:text-primary' slot="icon-only" icon={thumbsUpOutline}></IonIcon>
+                        <IonIcon className='mr-2.5 cursor-pointer hover:text-primary' slot="icon-only" icon={thumbsDownOutline}></IonIcon>
+                      </div>
+                      <div>
+                        <IonChip className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Rewrite all suggestions</IonChip>
+                        <IonChip className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Send to contentfull</IonChip>
+                        <IonChip className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Save all suggestions to word.doc</IonChip>
+                        <IonChip onClick={handleReset} className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Create new task</IonChip>
+                      </div>
+                    </div>
+                  </div>
+                </IonCol>
+              </IonRow>
+            </IonGrid>
+            :
+            <div className='text-center mt-6'>
+              <IonButton type='submit' className='btn-primary' shape="round">
+              {loading && <IonSpinner className='mr-2' name="bubbles"></IonSpinner>}
+                Start the magic
+              </IonButton>
+            </div>
+            }
+            
           </form>
         </div>
         <IonLoading
@@ -291,6 +443,30 @@ const Home: React.FC = () => {
           isOpen={loading}
           message={'Please wait...'}
         />
+
+        <IonFab slot="fixed" vertical="bottom" horizontal="end">
+          <IonFabButton size="small">
+            <IonIcon icon={information}></IonIcon>
+          </IonFabButton>
+          <IonFabList side="top">
+            <IonFabButton title='API' id="endpoint">
+              <IonIcon icon={globe}></IonIcon>
+            </IonFabButton>
+            <IonFabButton title='Version' id="app-version">
+              <IonIcon icon={link}></IonIcon>
+            </IonFabButton>
+          </IonFabList>
+        </IonFab>
+        <IonToast className='custom-toast' icon={globe} trigger="endpoint" message={import.meta.env.VITE_API_URL} buttons={[
+          {
+            text: 'Close',
+          },
+        ]} duration={3000}></IonToast>
+        <IonToast className='custom-toast' icon={link} trigger="app-version" message={`App Version: ${packageJson.version}`} buttons={[
+          {
+            text: 'Close',
+          },
+        ]} duration={3000}></IonToast>
       </IonContent>
     </IonPage>
   );

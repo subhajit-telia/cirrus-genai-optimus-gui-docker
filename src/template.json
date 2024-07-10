@@ -41,5 +41,16 @@
         { "name": "Seniors", "isActive": false },
         { "name": "Young Adults", "isActive": false },
         { "name": "Adults without Children", "isActive": false }
+    ],
+    "usersList" : [
+        { "email": "subhajit.manna@teliacompany.com"},
+        { "email": "tim.roelofs@teliacompany.com"},
+        { "email": "calogero.cascio@accenture.com"},
+        { "email": "fabrizio.sparapani@accenture.com"},
+        { "email": "mohammed.elkady@teliacompany.com"},
+        { "email": "alejandro.garcia@teliacompany.com"},
+        { "email": "calogero.cascio@accenture.com"},
+        { "email": "fabrizio.sparapani@accenture.com"}
     ]
+
 }
