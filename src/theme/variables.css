@@ -66,3 +66,31 @@ ion-loading.custom-loading .loading-wrapper {
     padding: 10px;
     border-radius: 6px;
 }
+ion-toast.custom-toast {
+    --background: var(--color-primary);
+    color: var(--color-white);
+}
+.custom-search p {
+    font-size: 0.675rem;
+    position: absolute;
+    top: -8px;
+    left: 30px;
+    background: #fff;
+    z-index: 1;
+}
+.custom-search .optionListContainer {
+    z-index: 3;
+    font-size: 14px;
+}
+.custom-search .optionListContainer li:hover {
+    background: #F5F5F5;
+    color: #000;
+}
+.custom-search .optionListContainer li.highlightOption  {
+    background: unset;
+    color: unset;
+}
+.custom-search .search-wrapper .chip {
+    font-size: 10px;
+    background: var(--color-primary);
+}

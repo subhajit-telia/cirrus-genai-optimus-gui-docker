@@ -1,5 +1,7 @@
-import { IonContent, IonPage } from '@ionic/react';
+import { IonContent, IonPage, IonSplitPane } from '@ionic/react';
 import { useEffect } from 'react';
+import Sidenav from '../../../components/sidenav/Sidenav';
+import AppHeader from '../../../components/header/Header';
 const Channels: React.FC = () => {
   /* Variables start */
   
@@ -10,11 +12,19 @@ const Channels: React.FC = () => {
   }, []);
 
   return (
-    <IonPage>
-      <IonContent>
+    <>
+    <IonSplitPane contentId="main">
+    <Sidenav/>
+    <IonPage id="main">
+      
+      <AppHeader/>
+      
+      <IonContent className='page-body'>
             
       </IonContent>
     </IonPage>
+    </IonSplitPane>
+    </>
   );
 };
 
