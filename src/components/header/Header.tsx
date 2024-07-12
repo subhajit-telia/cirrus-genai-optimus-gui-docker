@@ -1,24 +1,45 @@
 import { IonAvatar, IonButtons, IonCol, IonContent, IonGrid, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonMenuButton, IonPage, IonPopover, IonRow, IonTitle, IonToolbar } from '@ionic/react';
 import './Header.css';
 import { person, power } from 'ionicons/icons';
-import { useLocation } from 'react-router-dom';
+import { useHistory, useLocation } from 'react-router-dom';
 import logo from '../../theme/assets/logo.png'
+import { useEffect, useState } from 'react';
+import { useAuth } from '../../config/AuthContext';
 
 interface ContainerProps { }
 
+interface UserData {
+    username: string;
+    role: string
+}
+
 const AppHeader: React.FC<ContainerProps> = () => {
+    const [userData, setUserData] = useState<UserData | null>(null);
     const location = useLocation();
+    const history = useHistory();
 
     const currentPath = location.pathname.startsWith('/') 
     ? location.pathname.substring(1) 
     : location.pathname;
 
-    console.log('location', location);
+    const { logout } = useAuth();
+
+    useEffect(() => {
+        let userLocalData:any = localStorage.getItem('user');
+        setUserData(JSON.parse(userLocalData));
+        console.log('userData', JSON.parse(userLocalData));
+    }, []);
+
+    /* handleLogout start */
+    const handleLogout = () => {
+        logout();
+    };
+    
   return (
     <IonHeader className='flex px-5 items-center justify-between'>
         <div>
             <IonToolbar>
-                {location.pathname === '/home' ?
+                {location.pathname === '/b2c' ?
                     <IonTitle><img className="w-20" src={logo}/></IonTitle>
                 : 
                 <IonTitle className='capitalize p-0'>{currentPath} List</IonTitle>
@@ -29,7 +50,7 @@ const AppHeader: React.FC<ContainerProps> = () => {
             </IonToolbar>
         </div>
         <div className='grow'>
-            {location.pathname === '/home' &&
+            {location.pathname === '/b2c' &&
                 <><IonLabel className='mx-1.5 text-sm cursor-pointer border-b-2 border-[#990ae3] pb-1 text-[#990ae3] font-bold'>B2C</IonLabel><IonLabel className='mx-1.5 text-sm cursor-pointer'>B2B</IonLabel></>
             }
         </div>
@@ -38,7 +59,12 @@ const AppHeader: React.FC<ContainerProps> = () => {
                 <IonAvatar className="w-6 h-6" aria-hidden="true" slot="start">
                     <img  alt="" src="https://ionicframework.com/docs/img/demos/avatar.svg" />
                 </IonAvatar>
-                <IonLabel>Huey</IonLabel>
+                {userData && (
+                    <IonLabel className='text-nowrap capitalize'>
+                        {userData.username.replace(/_/g, ' ')}
+                        <p>{userData.role}</p>
+                    </IonLabel>
+                )}
             </IonItem>
             <IonPopover className='profile-popover' trigger="cover-trigger" side="bottom" alignment="end">
                 <IonContent>
@@ -47,7 +73,7 @@ const AppHeader: React.FC<ContainerProps> = () => {
                             <IonIcon className='text-base' aria-hidden="true" icon={person} slot="start"></IonIcon>
                             <IonLabel>Profile</IonLabel>
                         </IonItem>
-                        <IonItem className='text-sm' button={true} detail={false}>
+                        <IonItem onClick={() => handleLogout()}  className='text-sm' button={true} detail={false}>
                             <IonIcon className='text-base' aria-hidden="true" icon={power} slot="start"></IonIcon>
                             <IonLabel>Logout</IonLabel>
                         </IonItem>

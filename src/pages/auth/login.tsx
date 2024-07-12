@@ -1,4 +1,4 @@
-import { IonButton, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonChip, IonCol, IonContent, IonGrid, IonHeader, IonIcon, IonInput, IonInputPasswordToggle, IonLabel, IonLoading, IonPage, IonRow, IonSegment, IonSegmentButton, IonSelect, IonSelectOption, IonSpinner, IonTextarea, IonTitle, IonToolbar } from '@ionic/react';
+import { IonButton, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonChip, IonCol, IonContent, IonGrid, IonHeader, IonIcon, IonInput, IonInputPasswordToggle, IonLabel, IonLoading, IonPage, IonRow, IonSegment, IonSegmentButton, IonSelect, IonSelectOption, IonSpinner, IonTextarea, IonTitle, IonToast, IonToolbar } from '@ionic/react';
 import ExploreContainer from '../../components/ExploreContainer';
 import AppHeader from '../../components/header/Header';
 import { lockClosed, send, sync } from 'ionicons/icons';
@@ -10,6 +10,8 @@ import AWS from 'aws-sdk';
 import { HTTPMethod, NetworkInfo } from '../../routes/network';
 import './Login.css';
 import loginVideo from '../../theme/assets/bg-video.mp4'
+import { useHistory } from 'react-router-dom';
+import { useAuth } from '../../config/AuthContext';
 
 interface UserAddModel {
     username: string;
@@ -20,11 +22,17 @@ const Login: React.FC = () => {
   /* Variables start */
   const [loading, setLoading] = useState<boolean>(false);
   const [segmentValue, setSegmentValue] = useState('user');
-
+  const history = useHistory();
+  const { login } = useAuth();
   useEffect(() => {
 
     
   }, []);
+
+  const handleLogin = (_role:string) => {
+    login(_role);
+    history.push('/b2c');
+  };
 
   /* -----------Handle form submit start----------- */
   const handleFormSubmit = async (data: any) => {
@@ -45,6 +53,17 @@ const Login: React.FC = () => {
 
       if (response.ok) {
         setLoading(false);
+        if (responseData === true) {
+          console.log('login');
+          let userData = {
+            username: data.username,
+            role: data.role[0]
+          };
+          localStorage.setItem('user', JSON.stringify(userData));
+          handleLogin(data.role[0]);
+        }else {
+          console.log('login faild');
+        }
       }
       
     } catch (error: any) {
@@ -103,7 +122,7 @@ const Login: React.FC = () => {
                         </div>
                         
                         <div>
-                            <IonInput className='mb-3.5' label="Email" labelPlacement="stacked" fill="outline"
+                            <IonInput className='mb-3.5' label="Username" labelPlacement="stacked" fill="outline"
                                 {...register("username", {
                                     validate: {},
                                 })}

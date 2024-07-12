@@ -1,4 +1,4 @@
-import { Redirect, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
 import { IonApp, IonRouterOutlet, setupIonicReact } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
 
@@ -31,48 +31,50 @@ import '@ionic/react/css/palettes/dark.system.css';
 
 /* Theme variables */
 
-import Home from './pages/home/Home';
 
 setupIonicReact();
 import './theme/variables.css';
-import { Conversation } from './pages/Conversation';
 import Login from './pages/auth/login';
-import Channels from './pages/admin/channels/Channels';
+import Formats from './pages/admin/formats/Formats';
 import Prompts from './pages/admin/prompts/Prompts';
 import Purpose from './pages/admin/purpose/Purpose';
 import Segments from './pages/admin/segments/Segments';
 import Users from './pages/admin/users/Users';
+import {AuthProvider}  from './config/AuthContext';
+import AuthGuard from './config/AuthGuard';
+import B2C from './pages/program/B2C';
+
+
 const App: React.FC = () => (
   <IonApp>
     <IonReactRouter>
       <IonRouterOutlet>
-        <Route exact path="/home">
-          <Home />
-        </Route>
-        <Route exact path="/login">
-          <Login />
-        </Route>
-        <Route exact path="/channels">
-          <Channels />
-        </Route>
-        <Route exact path="/prompts">
-          <Prompts />
-        </Route>
-        <Route exact path="/purpose">
-          <Purpose />
-        </Route>
-        <Route exact path="/segments">
-          <Segments />
-        </Route>
-        <Route exact path="/users">
-          <Users />
-        </Route>
-        <Route exact path="/conversation">
-          <Conversation selectedTopic=""  addressBarValue=""   selectedModel="" />
-        </Route>
-        <Route exact path="/">
-          <Redirect to="/home" />
-        </Route>
+        <AuthProvider>
+          <Router>
+            <Switch>
+              <AuthGuard path="/b2c" component={B2C} role="user"/>
+              <AuthGuard path="/users" component={Users} />
+              
+              <Route exact path="/login">
+                <Login />
+              </Route>
+              <Route exact path="/formats">
+                <Formats />
+              </Route>
+              <Route exact path="/prompts">
+                <Prompts />
+              </Route>
+              <Route exact path="/purpose">
+                <Purpose />
+              </Route>
+              <Route exact path="/segments">
+                <Segments />
+              </Route>
+              <Route path="/" component={Login} />
+            </Switch>
+          </Router>
+        </AuthProvider>
+        
       </IonRouterOutlet>
     </IonReactRouter>
   </IonApp>
