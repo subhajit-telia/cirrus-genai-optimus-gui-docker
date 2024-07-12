@@ -29,8 +29,8 @@ import {
       mdIcon: peopleOutline
     },
     {
-      title: 'Channels',
-      url: '/channels',
+      title: 'Formats',
+      url: '/formats',
       iosIcon: optionsOutline,
       mdIcon: optionsOutline
     },

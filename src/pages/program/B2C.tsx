@@ -1,6 +1,5 @@
 import { IonButton, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonChip, IonCol, IonContent, IonFab, IonFabButton, IonFabList, IonGrid, IonHeader, IonIcon, IonInput, IonLoading, IonPage, IonPopover, IonRow, IonSelect, IonSelectOption, IonSpinner, IonTextarea, IonTitle, IonToast, IonToolbar } from '@ionic/react';
 import ExploreContainer from '../../components/ExploreContainer';
-import './Home.css';
 import AppHeader from '../../components/header/Header';
 import { chevronUpCircle, colorPalette, globe, information, link, lockClosed, send, sync, thumbsDownOutline, thumbsUpOutline } from 'ionicons/icons';
 import { useEffect, useState } from 'react';
@@ -54,11 +53,15 @@ const Home: React.FC = () => {
   /* Variables start */
   const [segments, setSegments] = useState<Segment[]>([]);
   const [purposes, setPurposes] = useState<Purposes[]>([]);
-  const [purposeIds, setPurposeIds] = useState<string[]>([]);
+  const [selectedProducts, setSelectedProducts] = useState<Products[]>([]);
   const [products, setProducts] = useState<Products[]>([]);
   const [formats, setFormats] = useState<Formats[]>([]);
   const [tabs, setTabs] = useState<Tab[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
+  const [loadingSegments, setLoadingSegments] = useState<boolean>(false);
+  const [loadingPurposes, setLoadingPurposes] = useState<boolean>(false);
+  const [loadingFormats, setLoadingFormats] = useState<boolean>(false);
+  const [loadingProducts, setLoadingProducts] = useState<boolean>(false);
   
 
   useEffect(() => {
@@ -69,80 +72,100 @@ const Home: React.FC = () => {
   }, [setSegments]);
 
   const onSelect = (selectedList:any, selectedItem:any) => {
-    setPurposeIds([]);
+    setSelectedProducts(selectedList);
     console.log('onSelect', selectedList);
     console.log('onSelect', selectedItem);
     
-    const ids = selectedList.map((product: { product_id: any; }) => product.product_id);
-    setPurposeIds(ids);
-    console.log('purposeIds', purposeIds);
+    // const ids = selectedList.map((product: { product_id: any; }) => product.product_id);
+    // setPurposeIds(ids);
   };
 
   const onRemove = (selectedList:any, removedItem:any) => {
-    setPurposeIds([]);
+    setSelectedProducts(selectedList);
     console.log('onRemove', selectedList);
     console.log('onRemove', removedItem);
-    const ids = selectedList.map((product: { product_id: any; }) => product.product_id);
-    setPurposeIds(ids);
-    console.log('purposeIds', purposeIds);
   };
   
   /* -------------get segments data start------------- */
   const getSegmentsData = async () => {
+    setLoadingSegments(true);
     try {
       const urlData =NetworkInfo.URL + '/resource/get?table=segments&use_case=content_creation_b2c&columns=segment_id&columns=segment_name';
 
       const response = await fetch(urlData);
       const responseData = await response.json();
       console.log("Success:", responseData);
-      setSegments(responseData);
+      if (response.ok) {
+        setSegments(responseData);
+        setLoadingSegments(false);
+      }
+      
     } catch (error: any) {
       console.error("catch failed:", error);
+      setLoadingSegments(false);
     }
   };
   /* get segments data end */
 
   /* -------------get purposes data start------------- */
   const getPurposesData = async () => {
+    setLoadingPurposes(true);
     try {
       const urlData =NetworkInfo.URL + '/resource/get?table=purposes&use_case=content_creation_b2c&columns=purpose_id&columns=purpose_name';
 
       const response = await fetch(urlData);
       const responseData = await response.json();
       console.log("Success:", responseData);
-      setPurposes(responseData);
+
+      if (response.ok) {
+        setPurposes(responseData);
+        setLoadingPurposes(false);
+      }
     } catch (error: any) {
       console.error("catch failed:", error);
+      setLoadingPurposes(false);
     }
   };
   /* get purposes data end */
 
   /* -------------get products data start------------- */
   const getProductsData = async () => {
+    setLoadingProducts(true);
     try {
       const urlData =NetworkInfo.URL + '/resource/get?table=products&use_case=content_creation_b2c&columns=product_id&columns=product_name';
 
       const response = await fetch(urlData);
       const responseData = await response.json();
       console.log("Success:", responseData);
-      setProducts(responseData);
+      
+      if (response.ok) {
+        setProducts(responseData);
+        setLoadingProducts(false);
+      }
     } catch (error: any) {
       console.error("catch failed:", error);
+      setLoadingProducts(false);
     }
   };
   /* get products data end */
 
   /* -------------get formats data start------------- */
   const getFormatsData = async () => {
+    setLoadingFormats(true);
     try {
       const urlData =NetworkInfo.URL + '/resource/get?table=formats&use_case=content_creation_b2c&columns=format_id&columns=format_name';
 
       const response = await fetch(urlData);
       const responseData = await response.json();
       console.log("Success:", responseData);
-      setFormats(responseData);
+      
+      if (response.ok) {
+        setFormats(responseData);
+        setLoadingFormats(false);
+      }
     } catch (error: any) {
       console.error("catch failed:", error);
+      setLoadingFormats(false);
     }
   };
   /* get formats data end */
@@ -184,7 +207,7 @@ const Home: React.FC = () => {
   /* -----------Handle form submit start----------- */
   let arrayTab:any;
   const handleFormSubmit = (data:any) => {
-    console.log('purposeIds', purposeIds);
+    let productIds = selectedProducts.map(product => product.product_id);
     data.segment = segments
     .filter(segment => segment.isActive)
     .map(segment => segment.segment_id);
@@ -208,7 +231,7 @@ const Home: React.FC = () => {
           session_id : generateDateTimeString(),
           qid : generateDateTimeString(),
           use_case : 'content_creation_b2c',
-          product_ids : purposeIds,
+          product_ids : productIds,
           question: data.question,
           purpose_id: data.purpose,
           segment_id: segment,
@@ -300,7 +323,7 @@ const Home: React.FC = () => {
 
     setSegments(updatedSegments);
     setTabs([]);
-    setPurposeIds([]);
+    setSelectedProducts([]);
     setValue("format", '');
     setValue("purpose", '');
     setValue("products", '');
@@ -360,6 +383,7 @@ const Home: React.FC = () => {
                         displayValue="product_name"
                         placeholder="Select products"
                         options={products} // Options to display in the dropdown
+                        selectedValues= {selectedProducts}
                         onKeyPressFn={function noRefCheck(){}}
                         onRemove={onRemove}
                         onSearch={function noRefCheck(){}}
@@ -440,7 +464,7 @@ const Home: React.FC = () => {
           className="custom-loading"
           spinner="circles" 
           trigger="open-loading"
-          isOpen={loading}
+          isOpen={loading || loadingSegments || loadingPurposes || loadingFormats || loadingProducts}
           message={'Please wait...'}
         />
 
