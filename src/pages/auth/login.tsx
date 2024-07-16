@@ -31,7 +31,12 @@ const Login: React.FC = () => {
 
   const handleLogin = (_role:string) => {
     login(_role);
-    history.push('/b2c');
+    if (_role === 'user') {
+      history.push('/b2c');
+    }else {
+      history.push('/users');
+    }
+    
   };
 
   /* -----------Handle form submit start----------- */
@@ -103,7 +108,7 @@ const Login: React.FC = () => {
                     <source src={loginVideo} type="video/mp4"></source>
                 </video>
             </div>
-            <div className="content flex items-center justify-around h-full">
+            <div className="content flex items-center justify-around flex-col sm:flex-row h-full">
                 <div className='content-box'>
                     <p className='text-4xl font-bold'>Welcome to Gen-AI</p>
                 </div>
@@ -111,7 +116,7 @@ const Login: React.FC = () => {
                     <form onSubmit={handleSubmit(handleFormSubmit)} className="w-full">
                         <div className='flex justify-between'>
                             <p className='mb-3.5 text-xl'>Sign In</p>
-                            <IonSegment onIonChange={handleSegmentChange} className='w-36 h-7 bg-white rounded-[50px]' value="user">
+                            <IonSegment onIonChange={handleSegmentChange} className='w-36 h-7 bg-white rounded-[50px]' value={segmentValue}>
                                 <IonSegmentButton className='w-20 min-w-0 h-7 min-h-6 ' value="user">
                                     <IonLabel className='m-0 text-xs'>User</IonLabel>
                                 </IonSegmentButton>

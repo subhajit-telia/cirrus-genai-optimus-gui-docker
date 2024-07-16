@@ -1,4 +1,4 @@
-import { IonButton, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonChip, IonCol, IonContent, IonFab, IonFabButton, IonFabList, IonGrid, IonHeader, IonIcon, IonInput, IonLoading, IonPage, IonPopover, IonRow, IonSelect, IonSelectOption, IonSpinner, IonTextarea, IonTitle, IonToast, IonToolbar } from '@ionic/react';
+import { IonButton, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonChip, IonCol, IonContent, IonFab, IonFabButton, IonFabList, IonGrid, IonHeader, IonIcon, IonInput, IonLoading, IonPage, IonPopover, IonRow, IonSelect, IonSelectOption, IonSpinner, IonText, IonTextarea, IonTitle, IonToast, IonToolbar } from '@ionic/react';
 import ExploreContainer from '../../components/ExploreContainer';
 import AppHeader from '../../components/header/Header';
 import { chevronUpCircle, colorPalette, globe, information, link, lockClosed, send, sync, thumbsDownOutline, thumbsUpOutline } from 'ionicons/icons';
@@ -223,23 +223,26 @@ const Home: React.FC = () => {
 
     console.log('arrayTab', arrayTab);
 
-    data.format.forEach((format: any) => {
-      data.segment.forEach((segment: any) => {
-        console.log('call>>>>',format, segment);
-        let eachItem = {
-          user : 'ibu4416',
-          session_id : generateDateTimeString(),
-          qid : generateDateTimeString(),
-          use_case : 'content_creation_b2c',
-          product_ids : productIds,
-          question: data.question,
-          purpose_id: data.purpose,
-          segment_id: segment,
-          format_id: format
-        }
-        handleApiCall(eachItem);
+    if (data.format) {
+      data.format.forEach((format: any) => {
+        data.segment.forEach((segment: any) => {
+          console.log('call>>>>',format, segment);
+          let eachItem = {
+            user : 'ibu4416',
+            session_id : generateDateTimeString(),
+            qid : generateDateTimeString(),
+            use_case : 'content_creation_b2c',
+            product_ids : productIds,
+            question: data.question,
+            purpose_id: data.purpose,
+            segment_id: segment,
+            format_id: format
+          }
+          handleApiCall(eachItem);
+        });
       });
-    });
+    }
+    
   };
   const handleApiCall = async (data: any) => {
     setLoading(true);
@@ -350,12 +353,14 @@ const Home: React.FC = () => {
                     <div className='px-4 pb-3.5'>
                       <IonSelect placeholder="Select formats" disabled={formats.length === 0} className='min-h-10 field-item' label="Select desired format below" multiple={true} interface="popover" labelPlacement="stacked" fill="outline"
                         {...register("format", {
+                          required: "Format is required",
                           validate: {},
                         })}>
                           {formats.map((item, index) => (
                             <IonSelectOption key={index} value={item.format_id}>{item.format_name}</IonSelectOption>
                           ))}
                         </IonSelect>
+                        <IonText className='text-xs' color="danger">{errors?.["format"]?.message}</IonText>
                     </div>
                   </div>
                 </IonCol>

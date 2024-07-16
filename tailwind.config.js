@@ -6,7 +6,11 @@ export default {
         primary: 'var(--color-primary)',
         white: 'var(--color-white)'
       },
-      extend: {},
+      extend: {
+        fontFamily: {
+          custom: ['TeliaFont', 'sans-serif'],
+        },
+      },
     },
     plugins: [],
   }
