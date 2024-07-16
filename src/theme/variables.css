@@ -1,5 +1,18 @@
 /* For information on how to create your own theme, please see:
 http://ionicframework.com/docs/theming/ */
+@font-face {
+    font-family: 'TeliaFont';
+    src: url('../theme/fonts/TTF/TeliaSans-Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+@font-face {
+    font-family: 'TeliaFont';
+    src: url('../theme/fonts/TTF/TeliaSans-Bold.ttf') format('truetype');
+    font-weight: bold;
+    font-style: normal;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -15,6 +28,16 @@ http://ionicframework.com/docs/theming/ */
     .btn-primary {
         --background: var(--color-primary);
     }
+}
+:root {
+    --ion-font-family: 'TeliaFont', sans-serif;
+    --ion-default-font: 'TeliaFont', sans-serif;
+}
+body {
+    @apply font-custom;
+}
+* {
+    font-family: 'TeliaFont', sans-serif;
 }
 
 .page-body {

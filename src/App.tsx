@@ -50,29 +50,20 @@ const App: React.FC = () => (
     <IonReactRouter>
       <IonRouterOutlet>
         <AuthProvider>
-          <Router>
             <Switch>
               <AuthGuard path="/b2c" component={B2C} role="user"/>
-              <AuthGuard path="/users" component={Users} />
+              <AuthGuard path="/users" component={Users} role="admin"/>
+              <AuthGuard path="/formats" component={Formats} role="admin"/>
+              <AuthGuard path="/prompts" component={Prompts} role="admin"/>
+              <AuthGuard path="/purpose" component={Purpose} role="admin"/>
+              <AuthGuard path="/segments" component={Segments} role="admin"/>
               
               <Route exact path="/login">
                 <Login />
               </Route>
-              <Route exact path="/formats">
-                <Formats />
-              </Route>
-              <Route exact path="/prompts">
-                <Prompts />
-              </Route>
-              <Route exact path="/purpose">
-                <Purpose />
-              </Route>
-              <Route exact path="/segments">
-                <Segments />
-              </Route>
+              
               <Route path="/" component={Login} />
             </Switch>
-          </Router>
         </AuthProvider>
         
       </IonRouterOutlet>

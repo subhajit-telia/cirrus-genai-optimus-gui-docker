@@ -1,4 +1,4 @@
-import { IonAlert, IonButton, IonButtons, IonCard, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonItemOption, IonItemOptions, IonItemSliding, IonLabel, IonList, IonModal, IonPage, IonProgressBar, IonSegment, IonSegmentButton, IonSpinner, IonSplitPane, IonTitle, IonToolbar } from '@ionic/react';
+import { IonAlert, IonButton, IonButtons, IonCard, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonItemOption, IonItemOptions, IonItemSliding, IonLabel, IonList, IonModal, IonPage, IonProgressBar, IonSegment, IonSegmentButton, IonSpinner, IonSplitPane, IonText, IonTitle, IonToolbar } from '@ionic/react';
 import { useEffect, useRef, useState } from 'react';
 import AppHeader from '../../../components/header/Header';
 import Sidenav from '../../../components/sidenav/Sidenav';
@@ -244,13 +244,15 @@ const Users: React.FC = () => {
                   })}
                 ></IonInput>
               
-                <IonInput className='mb-4 text-sm' label="Password" labelPlacement="floating" fill="outline" placeholder="Enter Password"
+                <IonInput className='text-sm' label="Password" labelPlacement="floating" fill="outline" placeholder="Enter Password"
                   {...register("password", {
                     validate: {},
                   })}
                 ></IonInput>
-                
-                <div className='text-center'>
+                {isEdit === true && (
+                  <IonText className='text-xs' color="danger">Password is encripted!</IonText>
+                )}
+                <div className='text-center mt-4'>
                   <IonButton size='small' type='submit' className='btn-primary' shape="round">
                     {loading && <IonSpinner className='mr-2' name="bubbles"></IonSpinner>}
                     Save
