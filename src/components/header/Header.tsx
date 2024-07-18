@@ -1,4 +1,4 @@
-import { IonAvatar, IonButtons, IonCol, IonContent, IonGrid, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonMenuButton, IonPage, IonPopover, IonRow, IonTitle, IonToolbar } from '@ionic/react';
+import { IonAvatar, IonButtons, IonCol, IonContent, IonGrid, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonMenuButton, IonPage, IonPopover, IonRouterLink, IonRow, IonTitle, IonToolbar } from '@ionic/react';
 import './Header.css';
 import { person, power } from 'ionicons/icons';
 import { useHistory, useLocation } from 'react-router-dom';
@@ -39,7 +39,7 @@ const AppHeader: React.FC<ContainerProps> = () => {
     <IonHeader className='flex px-5 items-center justify-between'>
         <div>
             <IonToolbar>
-                {location.pathname === '/b2c' ?
+                {(userData) && (userData.role === 'user') ?
                     <IonTitle><img className="w-20" src={logo}/></IonTitle>
                 : 
                 <IonTitle className='capitalize p-0'>{currentPath} List</IonTitle>
@@ -50,8 +50,11 @@ const AppHeader: React.FC<ContainerProps> = () => {
             </IonToolbar>
         </div>
         <div className='grow'>
-            {location.pathname === '/b2c' &&
-                <><IonLabel className='mx-1.5 text-sm cursor-pointer border-b-2 border-[#990ae3] pb-1 text-[#990ae3] font-bold'>B2C</IonLabel><IonLabel className='mx-1.5 text-sm cursor-pointer'>B2B</IonLabel></>
+            {(userData) && (userData.role === 'user') &&
+                <>
+                    <IonRouterLink routerLink="/b2c" routerDirection="none" className={`${location.pathname === '/b2c' ? 'border-b-2 border-[#990ae3] pb-1 text-[#990ae3] font-bold' : ''} mx-1.5 text-sm cursor-pointer text-[#000]`}>B2C</IonRouterLink>
+                    <IonRouterLink routerLink="/b2b" routerDirection="none" className={`${location.pathname === '/b2b' ? 'border-b-2 border-[#990ae3] pb-1 text-[#990ae3] font-bold' : ''} mx-1.5 text-sm cursor-pointer text-[#000]`}>B2B</IonRouterLink>
+                </>
             }
         </div>
         <div>

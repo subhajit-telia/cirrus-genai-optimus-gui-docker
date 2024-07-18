@@ -11,7 +11,7 @@ import {
   } from '@ionic/react';
   
   import { useLocation } from 'react-router-dom';
-  import { archiveOutline, archiveSharp, bookmarkOutline, codeWorkingOutline, heartOutline, heartSharp, listOutline, mailOutline, mailSharp, optionsOutline, paperPlaneOutline, paperPlaneSharp, peopleOutline, trailSignOutline, trashOutline, trashSharp, warningOutline, warningSharp } from 'ionicons/icons';
+  import { archiveOutline, archiveSharp, bookmarkOutline, codeWorkingOutline, colorFilter, heartOutline, heartSharp, listOutline, mailOutline, mailSharp, optionsOutline, paperPlaneOutline, paperPlaneSharp, peopleOutline, trailSignOutline, trashOutline, trashSharp, warningOutline, warningSharp } from 'ionicons/icons';
   import './Sidenav.css';
   
   interface AppPage {
@@ -52,6 +52,12 @@ import {
       iosIcon: listOutline,
       mdIcon: listOutline
     },
+    {
+      title: 'Examples',
+      url: '/examples',
+      iosIcon: colorFilter,
+      mdIcon: colorFilter
+    }
   ];
   
   const Sidenav: React.FC = () => {
