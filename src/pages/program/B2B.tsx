@@ -52,7 +52,7 @@ interface Formats {
   format_id: string;
 }
 
-const B2C: React.FC = () => {
+const B2B: React.FC = () => {
   /* Variables start */
   const [segments, setSegments] = useState<Segment[]>([]);
   const [purposes, setPurposes] = useState<Purposes[]>([]);
@@ -95,7 +95,7 @@ const B2C: React.FC = () => {
   const getSegmentsData = async () => {
     setLoadingSegments(true);
     try {
-      const urlData =NetworkInfo.URL + '/resource/get?table=segments&use_case=content_creation_b2c&columns=segment_id&columns=segment_name';
+      const urlData =NetworkInfo.URL + '/resource/get?table=segments&use_case=content_creation_b2b&columns=segment_id&columns=segment_name';
 
       const response = await fetch(urlData);
       const responseData = await response.json();
@@ -116,7 +116,7 @@ const B2C: React.FC = () => {
   const getPurposesData = async () => {
     setLoadingPurposes(true);
     try {
-      const urlData =NetworkInfo.URL + '/resource/get?table=purposes&use_case=content_creation_b2c&columns=purpose_id&columns=purpose_name';
+      const urlData =NetworkInfo.URL + '/resource/get?table=purposes&use_case=content_creation_b2b&columns=purpose_id&columns=purpose_name';
 
       const response = await fetch(urlData);
       const responseData = await response.json();
@@ -137,7 +137,7 @@ const B2C: React.FC = () => {
   const getProductsData = async () => {
     setLoadingProducts(true);
     try {
-      const urlData =NetworkInfo.URL + '/resource/get?table=products&use_case=content_creation_b2c&columns=product_id&columns=product_name';
+      const urlData =NetworkInfo.URL + '/resource/get?table=products&use_case=content_creation_b2b&columns=product_id&columns=product_name';
 
       const response = await fetch(urlData);
       const responseData = await response.json();
@@ -158,7 +158,7 @@ const B2C: React.FC = () => {
   const getFormatsData = async () => {
     setLoadingFormats(true);
     try {
-      const urlData =NetworkInfo.URL + '/resource/get?table=formats&use_case=content_creation_b2c&columns=format_id&columns=format_name';
+      const urlData =NetworkInfo.URL + '/resource/get?table=formats&use_case=content_creation_b2b&columns=format_id&columns=format_name';
 
       const response = await fetch(urlData);
       const responseData = await response.json();
@@ -255,7 +255,7 @@ const B2C: React.FC = () => {
             user : 'ibu4416',
             session_id : generateDateTimeString(),
             qid : generateDateTimeString(),
-            use_case : 'content_creation_b2c',
+            use_case : 'content_creation_b2b',
             product_ids : productIds,
             question: data.question,
             purpose_id: data.purpose,
@@ -272,7 +272,7 @@ const B2C: React.FC = () => {
           user : 'ibu4416',
           session_id : generateDateTimeString(),
           qid : generateDateTimeString(),
-          use_case : 'content_creation_b2c',
+          use_case : 'content_creation_b2b',
           product_ids : productIds,
           question: data.question,
           purpose_id: data.purpose,
@@ -288,7 +288,7 @@ const B2C: React.FC = () => {
           user : 'ibu4416',
           session_id : generateDateTimeString(),
           qid : generateDateTimeString(),
-          use_case : 'content_creation_b2c',
+          use_case : 'content_creation_b2b',
           product_ids : productIds,
           question: data.question,
           purpose_id: data.purpose,
@@ -307,7 +307,7 @@ const B2C: React.FC = () => {
           user : 'ibu4416',
           session_id : generateDateTimeString(),
           qid : generateDateTimeString(),
-          use_case : 'content_creation_b2c',
+          use_case : 'content_creation_b2b',
           product_ids : productIds,
           question: data.question,
           purpose_id: data.purpose,
@@ -619,4 +619,4 @@ const B2C: React.FC = () => {
   );
 };
 
-export default B2C;
+export default B2B;

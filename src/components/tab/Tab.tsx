@@ -28,48 +28,68 @@ const Tabs: React.FC<TabsProps> = ({ tabs }) => {
     setActiveTab(segment_id);
   };
 
+  console.log('tabs@@@@', tabs)
+
   return (
     <div className="">
-      <div className="flex">
-        {tabs.map((tab) => (
-          <button
-            type='button'
-            key={tab.segment_id}
-            onClick={() => changeTab(tab.segment_id)}
-            className={`${
-              activeTab === tab.segment_id
-                ? '!bg-white font-bold'
-                : ''
-            } bg-[#eaeaea] rounded-md rounded-tr-3xl rounded-br-none whitespace-nowrap py-1 px-4 border-b-2 text-md focus:outline-none`}
-          >
-            {tab.segment_name ?
-              <p>{tab.segment_name}</p>
-            :
-              <IonSpinner name="dots"></IonSpinner>
-            }
-            
-            
-          </button>
-        ))}
-      </div>
-      <div className="bg-white p-4 rounded-md">
-        {tabs.map((tab) => (
-          <div key={tab.segment_id} className={activeTab === tab.segment_id ? 'block' : 'hidden'} >
-            {tab.data.map((tabItem) => (
-              <div className='mb-5 tab-body' key={tabItem.format_id}>
-                {tabItem.format_name ?
-                  <h3>{tabItem.format_name}</h3>
+      {tabs[0].data ?
+        <>
+          <div className="flex">
+            {tabs.map((tab) => (
+              <button
+                type='button'
+                key={tab.segment_id}
+                onClick={() => changeTab(tab.segment_id)}
+                className={`${
+                  activeTab === tab.segment_id
+                    ? '!bg-white font-bold'
+                    : ''
+                } bg-[#eaeaea] rounded-md rounded-tr-3xl rounded-br-none whitespace-nowrap py-1 px-4 border-b-2 text-md focus:outline-none`}
+              >
+                {tab.segment_name ?
+                  <p>{tab.segment_name}</p>
                 :
                   <IonSpinner name="dots"></IonSpinner>
                 }
                 
-                {/* <div className='text-sm' dangerouslySetInnerHTML={{ __html: tabItem.answer }}></div> */}
-                <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} children={tabItem.answer}/>
+                
+              </button>
+            ))}
+          </div>
+          <div className="bg-white p-4 rounded-md">
+            {tabs.map((tab) => (
+              <div key={tab.segment_id} className={activeTab === tab.segment_id ? 'block' : 'hidden'} >
+                {tab.data.map((tabItem) => (
+                  <div className='mb-5 tab-body' key={tabItem.format_id}>
+                    {tabItem.format_name ?
+                      <h3>{tabItem.format_name}</h3>
+                    :
+                      <IonSpinner name="dots"></IonSpinner>
+                    }
+                    
+                    {/* <div className='text-sm' dangerouslySetInnerHTML={{ __html: tabItem.answer }}></div> */}
+                    <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} children={tabItem.answer}/>
+                  </div>
+                ))}
               </div>
             ))}
           </div>
-        ))}
-      </div>
+        </>
+        :
+        <div className="bg-white p-4 rounded-md">
+          {tabs.map((tabItem:any) => (
+            <div className='mb-5 tab-body' key={tabItem.format_id}>
+              {tabItem.format_name ?
+                <h3 className='capitalize'>{tabItem.format_name}</h3>
+              :
+                <IonSpinner name="dots"></IonSpinner>
+              }
+              <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} children={tabItem.answer}/>
+            </div>
+          ))}
+        </div>
+      }
+      
     </div>
   );
 };
