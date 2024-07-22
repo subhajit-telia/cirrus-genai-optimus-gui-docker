@@ -45,6 +45,7 @@ import AuthGuard from './config/AuthGuard';
 import B2C from './pages/program/B2C';
 import B2B from './pages/program/B2B';
 import Examples from './pages/admin/examples/Examples';
+import Config from './pages/admin/configuration/Config';
 
 
 const App: React.FC = () => (
@@ -61,6 +62,7 @@ const App: React.FC = () => (
               <AuthGuard path="/purpose" component={Purpose} role="admin"/>
               <AuthGuard path="/segments" component={Segments} role="admin"/>
               <AuthGuard path="/examples" component={Examples} role="admin"/>
+              <AuthGuard path="/config" component={Config} role="admin"/>
               
               <Route exact path="/login">
                 <Login />

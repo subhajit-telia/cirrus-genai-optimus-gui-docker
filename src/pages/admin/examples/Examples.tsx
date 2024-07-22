@@ -1,4 +1,4 @@
-import { IonAlert, IonButton, IonButtons, IonCard, IonCheckbox, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonItemOption, IonItemOptions, IonItemSliding, IonLabel, IonList, IonModal, IonPage, IonProgressBar,    IonSpinner, IonSplitPane, IonTextarea, IonTitle, IonToolbar } from '@ionic/react';
+import { IonAlert, IonButton, IonButtons, IonCard, IonCheckbox, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonItemOption, IonItemOptions, IonItemSliding, IonLabel, IonList, IonModal, IonPage, IonProgressBar,    IonSelect,    IonSelectOption,    IonSpinner, IonSplitPane, IonTextarea, IonTitle, IonToolbar } from '@ionic/react';
 import { useEffect, useRef, useState } from 'react';
 import AppHeader from '../../../components/header/Header';
 import Sidenav from '../../../components/sidenav/Sidenav';
@@ -7,6 +7,9 @@ import templateData from '../../../template.json';
 import { HTTPMethod, NetworkInfo } from '../../../routes/network';
 import { OverlayEventDetail } from '@ionic/core/components';
 import { useForm } from 'react-hook-form';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
 
 interface ExampleAddModel {
   example: string;
@@ -15,8 +18,23 @@ interface ExampleAddModel {
   purpose_id: string;
   format_id: string;
   user_prompt: string;
+  products: string;
   b2b: number | boolean;
   b2c: number | boolean;
+}
+
+interface Segment {
+  segment_name: string;
+  segment_id: string;
+  isActive: boolean;
+}
+interface Purposes {
+  purpose_name: string;
+  purpose_id: string;
+}
+interface Formats {
+  format_name: string;
+  format_id: string;
 }
 
 const Examples: React.FC = () => {
@@ -28,10 +46,16 @@ const Examples: React.FC = () => {
   const [isOpenModal, setIsOpenModal] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
   const [targetIndex, setTargetIndex] = useState<number>();
+  const [segments, setSegments] = useState<Segment[]>([]);
+  const [purposes, setPurposes] = useState<Purposes[]>([]);
+  const [formats, setFormats] = useState<Formats[]>([]);
 
   useEffect(() => {
 
     getExamplesData();
+    getSegmentsData();
+    getPurposesData();
+    getFormatsData();
   }, []);
 
   /* -------------get Examples data start------------- */
@@ -55,6 +79,60 @@ const Examples: React.FC = () => {
     }
   };
   /* get examples data end */
+
+  /* -------------get segments data start------------- */
+  const getSegmentsData = async () => {
+    try {
+      const urlData =NetworkInfo.URL + '/resource/get?table=segments&use_case=content_creation_b2c&columns=segment_id&columns=segment_name';
+
+      const response = await fetch(urlData);
+      const responseData = await response.json();
+      console.log("Success:", responseData);
+      if (response.ok) {
+        setSegments(responseData);
+      }
+      
+    } catch (error: any) {
+      console.error("catch failed:", error);
+    }
+  };
+  /* get segments data end */
+
+  /* -------------get purposes data start------------- */
+  const getPurposesData = async () => {
+    try {
+      const urlData =NetworkInfo.URL + '/resource/get?table=purposes&use_case=content_creation_b2c&columns=purpose_id&columns=purpose_name';
+
+      const response = await fetch(urlData);
+      const responseData = await response.json();
+      console.log("Success:", responseData);
+
+      if (response.ok) {
+        setPurposes(responseData);
+      }
+    } catch (error: any) {
+      console.error("catch failed:", error);
+    }
+  };
+  /* get purposes data end */
+
+  /* -------------get formats data start------------- */
+  const getFormatsData = async () => {
+    try {
+      const urlData =NetworkInfo.URL + '/resource/get?table=formats&use_case=content_creation_b2c&columns=format_id&columns=format_name';
+
+      const response = await fetch(urlData);
+      const responseData = await response.json();
+      console.log("Success:", responseData);
+      
+      if (response.ok) {
+        setFormats(responseData);
+      }
+    } catch (error: any) {
+      console.error("catch failed:", error);
+    }
+  };
+  /* get formats data end */
 
   /* modal functions start */
 
@@ -108,7 +186,7 @@ const Examples: React.FC = () => {
     if (_value.b2c === 1) {
       setValue("b2c", true);
     }else {
-      setValue("b2b", false);
+      setValue("b2c", false);
     }
 
     setIsOpenModal(true);
@@ -127,9 +205,13 @@ const Examples: React.FC = () => {
   const handleFormSubmit = async (data: any) => {
     console.log('handleFormSubmit', data);
     let payLoad:any = {};
-    payLoad.example_name = data.example_name;
-    payLoad.example_definition = data.example_definition;
-    payLoad.example_id = `${data.example_name.replace(/\s+/g, '')}`;
+    payLoad.example = data.example;
+    payLoad.format_id = data.format_id;
+    payLoad.products = data.products;
+    payLoad.purpose_id = data.purpose_id;
+    payLoad.segment_id = data.segment_id;
+    payLoad.user_prompt = data.user_prompt;
+    payLoad.example_id = data.example_id;
 
     if (data.b2b === true) {
       payLoad.b2b = 1;
@@ -152,6 +234,7 @@ const Examples: React.FC = () => {
     if (isEdit === true) {
       prevExampleList.splice(index, 1, payLoad);
     }else {
+      payLoad.example_id = `ex${exampleList.length}`;
       prevExampleList = [...exampleList, payLoad];
     }
 
@@ -236,14 +319,15 @@ const Examples: React.FC = () => {
                 <IonItemSliding>
                   <IonItem button={true}>
                     <IonLabel>
-                      <p className='font-bold'>Example name: {item.example}</p>
+                      <p><b>Segment Id:</b> {item.segment_id}</p>
+                      <p><b>Purpose Id:</b> {item.purpose_id}</p>
+                      <p><b>Format Id:</b> {item.format_id}</p>
                       <p>
-                        Is B2B: {item.b2b === 1 ? 'Yes' : item.b2b === 0 ? 'No' : 'invalid value'}
+                        <b>Is B2B:</b> {item.b2b === 1 ? 'Yes' : item.b2b === 0 ? 'No' : 'invalid value'} | <b>Is B2C:</b> {item.b2c === 1 ? 'Yes' : item.b2c === 0 ? 'No' : 'invalid value'}
                       </p>
-                      <p>
-                        Is B2C: {item.b2c === 1 ? 'Yes' : item.b2c === 0 ? 'No' : 'invalid value'}
-                      </p>
-                      <p>Example Definition: {item.example}</p>
+                      <p><b>Products:</b> {item.products}</p>
+                      <p><b>User Prompt:</b> {item.user_prompt}</p>
+                      <p><b>Example:</b> {item.example}</p>
                     </IonLabel>
                     <IonButton id="open-modal" onClick={() => handleEdit(item, index)} slot="end" size="small" color="warning">
                       <IonIcon icon={createOutline}></IonIcon>
@@ -275,18 +359,58 @@ const Examples: React.FC = () => {
             </IonHeader>
             <div className="ion-padding">
               <form onSubmit={handleSubmit(handleFormSubmit)} className="w-full">
-                <IonInput className='mb-4 text-sm' label="Example Name" labelPlacement="floating" fill="outline" placeholder="Enter Example Name"
-                  {...register("example", {
+                <IonSelect placeholder="Select formats" disabled={formats.length === 0} className='min-h-10 field-item mb-4 text-sm' label="Select desired format below" interface="popover" labelPlacement="stacked" fill="outline"
+                  {...register("format_id", {
+                    validate: {},
+                  })}>
+                  {formats.map((item, index) => (
+                    <IonSelectOption key={index} value={item.format_id}>{item.format_name}</IonSelectOption>
+                  ))}
+                </IonSelect>
+
+                <IonSelect placeholder="Select purpose" disabled={purposes.length === 0} className='min-h-10 field-item mb-4 text-sm' label="Which product/offer do you want to report on?" interface="popover" labelPlacement="stacked" fill="outline"
+                  {...register("purpose_id", {
+                    validate: {},
+                  })}>
+                  {purposes.map((item, index) => (
+                    <IonSelectOption key={index} value={item.purpose_id}>{item.purpose_name}</IonSelectOption>
+                  ))}
+                </IonSelect>
+
+                <IonSelect placeholder="Select Segment" disabled={segments.length === 0} className='min-h-10 field-item mb-4 text-sm' label="Which product/offer do you want to report on?" interface="popover" labelPlacement="stacked" fill="outline"
+                  {...register("segment_id", {
+                    validate: {},
+                  })}>
+                  {segments.map((item, index) => (
+                    <IonSelectOption key={index} value={item.segment_id}>{item.segment_name}</IonSelectOption>
+                  ))}
+                </IonSelect>
+
+
+                <IonInput className='mb-4 text-sm' label="Product Name" labelPlacement="floating" fill="outline" placeholder="Enter Product Name"
+                  {...register("products", {
                     validate: {},
                   })}
                 ></IonInput>
 
                 <IonTextarea
                   className='mb-4 text-sm'
-                  label="Example Definition"
+                  label="User Prompt"
                   labelPlacement="floating"
                   fill="outline"
-                  placeholder="Enter class definition"
+                  placeholder="Enter User Prompt"
+                  autoGrow={true}
+                  {...register("user_prompt", {
+                    validate: {},
+                  })}
+                ></IonTextarea>
+
+                <IonTextarea
+                  className='mb-4 text-sm'
+                  label="Example"
+                  labelPlacement="floating"
+                  fill="outline"
+                  placeholder="Enter Example"
                   autoGrow={true}
                   {...register("example", {
                     validate: {},

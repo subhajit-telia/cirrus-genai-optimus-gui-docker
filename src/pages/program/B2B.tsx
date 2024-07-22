@@ -467,7 +467,6 @@ const B2B: React.FC = () => {
                             <IonSelectOption key={index} value={item.format_id}>{item.format_name}</IonSelectOption>
                           ))}
                         </IonSelect>
-                        <IonText className='text-xs' color="danger">{errors?.["format"]?.message}</IonText>
                     </div>
                   </div>
                 </IonCol>
