@@ -11,7 +11,7 @@ import {
   } from '@ionic/react';
   
   import { useLocation } from 'react-router-dom';
-  import { archiveOutline, archiveSharp, bookmarkOutline, codeWorkingOutline, colorFilter, heartOutline, heartSharp, listOutline, mailOutline, mailSharp, optionsOutline, paperPlaneOutline, paperPlaneSharp, peopleOutline, trailSignOutline, trashOutline, trashSharp, warningOutline, warningSharp } from 'ionicons/icons';
+  import { archiveOutline, archiveSharp, bookmarkOutline, codeWorkingOutline, colorFilter, heartOutline, heartSharp, listOutline, mailOutline, mailSharp, optionsOutline, paperPlaneOutline, paperPlaneSharp, peopleOutline, settings, trailSignOutline, trashOutline, trashSharp, warningOutline, warningSharp } from 'ionicons/icons';
   import './Sidenav.css';
   
   interface AppPage {
@@ -57,6 +57,12 @@ import {
       url: '/examples',
       iosIcon: colorFilter,
       mdIcon: colorFilter
+    },
+    {
+      title: 'Configuration',
+      url: '/config',
+      iosIcon: settings,
+      mdIcon: settings
     }
   ];
   
