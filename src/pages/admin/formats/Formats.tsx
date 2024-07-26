@@ -1,4 +1,4 @@
-import { IonAlert, IonButton, IonButtons, IonCard, IonCheckbox, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonItemOption, IonItemOptions, IonItemSliding, IonLabel, IonList, IonModal, IonPage, IonProgressBar, IonRadio, IonRadioGroup, IonSegment, IonSegmentButton, IonSpinner, IonSplitPane, IonTextarea, IonTitle, IonToolbar } from '@ionic/react';
+import { IonAlert, IonButton, IonButtons, IonCard, IonCheckbox, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonItemOption, IonItemOptions, IonItemSliding, IonLabel, IonList, IonModal, IonPage, IonProgressBar, IonRadio, IonRadioGroup, IonSegment, IonSegmentButton, IonSpinner, IonSplitPane, IonTextarea, IonTitle, IonToast, IonToolbar } from '@ionic/react';
 import { useEffect, useRef, useState } from 'react';
 import AppHeader from '../../../components/header/Header';
 import Sidenav from '../../../components/sidenav/Sidenav';
@@ -30,6 +30,8 @@ const Formats: React.FC = () => {
   const [isOpenModal, setIsOpenModal] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
   const [targetIndex, setTargetIndex] = useState<number>();
+  const [isShowError, setIsShowError] = useState(false);
+  const [isErrorMsg, setIsErrorMsg] = useState('');
 
   useEffect(() => {
 
@@ -191,7 +193,9 @@ const Formats: React.FC = () => {
       const responseData = await response.json();
       console.log("Success:", responseData);
 
-      if (response.ok && responseData === true) {
+      if (response.ok) {
+        setIsShowError(true);
+        setIsErrorMsg(responseData);
         reset();
         setLoading(false);
         setIsEdit(false);
@@ -249,10 +253,10 @@ const Formats: React.FC = () => {
                       <p className='font-bold'>Format name: {item.format_name}</p>
                       <p>Class name: {item.format_class_name}</p>
                       <p>
-                        Is B2B: {item.b2b === 1 ? 'Yes' : item.b2b === 0 ? 'No' : 'invalid value'}
+                        B2B: {item.b2b === 1 ? 'Yes' : item.b2b === 0 ? 'No' : 'invalid value'}
                       </p>
                       <p>
-                        Is B2C: {item.b2c === 1 ? 'Yes' : item.b2c === 0 ? 'No' : 'invalid value'}
+                        B2C: {item.b2c === 1 ? 'Yes' : item.b2c === 0 ? 'No' : 'invalid value'}
                       </p>
                       <p>Quality checked: {item.quality_check === 1 ? 'Yes' : item.quality_check === 0 ? 'No' : 'invalid value'}</p>
                       <p>Class Definition:</p>
@@ -335,7 +339,7 @@ const Formats: React.FC = () => {
                       console.log('event', event.detail.checked);
                       setValue("b2b", event.detail.checked);
                     }}
-                    labelPlacement="start">Is B2B</IonCheckbox>
+                    labelPlacement="start">B2B</IonCheckbox>
 
                   <IonCheckbox 
                     {...register("b2c", {
@@ -346,7 +350,7 @@ const Formats: React.FC = () => {
                       console.log('event', event.detail.checked);
                       setValue("b2c", event.detail.checked);
                     }}
-                    labelPlacement="start">Is B2C</IonCheckbox>
+                    labelPlacement="start">B2C</IonCheckbox>
                 </div>
 
                 <IonCheckbox 
@@ -358,7 +362,7 @@ const Formats: React.FC = () => {
                     console.log('event', event.detail.checked);
                     setValue("quality_check", event.detail.checked);
                   }}
-                  className='mb-4 text-sm' labelPlacement="start">Quality checked?</IonCheckbox>
+                  className='mb-4 text-sm' labelPlacement="start">Rewrite output if it does not match schema</IonCheckbox>
                 
                 <div className='text-center'>
                   <IonButton size='small' type='submit' className='btn-primary' shape="round">
@@ -407,6 +411,13 @@ const Formats: React.FC = () => {
               <IonIcon icon={add}></IonIcon>
             </IonFabButton>
           </IonFab>
+          <IonToast
+            className='custom-toast'
+            isOpen={isShowError}
+            message={isErrorMsg}
+            duration={3000}
+            onDidDismiss={() => setIsShowError(false)}
+          ></IonToast>
       </IonContent>
     </IonPage>
     </IonSplitPane>
