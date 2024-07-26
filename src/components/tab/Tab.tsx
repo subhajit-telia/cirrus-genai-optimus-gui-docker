@@ -60,15 +60,16 @@ const Tabs: React.FC<TabsProps> = ({ tabs }) => {
             {tabs.map((tab) => (
               <div key={tab.segment_id} className={activeTab === tab.segment_id ? 'block' : 'hidden'} >
                 {tab.data.map((tabItem) => (
-                  <div className='mb-5 tab-body' key={tabItem.format_id}>
-                    {tabItem.format_name ?
-                      <h3>{tabItem.format_name}</h3>
+                  <div className='mb-5 tab-body border p-4 rounded-md' key={tabItem.format_id}>
+                    {tabItem.format_name &&
+                      <h3 className='capitalize'>{tabItem.format_name}</h3>
+                    }
+
+                    {tabItem.answer ?
+                      <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} children={tabItem.answer}/>
                     :
                       <IonSpinner name="dots"></IonSpinner>
                     }
-                    
-                    {/* <div className='text-sm' dangerouslySetInnerHTML={{ __html: tabItem.answer }}></div> */}
-                    <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} children={tabItem.answer}/>
                   </div>
                 ))}
               </div>
@@ -78,13 +79,17 @@ const Tabs: React.FC<TabsProps> = ({ tabs }) => {
         :
         <div className="bg-white p-4 rounded-md">
           {tabs.map((tabItem:any) => (
-            <div className='mb-5 tab-body' key={tabItem.format_id}>
-              {tabItem.format_name ?
+            <div className='mb-5 tab-body border p-4 rounded-md' key={tabItem.format_id}>
+              {tabItem.format_name &&
                 <h3 className='capitalize'>{tabItem.format_name}</h3>
+              }
+
+              {tabItem.answer ?
+                <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} children={tabItem.answer}/>
               :
                 <IonSpinner name="dots"></IonSpinner>
               }
-              <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} children={tabItem.answer}/>
+              
             </div>
           ))}
         </div>

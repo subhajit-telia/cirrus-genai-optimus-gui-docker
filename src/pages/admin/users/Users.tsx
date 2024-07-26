@@ -1,4 +1,4 @@
-import { IonAlert, IonButton, IonButtons, IonCard, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonItemOption, IonItemOptions, IonItemSliding, IonLabel, IonList, IonModal, IonPage, IonProgressBar, IonSegment, IonSegmentButton, IonSpinner, IonSplitPane, IonText, IonTitle, IonToolbar } from '@ionic/react';
+import { IonAlert, IonButton, IonButtons, IonCard, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonItemOption, IonItemOptions, IonItemSliding, IonLabel, IonList, IonModal, IonPage, IonProgressBar, IonSegment, IonSegmentButton, IonSpinner, IonSplitPane, IonText, IonTitle, IonToast, IonToolbar } from '@ionic/react';
 import { useEffect, useRef, useState } from 'react';
 import AppHeader from '../../../components/header/Header';
 import Sidenav from '../../../components/sidenav/Sidenav';
@@ -24,6 +24,8 @@ const Users: React.FC = () => {
   const [isOpenModal, setIsOpenModal] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
   const [targetIndex, setTargetIndex] = useState<number>();
+  const [isShowError, setIsShowError] = useState(false);
+  const [isErrorMsg, setIsErrorMsg] = useState('');
 
   useEffect(() => {
 
@@ -140,18 +142,29 @@ const Users: React.FC = () => {
       const responseData = await response.json();
       console.log("Success:", responseData);
 
-      if (response.ok && responseData === true) {
+      if (response.ok) {
+        setIsShowError(true);
+        setIsErrorMsg(responseData);
         reset();
         setLoading(false);
         setIsEdit(false);
         setTargetIndex(-1);
         getUsersData();
         onModalDismiss();
+      }else {
+        // Handle non-ok responses here
+        console.error("Error response:", responseData);
+        setIsShowError(true);
+        setIsErrorMsg(responseData.message || "Unknown error occurred");
+        setLoading(false);
       }
       
     } catch (error: any) {
       console.error("Login failed:", error);
       setLoading(false);
+      setIsShowError(true);
+      setIsErrorMsg(error.message || "Request failed");
+      getUsersData();
     }
   };
   /* Handle form submit end */
@@ -299,6 +312,14 @@ const Users: React.FC = () => {
               <IonIcon icon={add}></IonIcon>
             </IonFabButton>
           </IonFab>
+
+          <IonToast
+            className='custom-toast'
+            isOpen={isShowError}
+            message={isErrorMsg}
+            duration={3000}
+            onDidDismiss={() => setIsShowError(false)}
+          ></IonToast>
       </IonContent>
     </IonPage>
     </IonSplitPane>

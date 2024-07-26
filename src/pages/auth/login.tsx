@@ -1,4 +1,4 @@
-import { IonButton, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonChip, IonCol, IonContent, IonGrid, IonHeader, IonIcon, IonInput, IonInputPasswordToggle, IonLabel, IonLoading, IonPage, IonRow, IonSegment, IonSegmentButton, IonSelect, IonSelectOption, IonSpinner, IonTextarea, IonTitle, IonToast, IonToolbar } from '@ionic/react';
+import { IonButton, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonChip, IonCol, IonContent, IonGrid, IonHeader, IonIcon, IonInput, IonInputPasswordToggle, IonLabel, IonLoading, IonPage, IonRow, IonSegment, IonSegmentButton, IonSelect, IonSelectOption, IonSpinner, IonText, IonTextarea, IonTitle, IonToast, IonToolbar } from '@ionic/react';
 import ExploreContainer from '../../components/ExploreContainer';
 import AppHeader from '../../components/header/Header';
 import { lockClosed, send, sync } from 'ionicons/icons';
@@ -21,6 +21,7 @@ interface UserAddModel {
 const Login: React.FC = () => {
   /* Variables start */
   const [loading, setLoading] = useState<boolean>(false);
+  const [isShowError, setIsShowError] = useState(false);
   const [segmentValue, setSegmentValue] = useState('user');
   const history = useHistory();
   const { login } = useAuth();
@@ -68,6 +69,7 @@ const Login: React.FC = () => {
           handleLogin(data.role[0]);
         }else {
           console.log('login faild');
+          setIsShowError(true);
         }
       }
       
@@ -108,9 +110,9 @@ const Login: React.FC = () => {
                     <source src={loginVideo} type="video/mp4"></source>
                 </video>
             </div>
-            <div className="content flex items-center justify-around flex-col sm:flex-row h-full">
+            <div className="content flex justify-around flex-col sm:flex-row h-full">
                 <div className='content-box'>
-                    <p className='text-4xl font-bold'>Welcome to Gen-AI</p>
+                    <p className='md:text-8xl text-3xl font-bold'>Welcome to Optimus</p>
                 </div>
                 <div className='login-box py-5 px-4 bg-[#6f139ec7] rounded-lg'>
                     <form onSubmit={handleSubmit(handleFormSubmit)} className="w-full">
@@ -127,18 +129,24 @@ const Login: React.FC = () => {
                         </div>
                         
                         <div>
-                            <IonInput className='mb-3.5' label="Username" labelPlacement="stacked" fill="outline"
+                            <IonInput label="Username" labelPlacement="stacked" fill="outline"
                                 {...register("username", {
+                                    required: "Username is required",
                                     validate: {},
                                 })}
+                                onIonInput={(e:any) => setValue("username", e.detail.value)}
                             ></IonInput>
-                            <IonInput className='mb-3.5' type="password" label="Password" labelPlacement="stacked" fill="outline"
+                            <IonText color="warning"  className='text-xs mb-3.5 block'>{errors?.["username"]?.message} </IonText>
+                            <IonInput type="password" label="Password" labelPlacement="stacked" fill="outline"
                                 {...register("password", {
+                                    required: "Password is required",
                                     validate: {},
                                 })}
+                                onIonInput={(e:any) => setValue("password", e.detail.value)}
                             >
                                 <IonInputPasswordToggle slot="end"></IonInputPasswordToggle>
                             </IonInput>
+                            <IonText color="warning"  className='text-xs mb-3.5 block'>{errors?.["password"]?.message} </IonText>
                         </div>
                         <p className='mb-3.5 cursor-pointer'>Forgot password?</p>
                         <div className='text-center mb-3.5'>
@@ -150,6 +158,13 @@ const Login: React.FC = () => {
                     </form>
                 </div>
             </div>
+        <IonToast
+        className='custom-toast'
+          isOpen={isShowError}
+          message="Please check Username & Password!"
+          duration={3000}
+          onDidDismiss={() => setIsShowError(false)}
+        ></IonToast>
       </IonContent>
     </IonPage>
   );

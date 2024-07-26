@@ -1,4 +1,4 @@
-import { IonAlert, IonButton, IonButtons, IonCard, IonCheckbox, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonItemOption, IonItemOptions, IonItemSliding, IonLabel, IonList, IonModal, IonPage, IonProgressBar,    IonSelect,    IonSelectOption,    IonSpinner, IonSplitPane, IonTextarea, IonTitle, IonToolbar } from '@ionic/react';
+import { IonAlert, IonButton, IonButtons, IonCard, IonCheckbox, IonCol, IonContent, IonFab, IonFabButton, IonGrid, IonHeader, IonIcon, IonInput, IonItem, IonItemOption, IonItemOptions, IonItemSliding, IonLabel, IonList, IonModal, IonPage, IonProgressBar,    IonRow,    IonSelect,    IonSelectOption,    IonSpinner, IonSplitPane, IonText, IonTextarea, IonTitle, IonToast, IonToolbar } from '@ionic/react';
 import { useEffect, useRef, useState } from 'react';
 import AppHeader from '../../../components/header/Header';
 import Sidenav from '../../../components/sidenav/Sidenav';
@@ -49,6 +49,8 @@ const Examples: React.FC = () => {
   const [segments, setSegments] = useState<Segment[]>([]);
   const [purposes, setPurposes] = useState<Purposes[]>([]);
   const [formats, setFormats] = useState<Formats[]>([]);
+  const [isShowError, setIsShowError] = useState(false);
+  const [isErrorMsg, setIsErrorMsg] = useState('');
 
   useEffect(() => {
 
@@ -201,6 +203,22 @@ const Examples: React.FC = () => {
   };
   /* check password hashed or not end */
 
+  /* -----------Filter form submit start----------- */
+  const filterFormSubmit = async (data: any) => {
+    console.log('data', data);
+
+    let filteredData = exampleList.filter(item => {
+      const matchesFormat = data.format_id ? item.format_id === data.format_id : true;
+      const matchesSegment = data.segment_id ? item.segment_id === data.segment_id : true;
+      const matchesPurpose = data.purpose_id ? item.purpose_id === data.purpose_id : true;
+      return matchesFormat && matchesSegment && matchesPurpose;
+    });
+
+    console.log('filteredData', filteredData);
+    setExampleList(filteredData);
+  }
+  /* Filter form submit end */
+
   /* -----------Handle form submit start----------- */
   const handleFormSubmit = async (data: any) => {
     console.log('handleFormSubmit', data);
@@ -266,7 +284,9 @@ const Examples: React.FC = () => {
       const responseData = await response.json();
       console.log("Success:", responseData);
 
-      if (response.ok && responseData === true) {
+      if (response.ok) {
+        setIsShowError(true);
+        setIsErrorMsg(responseData);
         reset();
         setLoading(false);
         setIsEdit(false);
@@ -312,6 +332,47 @@ const Examples: React.FC = () => {
         {loading && 
         <IonProgressBar type="indeterminate"></IonProgressBar>
         }
+          <IonCard>
+            <form onSubmit={handleSubmit(filterFormSubmit)} className="w-full">
+              <IonGrid>
+                <IonRow className='items-center'>
+                  <IonCol size='1'>
+                    Filter By:
+                  </IonCol>
+                  <IonCol size='3'>
+                    <IonInput className='text-sm' label="Format Id" labelPlacement="floating" fill="outline" placeholder="Enter Product Name"
+                      {...register("format_id", {
+                        validate: {},
+                      })}
+                    ></IonInput>
+                  </IonCol>
+                  <IonCol size='3'>
+                    <IonInput className='text-sm' label="Segment Id" labelPlacement="floating" fill="outline" placeholder="Enter Product Name"
+                      {...register("segment_id", {
+                        validate: {},
+                      })}
+                    ></IonInput>
+                  </IonCol>
+                  <IonCol size='3'>
+                    <IonInput className='text-sm' label="Purpose Id" labelPlacement="floating" fill="outline" placeholder="Enter Product Name"
+                      {...register("purpose_id", {
+                        validate: {},
+                      })}
+                    ></IonInput>
+                  </IonCol>
+                  <IonCol size='2'>
+                    <IonButton size='small' type='submit' className='btn-primary text-xs' shape="round">
+                      Filter
+                    </IonButton>
+                    <IonButton onClick={() => getExamplesData()} className='text-xs' size='small' type='reset' fill='outline' shape="round">
+                      Cancel
+                    </IonButton>
+                  </IonCol>
+                </IonRow>
+              </IonGrid>
+            </form>
+          </IonCard>
+          
         
           <IonList className='bg-transparent'>
             {exampleList.map((item, index) => (
@@ -323,7 +384,7 @@ const Examples: React.FC = () => {
                       <p><b>Purpose Id:</b> {item.purpose_id}</p>
                       <p><b>Format Id:</b> {item.format_id}</p>
                       <p>
-                        <b>Is B2B:</b> {item.b2b === 1 ? 'Yes' : item.b2b === 0 ? 'No' : 'invalid value'} | <b>Is B2C:</b> {item.b2c === 1 ? 'Yes' : item.b2c === 0 ? 'No' : 'invalid value'}
+                        <b>B2B:</b> {item.b2b === 1 ? 'Yes' : item.b2b === 0 ? 'No' : 'invalid value'} | <b>B2C:</b> {item.b2c === 1 ? 'Yes' : item.b2c === 0 ? 'No' : 'invalid value'}
                       </p>
                       <p><b>Products:</b> {item.products}</p>
                       <p><b>User Prompt:</b> {item.user_prompt}</p>
@@ -344,6 +405,10 @@ const Examples: React.FC = () => {
               </IonCard>
             ))}
           </IonList>
+
+          {exampleList.length === 0 &&
+            <IonText className='text-center block'>No data found!</IonText>
+          }
 
           {/* modal start */}
           <IonModal id="example-modal" isOpen={isOpenModal} onWillDismiss={() => onModalDismiss()}>
@@ -427,7 +492,7 @@ const Examples: React.FC = () => {
                       console.log('event', event.detail.checked);
                       setValue("b2b", event.detail.checked);
                     }}
-                    labelPlacement="start">Is B2B</IonCheckbox>
+                    labelPlacement="start">B2B</IonCheckbox>
 
                   <IonCheckbox 
                     {...register("b2c", {
@@ -438,7 +503,7 @@ const Examples: React.FC = () => {
                       console.log('event', event.detail.checked);
                       setValue("b2c", event.detail.checked);
                     }}
-                    labelPlacement="start">Is B2C</IonCheckbox>
+                    labelPlacement="start">B2C</IonCheckbox>
                 </div>
                 
                 <div className='text-center'>
@@ -488,6 +553,13 @@ const Examples: React.FC = () => {
               <IonIcon icon={add}></IonIcon>
             </IonFabButton>
           </IonFab>
+          <IonToast
+            className='custom-toast'
+            isOpen={isShowError}
+            message={isErrorMsg}
+            duration={3000}
+            onDidDismiss={() => setIsShowError(false)}
+          ></IonToast>
       </IonContent>
     </IonPage>
     </IonSplitPane>

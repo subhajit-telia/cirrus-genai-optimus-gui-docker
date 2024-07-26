@@ -33,6 +33,9 @@ http://ionicframework.com/docs/theming/ */
     --ion-font-family: 'TeliaFont', sans-serif;
     --ion-default-font: 'TeliaFont', sans-serif;
 }
+::-ms-reveal {
+    display: none;
+}
 body {
     @apply font-custom;
 }
@@ -92,6 +95,9 @@ ion-loading.custom-loading .loading-wrapper {
 ion-toast.custom-toast {
     --background: var(--color-primary);
     color: var(--color-white);
+    --width: auto !important;
+    --min-width: 200px;
+    --max-width: 400px;
 }
 .custom-search p {
     font-size: 0.675rem;
@@ -122,7 +128,26 @@ ion-modal#example-modal {
     --width: fit-content;
   --min-width: 350px;
   --max-width: 450px;
-  --height: fit-content;
+  --height: auto;
   --border-radius: 6px;
   --box-shadow: 0 28px 48px rgba(0, 0, 0, 0.4);
+}
+ion-textarea .textarea-wrapper-inner {
+    max-height: 300px;
+}
+ion-textarea .textarea-wrapper-inner .native-wrapper .native-textarea {
+    max-height: 300px;
+    overflow: auto !important;
+}
+.bg-transparent ion-card ion-item ion-label {
+    font-size: 14px;
+    color: #000;
+}
+.bg-transparent ion-card ion-item ion-label p {
+    font-size: 14px;
+    color: #000;
+}
+.bg-transparent ion-card ion-item ion-label li {
+    font-size: 14px;
+    color: #000;
 }

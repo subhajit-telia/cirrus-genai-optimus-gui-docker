@@ -79,7 +79,6 @@ const Config: React.FC = () => {
     payLoad.chat.feedback_dynamodb_table = data.feedback_dynamodb_table;
     payLoad.chat.model = data.model;
     payLoad.chat.agent_type = data.agent_type;
-    payLoad.quality_gates = data.quality_gates;
     payLoad.llm_retry_count = data.llm_retry_count;
     payLoad.chat.model_config.generation_max_"removed"s = data.generation_max_"removed"s;
     payLoad.chat.model_config.context_max_"removed"s = data.context_max_"removed"s;
@@ -129,7 +128,7 @@ const Config: React.FC = () => {
     },
   });
 
-  const isQualityGates = watch('quality_gates');
+  // const isQualityGates = watch('quality_gates');
   /* Handle form input field changes end */
 
   return (
@@ -220,7 +219,7 @@ const Config: React.FC = () => {
                                 ></IonInput>
                             </IonCol>
 
-                            <IonCol size="4">
+                            {/* <IonCol size="4">
                                 <IonCheckbox 
                                 {...register("quality_gates", {
                                     validate: {},
@@ -231,7 +230,7 @@ const Config: React.FC = () => {
                                     setValue("quality_gates", event.detail.checked);
                                 }}
                                 className='mb-4 text-sm' labelPlacement="start">Quality checked?</IonCheckbox>
-                            </IonCol>
+                            </IonCol> */}
 
                         </IonRow>
                     </IonGrid>

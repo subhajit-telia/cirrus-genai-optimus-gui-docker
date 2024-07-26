@@ -1,4 +1,4 @@
-import { IonAlert, IonButton, IonButtons, IonCard, IonCheckbox, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonItemOption, IonItemOptions, IonItemSliding, IonLabel, IonList, IonModal, IonPage, IonProgressBar, IonSpinner, IonSplitPane, IonTextarea, IonTitle, IonToolbar } from '@ionic/react';
+import { IonAlert, IonButton, IonButtons, IonCard, IonCheckbox, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonItemOption, IonItemOptions, IonItemSliding, IonLabel, IonList, IonModal, IonPage, IonProgressBar, IonSpinner, IonSplitPane, IonTextarea, IonTitle, IonToast, IonToolbar } from '@ionic/react';
 import { useEffect, useRef, useState } from 'react';
 import AppHeader from '../../../components/header/Header';
 import Sidenav from '../../../components/sidenav/Sidenav';
@@ -25,6 +25,8 @@ const Prompts: React.FC = () => {
   const [isOpenModal, setIsOpenModal] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
   const [targetIndex, setTargetIndex] = useState<number>();
+  const [isShowError, setIsShowError] = useState(false);
+  const [isErrorMsg, setIsErrorMsg] = useState('');
 
   useEffect(() => {
 
@@ -144,7 +146,9 @@ const Prompts: React.FC = () => {
       const responseData = await response.json();
       console.log("Success:", responseData);
 
-      if (response.ok && responseData === true) {
+      if (response.ok) {
+        setIsShowError(true);
+        setIsErrorMsg(responseData);
         reset();
         setLoading(false);
         setIsEdit(false);
@@ -294,6 +298,14 @@ const Prompts: React.FC = () => {
               <IonIcon icon={add}></IonIcon>
             </IonFabButton>
           </IonFab>
+
+          <IonToast
+            className='custom-toast'
+            isOpen={isShowError}
+            message={isErrorMsg}
+            duration={3000}
+            onDidDismiss={() => setIsShowError(false)}
+          ></IonToast>
       </IonContent>
     </IonPage>
     </IonSplitPane>

@@ -1,4 +1,4 @@
-import { IonAlert, IonButton, IonButtons, IonCard, IonCheckbox, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonItemOption, IonItemOptions, IonItemSliding, IonLabel, IonList, IonModal, IonPage, IonProgressBar, IonRadio, IonRadioGroup, IonSegment, IonSegmentButton, IonSpinner, IonSplitPane, IonTextarea, IonTitle, IonToolbar } from '@ionic/react';
+import { IonAlert, IonButton, IonButtons, IonCard, IonCheckbox, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonItemOption, IonItemOptions, IonItemSliding, IonLabel, IonList, IonModal, IonPage, IonProgressBar, IonRadio, IonRadioGroup, IonSegment, IonSegmentButton, IonSpinner, IonSplitPane, IonTextarea, IonTitle, IonToast, IonToolbar } from '@ionic/react';
 import { useEffect, useRef, useState } from 'react';
 import AppHeader from '../../../components/header/Header';
 import Sidenav from '../../../components/sidenav/Sidenav';
@@ -25,6 +25,8 @@ const Purpose: React.FC = () => {
   const [isOpenModal, setIsOpenModal] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
   const [targetIndex, setTargetIndex] = useState<number>();
+  const [isShowError, setIsShowError] = useState(false);
+  const [isErrorMsg, setIsErrorMsg] = useState('');
 
   useEffect(() => {
 
@@ -172,7 +174,9 @@ const Purpose: React.FC = () => {
       const responseData = await response.json();
       console.log("Success:", responseData);
 
-      if (response.ok && responseData === true) {
+      if (response.ok) {
+        setIsShowError(true);
+        setIsErrorMsg(responseData);
         reset();
         setLoading(false);
         setIsEdit(false);
@@ -227,10 +231,10 @@ const Purpose: React.FC = () => {
                     <IonLabel>
                       <p className='font-bold'>Purpose name: {item.purpose_name}</p>
                       <p>
-                        Is B2B: {item.b2b === 1 ? 'Yes' : item.b2b === 0 ? 'No' : 'invalid value'}
+                        B2B: {item.b2b === 1 ? 'Yes' : item.b2b === 0 ? 'No' : 'invalid value'}
                       </p>
                       <p>
-                        Is B2C: {item.b2c === 1 ? 'Yes' : item.b2c === 0 ? 'No' : 'invalid value'}
+                        B2C: {item.b2c === 1 ? 'Yes' : item.b2c === 0 ? 'No' : 'invalid value'}
                       </p>
                       <p>Purpose Definition: {item.purpose_definition}</p>
                     </IonLabel>
@@ -292,7 +296,7 @@ const Purpose: React.FC = () => {
                       console.log('event', event.detail.checked);
                       setValue("b2b", event.detail.checked);
                     }}
-                    labelPlacement="start">Is B2B</IonCheckbox>
+                    labelPlacement="start">B2B</IonCheckbox>
 
                   <IonCheckbox 
                     {...register("b2c", {
@@ -303,7 +307,7 @@ const Purpose: React.FC = () => {
                       console.log('event', event.detail.checked);
                       setValue("b2c", event.detail.checked);
                     }}
-                    labelPlacement="start">Is B2C</IonCheckbox>
+                    labelPlacement="start">B2C</IonCheckbox>
                 </div>
                 
                 <div className='text-center'>
@@ -353,6 +357,14 @@ const Purpose: React.FC = () => {
               <IonIcon icon={add}></IonIcon>
             </IonFabButton>
           </IonFab>
+
+          <IonToast
+            className='custom-toast'
+            isOpen={isShowError}
+            message={isErrorMsg}
+            duration={3000}
+            onDidDismiss={() => setIsShowError(false)}
+          ></IonToast>
       </IonContent>
     </IonPage>
     </IonSplitPane>

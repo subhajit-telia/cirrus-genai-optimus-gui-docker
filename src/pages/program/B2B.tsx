@@ -1,4 +1,4 @@
-import { IonButton, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonChip, IonCol, IonContent, IonFab, IonFabButton, IonFabList, IonGrid, IonHeader, IonIcon, IonInput, IonLoading, IonPage, IonPopover, IonRow, IonSelect, IonSelectOption, IonSpinner, IonText, IonTextarea, IonTitle, IonToast, IonToolbar } from '@ionic/react';
+import { IonButton, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonChip, IonCol, IonContent, IonFab, IonFabButton, IonFabList, IonGrid, IonHeader, IonIcon, IonInput, IonLoading, IonPage, IonPopover, IonProgressBar, IonRow, IonSelect, IonSelectOption, IonSkeletonText, IonSpinner, IonText, IonTextarea, IonTitle, IonToast, IonToolbar } from '@ionic/react';
 import ExploreContainer from '../../components/ExploreContainer';
 import AppHeader from '../../components/header/Header';
 import { chevronUpCircle, colorPalette, globe, information, link, lockClosed, send, sync, thumbsDownOutline, thumbsUpOutline } from 'ionicons/icons';
@@ -224,26 +224,37 @@ const B2B: React.FC = () => {
       console.log('>>>A');
       arrayTab  =  data.segment.map((segment: any) => ({
         segment_id: segment,
+        segment_name: segments.find(s => s.segment_id === segment)?.segment_name,
         data: data.format.map((format: any) => ({
           format_id: format,
+          format_name: formats.find(f => f.format_id === format)?.format_name,
         }))
       }));
-    }else if (data.segment.length !== 0 && (data.format === undefined || data.format === '')) {
+
+      
+    }else if (data.segment.length !== 0 && (data.format === undefined || data.format === '') && data.question !== '') {
       console.log('>>>B');
       arrayTab  =  data.segment.map((segment: any) => ({
         segment_id: segment,
-        data: []
+        segment_name: segments.find(s => s.segment_id === segment)?.segment_name,
+        data: [{
+          format_id: 'customPrompts',
+          format_name: data.question
+        }]
       }));
+      
     }else if (data.segment.length === 0 && data.format !== undefined && data.format !== ''){
       console.log('>>>C');
       console.log(data.format.length);
       arrayNoSegment = data.format.map((format: any) => ({
         format_id: format,
+        format_name: formats.find(f => f.format_id === format)?.format_name,
       }))
+      
     }
     
 
-    console.log('arrayTab', arrayTab);
+    
     
 
     if (data.format !== undefined && data.format !== '' && data.segment.length > 0) {
@@ -265,6 +276,7 @@ const B2B: React.FC = () => {
           handleApiCall(eachItem);
         });
       });
+      setTabs(arrayTab);
     }else if (data.format !== undefined && data.format !== '' && data.segment.length === 0) {
       console.log('>>>2');
       data.format.forEach((format: any) => {
@@ -281,7 +293,8 @@ const B2B: React.FC = () => {
         }
         handleApiCall(eachItem);
       });
-    }else if (data.format === undefined && data.segment.length !== 0 && data.question !== '') {
+      setTabs(arrayNoSegment);
+    }else if ((data.format === undefined || data.format === '') && data.segment.length !== 0 && data.question !== '') {
       console.log('>>>3');
       data.segment.forEach((segment: any) => {
         let eachItem = {
@@ -297,6 +310,7 @@ const B2B: React.FC = () => {
         }
         handleApiCall(eachItem);
       });
+      setTabs(arrayTab);
     }else {
       console.log('>>>4');
       if ((data.format === undefined || data.format === '') && data.question === '') {
@@ -317,12 +331,16 @@ const B2B: React.FC = () => {
         arrayNoSegment= [];
         let customFormat = {
           format_id: 'customPrompts',
+          format_name: data.question
         };
         arrayNoSegment.push(customFormat);
         handleApiCall(eachItem);
+        setTabs(arrayNoSegment);
       }
       
     }
+    console.log('arrayTab', arrayTab);
+    console.log('arrayNoSegment', arrayNoSegment);
     
   };
   const handleApiCall = async (data: any) => {
@@ -358,11 +376,17 @@ const B2B: React.FC = () => {
                       answer: DOMPurify.sanitize(responseData.answer),
                       format_name: responseData.input_params.format_name
                     };
+                  }else if (responseData.input_params.format_id === "" || responseData.input_params.format_id === undefined){
+                    return {
+                      ...format,
+                      answer: DOMPurify.sanitize(responseData.answer),
+                      format_name: responseData.input_params.question
+                    };
                   }
                   return format;
                 });
               }else {
-                console.log(segment.data.length)
+                console.log('Seg....',segment.data.length)
                 let noFormat = {
                   format_id: responseData.input_params.segment_id,
                   answer: DOMPurify.sanitize(responseData.answer),
@@ -467,6 +491,9 @@ const B2B: React.FC = () => {
                             <IonSelectOption key={index} value={item.format_id}>{item.format_name}</IonSelectOption>
                           ))}
                         </IonSelect>
+                        { loadingFormats &&
+                          <IonProgressBar className='mt-0.5' type="indeterminate"></IonProgressBar>
+                        }
                     </div>
                   </div>
                 </IonCol>
@@ -482,6 +509,9 @@ const B2B: React.FC = () => {
                             <IonSelectOption key={index} value={item.purpose_id}>{item.purpose_name}</IonSelectOption>
                           ))}
                         </IonSelect>
+                        { loadingPurposes &&
+                          <IonProgressBar className='mt-0.5' type="indeterminate"></IonProgressBar>
+                        }
                     </div>
                   </div>
                 </IonCol>
@@ -503,6 +533,9 @@ const B2B: React.FC = () => {
                           validate: {},
                         })}
                       />
+                      { loadingProducts &&
+                        <IonProgressBar className='mt-0.5' type="indeterminate"></IonProgressBar>
+                      }
                     </div>
                   </div>
                 </IonCol>
@@ -518,6 +551,14 @@ const B2B: React.FC = () => {
                   ))}
                 </div>
               </div>
+            }
+            {loadingSegments &&
+            <div className='segments flex max-sm:flex-col max-md:flex-col items-center justify-center mt-2.5'>
+              <IonSkeletonText className='mx-2.5 min-h-6 py-0 bg-[#f5e0ff] rounded-xl' animated={true} style={{ width: '22%' }}></IonSkeletonText>
+              <IonSkeletonText className='mx-2.5 min-h-6 py-0 bg-[#f5e0ff] rounded-xl' animated={true} style={{ width: '22%' }}></IonSkeletonText>
+              <IonSkeletonText className='mx-2.5 min-h-6 py-0 bg-[#f5e0ff] rounded-xl' animated={true} style={{ width: '22%' }}></IonSkeletonText>
+              <IonSkeletonText className='mx-2.5 min-h-6 py-0 bg-[#f5e0ff] rounded-xl' animated={true} style={{ width: '22%' }}></IonSkeletonText>
+            </div>
             }
             
             <IonGrid className='mt-7'>
@@ -576,13 +617,7 @@ const B2B: React.FC = () => {
             
           </form>
         </div>
-        <IonLoading
-          className="custom-loading"
-          spinner="circles" 
-          trigger="open-loading"
-          isOpen={loading || loadingSegments || loadingPurposes || loadingFormats || loadingProducts}
-          message={'Please wait...'}
-        />
+        
 
         <IonFab slot="fixed" vertical="bottom" horizontal="end">
           <IonFabButton size="small">
@@ -608,6 +643,7 @@ const B2B: React.FC = () => {
           },
         ]} duration={3000}></IonToast>
         <IonToast
+          className='custom-toast'
           isOpen={isShowError}
           message={isErrorMsg}
           duration={3000}
