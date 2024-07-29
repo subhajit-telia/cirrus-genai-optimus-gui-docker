@@ -1,4 +1,4 @@
-import { IonAlert, IonButton, IonButtons, IonCard, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonItemOption, IonItemOptions, IonItemSliding, IonLabel, IonList, IonModal, IonPage, IonProgressBar, IonSegment, IonSegmentButton, IonSpinner, IonSplitPane, IonText, IonTitle, IonToast, IonToolbar } from '@ionic/react';
+import { IonAlert, IonButton, IonButtons, IonCard, IonCheckbox, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonItemOption, IonItemOptions, IonItemSliding, IonLabel, IonList, IonModal, IonPage, IonProgressBar, IonRadio, IonRadioGroup, IonSegment, IonSegmentButton, IonSpinner, IonSplitPane, IonTextarea, IonTitle, IonToast, IonToolbar } from '@ionic/react';
 import { useEffect, useRef, useState } from 'react';
 import AppHeader from '../../../components/header/Header';
 import Sidenav from '../../../components/sidenav/Sidenav';
@@ -7,17 +7,23 @@ import templateData from '../../../template.json';
 import { HTTPMethod, NetworkInfo } from '../../../routes/network';
 import { OverlayEventDetail } from '@ionic/core/components';
 import { useForm } from 'react-hook-form';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
 
-interface UserAddModel {
-  username: string;
-  password: string;
-  role: string;
-  hashed: number;
+interface FormatAddModel {
+  format_name: string;
+  format_id: string;
+  format_class_name: string;
+  format_class_definition: string;
+  quality_check: number | boolean;
+  b2b: number | boolean;
+  b2c: number | boolean;
 }
 
-const Users: React.FC = () => {
+const Formats: React.FC = () => {
   /* Variables start */
-  const [userList, setUserList] = useState<UserAddModel[]>([]);
+  const [formatList, setFormatList] = useState<FormatAddModel[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const modal = useRef<HTMLIonModalElement>(null);
   const [isOpen, setIsOpen] = useState(false);
@@ -29,21 +35,21 @@ const Users: React.FC = () => {
 
   useEffect(() => {
 
-    getUsersData();
+    getFormatsData();
   }, []);
 
-  /* -------------get users data start------------- */
-  const getUsersData = async () => {
+  /* -------------get Formats data start------------- */
+  const getFormatsData = async () => {
     setLoading(true);
     try {
-      const urlData = NetworkInfo.URL + '/resource/get?table=users';
+      const urlData = NetworkInfo.URL + '/resource/get?table=formats';
 
       const response = await fetch(urlData);
       const responseData = await response.json();
       console.log("Success:", responseData);
 
       if (response.ok) {
-        setUserList(responseData);
+        setFormatList(responseData);
         setLoading(false);
       }
       
@@ -52,15 +58,19 @@ const Users: React.FC = () => {
       setLoading(false);
     }
   };
-  /* get users data end */
+  /* get formats data end */
 
   /* modal functions start */
 
   const onModalDismiss = () => {
     setIsOpenModal(false);
     setIsEdit(false);
-    setValue("username", '');
-    setValue("password", '');
+    setValue("format_class_definition", '');
+    setValue("format_name", '');
+    setValue("format_class_name", '');
+    setValue("b2b", false);
+    setValue("b2c", false);
+    setValue("quality_check", false);
   }
 
   const handleDeleteAleart = (_indicator:boolean, _value:number) => {
@@ -68,14 +78,14 @@ const Users: React.FC = () => {
       setIsOpen(true);
       setTargetIndex(_value);
     }else if (_indicator === false) {
-      let updatedUsers = userList;
+      let updatedFormats = formatList;
 
       let delIndex:any = targetIndex;
-      updatedUsers.splice(delIndex, 1);
+      updatedFormats.splice(delIndex, 1);
 
-      console.log('updatedUsers', updatedUsers);
+      console.log('updatedFormats', updatedFormats);
       setIsOpen(false);
-      handleUsersUpdate(updatedUsers);
+      handleFormatsUpdate(updatedFormats);
     }
 
   }
@@ -85,9 +95,25 @@ const Users: React.FC = () => {
   /* handle edit start */
   const handleEdit = (_value:any, _index:number) => {
     console.log('_value', _value);
-    setValue("username", _value.username);
-    setValue("password", _value.password);
-    setValue("role", 'admin');
+    setValue("format_class_definition", _value.format_class_definition);
+    setValue("format_name", _value.format_name);
+    setValue("format_class_name", _value.format_class_name);
+    if (_value.b2b === 1) {
+      setValue("b2b", true);
+    }else {
+      setValue("b2b", false);
+    }
+    if (_value.b2c === 1) {
+      setValue("b2c", true);
+    }else {
+      setValue("b2c", false);
+    }
+    if (_value.quality_check === 1) {
+      setValue("quality_check", true);
+    }else {
+      setValue("quality_check", false);
+    }
+
     setIsOpenModal(true);
     setIsEdit(true);
     setTargetIndex(_index);
@@ -102,33 +128,58 @@ const Users: React.FC = () => {
 
   /* -----------Handle form submit start----------- */
   const handleFormSubmit = async (data: any) => {
-    let prevUserList = userList;
-    let index:any = targetIndex;
-    if (isEdit === true) {
-      prevUserList.splice(index, 1, data);
+    console.log('handleFormSubmit', data);
+    let payLoad:any = {};
+    payLoad.format_name = data.format_name;
+    payLoad.format_class_definition = data.format_class_definition;
+    payLoad.format_id = `${data.format_name.replace(/\s+/g, '')}${data.b2b === true ? 'B2B' : ''}${data.b2c === true ? 'B2C' : ''}`
+    payLoad.format_class_name = data.format_class_name;
+    
+    if (data.b2b === true) {
+      payLoad.b2b = 1;
     }else {
-      prevUserList = [...userList, data];
+      payLoad.b2b = 0;
+    }
+
+    if (data.b2c === true) {
+      payLoad.b2c = 1;
+    }else {
+      payLoad.b2c = 0;
+    }
+
+    if (data.quality_check === true) {
+      payLoad.quality_check = 1;
+    }else {
+      payLoad.quality_check = 0;
     }
 
     
-    console.log('prevList', prevUserList);
 
-    handleUsersUpdate(prevUserList);
+    let prevFormatList = formatList;
+    let index:any = targetIndex;
+
+    console.log('finalData', payLoad);
+    if (isEdit === true) {
+      prevFormatList.splice(index, 1, payLoad);
+    }else {
+      prevFormatList = [...formatList, payLoad];
+    }
+
+    
+    console.log('prevList', prevFormatList);
+
+    handleFormatsUpdate(prevFormatList);
   }
-  const handleUsersUpdate = async (allUser: UserAddModel[]) => {
+  const handleFormatsUpdate = async (allFormat: FormatAddModel[]) => {
     setLoading(true);
-    let formUrl = NetworkInfo.URL + '/login/put';
-    console.log('payload', allUser);
+    let formUrl = NetworkInfo.URL + '/resource/put';
+    console.log('payload', allFormat);
 
-    let updatedUsers = allUser.map(user => {
-      return {
-        ...user,
-        hashed: isBcryptHash(user.password) ? 1 : 0
-      };
-    });
+    let updatedFormats = allFormat;
 
     let finalPayload = {
-      json_obj: updatedUsers
+      table: "formats",
+      json_obj: updatedFormats
     }
     
     try {
@@ -149,22 +200,13 @@ const Users: React.FC = () => {
         setLoading(false);
         setIsEdit(false);
         setTargetIndex(-1);
-        getUsersData();
+        getFormatsData();
         onModalDismiss();
-      }else {
-        // Handle non-ok responses here
-        console.error("Error response:", responseData);
-        setIsShowError(true);
-        setIsErrorMsg(responseData.message || "Unknown error occurred");
-        setLoading(false);
       }
       
     } catch (error: any) {
       console.error("Login failed:", error);
       setLoading(false);
-      setIsShowError(true);
-      setIsErrorMsg(error.message || "Request failed");
-      getUsersData();
     }
   };
   /* Handle form submit end */
@@ -177,11 +219,16 @@ const Users: React.FC = () => {
     setValue,
     watch,
     formState: { errors }
-  } = useForm<UserAddModel>({
+  } = useForm<FormatAddModel>({
     defaultValues: {
-      role: 'user'
+      b2b: false,
+      b2c: false,
+      quality_check: false,
     },
   });
+  const isCheckQuality = watch('quality_check');
+  const isB2b = watch('b2b');
+  const isB2c = watch('b2c');
   /* Handle form input field changes end */
 
   return (
@@ -198,13 +245,22 @@ const Users: React.FC = () => {
         }
         
           <IonList className='bg-transparent'>
-            {userList.map((item, index) => (
+            {formatList.map((item, index) => (
               <IonCard key={index}>
                 <IonItemSliding>
                   <IonItem button={true}>
                     <IonLabel>
-                      <p className='font-bold'>Username: {item.username}</p>
-                      <p>Role: {item.role}</p>
+                      <p className='font-bold'>Format name: {item.format_name}</p>
+                      <p>Class name: {item.format_class_name}</p>
+                      <p>
+                        B2B: {item.b2b === 1 ? 'Yes' : item.b2b === 0 ? 'No' : 'invalid value'}
+                      </p>
+                      <p>
+                        B2C: {item.b2c === 1 ? 'Yes' : item.b2c === 0 ? 'No' : 'invalid value'}
+                      </p>
+                      <p>Quality checked: {item.quality_check === 1 ? 'Yes' : item.quality_check === 0 ? 'No' : 'invalid value'}</p>
+                      <p>Class Definition:</p>
+                      <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} children={item.format_class_definition}/>
                     </IonLabel>
                     <IonButton id="open-modal" onClick={() => handleEdit(item, index)} slot="end" size="small" color="warning">
                       <IonIcon icon={createOutline}></IonIcon>
@@ -226,7 +282,7 @@ const Users: React.FC = () => {
           <IonModal id="example-modal" isOpen={isOpenModal} onWillDismiss={() => onModalDismiss()}>
             <IonHeader>
               <IonToolbar>
-                <IonTitle className='text-sm font-bold'>User Add & Edit</IonTitle>
+                <IonTitle className='text-sm font-bold'>Formats Add & Edit</IonTitle>
                 <IonButtons slot="end">
                   <IonButton size="small" shape="round" onClick={() => onModalDismiss()}>
                     <IonIcon slot="icon-only" icon={closeOutline}></IonIcon>
@@ -236,36 +292,79 @@ const Users: React.FC = () => {
             </IonHeader>
             <div className="ion-padding">
               <form onSubmit={handleSubmit(handleFormSubmit)} className="w-full">
-                <IonSegment className='m-auto mb-4 border w-36 h-7 bg-white rounded-[50px]' 
-                  {...register("role", {
-                    required: "false",
-                  })}
-                  onIonChange={(event: any) => {
-                    console.log('event', event.target.value);
-                    setValue("role", event.target.value as string);
-                  }}>
-                  <IonSegmentButton className='w-20 min-w-0 h-7 min-h-6 ' value="user">
-                      <IonLabel className='m-0 text-xs'>User</IonLabel>
-                  </IonSegmentButton>
-                  <IonSegmentButton className='w-20 min-w-0 h-7 min-h-6 ' value="admin">
-                      <IonLabel className='m-0 text-xs'>Admin</IonLabel>
-                  </IonSegmentButton>
-                </IonSegment>
-                <IonInput className='mb-4 text-sm' label="Username" labelPlacement="floating" fill="outline" placeholder="Enter Username"
-                  {...register("username", {
+                <IonInput className='mb-4 text-sm' label="Format Name" labelPlacement="floating" fill="outline" placeholder="Enter Format Name"
+                  {...register("format_name", {
                     validate: {},
                   })}
                 ></IonInput>
               
-                <IonInput className='text-sm' label="Password" labelPlacement="floating" fill="outline" placeholder="Enter Password"
-                  {...register("password", {
+                <IonInput className='mb-4 text-sm' label="Class Name" labelPlacement="floating" fill="outline" placeholder="Enter class name"
+                  {...register("format_class_name", {
                     validate: {},
                   })}
                 ></IonInput>
-                {isEdit === true && (
-                  <IonText className='text-xs' color="danger">Password is encripted!</IonText>
-                )}
-                <div className='text-center mt-4'>
+
+                <IonTextarea
+                  className='mb-4 text-sm'
+                  label="Class Definition"
+                  labelPlacement="floating"
+                  fill="outline"
+                  placeholder="Enter class definition"
+                  autoGrow={true}
+                  {...register("format_class_definition", {
+                    validate: {},
+                  })}
+                ></IonTextarea>
+
+                {/* <IonRadioGroup 
+                  {...register("usage", {
+                    validate: {},
+                  })}
+                  onIonChange={(event: any) => {
+                    console.log('event', event.target.value);
+                    setValue("usage", event.target.value);
+                  }}
+                  className='flex justify-between mb-4 text-sm'>
+                  <IonRadio value="b2b" labelPlacement="end">B2B</IonRadio>
+                  <IonRadio value="b2c" labelPlacement="end">B2C</IonRadio>
+                </IonRadioGroup> */}
+
+                <div className='flex justify-between mb-4 text-sm'>
+                  <IonCheckbox 
+                    {...register("b2b", {
+                      validate: {},
+                    })}
+                    checked={isB2b as boolean}
+                    onIonChange={(event: any) => {
+                      console.log('event', event.detail.checked);
+                      setValue("b2b", event.detail.checked);
+                    }}
+                    labelPlacement="start">B2B</IonCheckbox>
+
+                  <IonCheckbox 
+                    {...register("b2c", {
+                      validate: {},
+                    })}
+                    checked={isB2c as boolean}
+                    onIonChange={(event: any) => {
+                      console.log('event', event.detail.checked);
+                      setValue("b2c", event.detail.checked);
+                    }}
+                    labelPlacement="start">B2C</IonCheckbox>
+                </div>
+
+                <IonCheckbox 
+                  {...register("quality_check", {
+                    validate: {},
+                  })}
+                  checked={isCheckQuality as boolean}
+                  onIonChange={(event: any) => {
+                    console.log('event', event.detail.checked);
+                    setValue("quality_check", event.detail.checked);
+                  }}
+                  className='mb-4 text-sm' labelPlacement="start">Rewrite output if it does not match schema</IonCheckbox>
+                
+                <div className='text-center'>
                   <IonButton size='small' type='submit' className='btn-primary' shape="round">
                     {loading && <IonSpinner className='mr-2' name="bubbles"></IonSpinner>}
                     Save
@@ -282,8 +381,8 @@ const Users: React.FC = () => {
           {/* aleart start */}
           <IonAlert
             isOpen={isOpen}
-            header="Delete user!"
-            subHeader="Are you want to delete this user?"
+            header="Delete format!"
+            subHeader="Are you want to delete this format?"
             trigger="present-alert"
             buttons={[
               {
@@ -312,7 +411,6 @@ const Users: React.FC = () => {
               <IonIcon icon={add}></IonIcon>
             </IonFabButton>
           </IonFab>
-
           <IonToast
             className='custom-toast'
             isOpen={isShowError}
@@ -327,4 +425,4 @@ const Users: React.FC = () => {
   );
 };
 
-export default Users;
+export default Formats;

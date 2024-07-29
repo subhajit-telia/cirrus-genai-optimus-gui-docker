@@ -1,5 +1,18 @@
 /* For information on how to create your own theme, please see:
 http://ionicframework.com/docs/theming/ */
+@font-face {
+    font-family: 'TeliaFont';
+    src: url('../theme/fonts/TTF/TeliaSans-Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+@font-face {
+    font-family: 'TeliaFont';
+    src: url('../theme/fonts/TTF/TeliaSans-Bold.ttf') format('truetype');
+    font-weight: bold;
+    font-style: normal;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -15,6 +28,19 @@ http://ionicframework.com/docs/theming/ */
     .btn-primary {
         --background: var(--color-primary);
     }
+}
+:root {
+    --ion-font-family: 'TeliaFont', sans-serif;
+    --ion-default-font: 'TeliaFont', sans-serif;
+}
+::-ms-reveal {
+    display: none;
+}
+body {
+    @apply font-custom;
+}
+* {
+    font-family: 'TeliaFont', sans-serif;
 }
 
 .page-body {
@@ -65,4 +91,63 @@ ion-loading.custom-loading .loading-wrapper {
     --background: var(--color-white);
     padding: 10px;
     border-radius: 6px;
+}
+ion-toast.custom-toast {
+    --background: var(--color-primary);
+    color: var(--color-white);
+    --width: auto !important;
+    --min-width: 200px;
+    --max-width: 400px;
+}
+.custom-search p {
+    font-size: 0.675rem;
+    position: absolute;
+    top: -8px;
+    left: 30px;
+    background: #fff;
+    z-index: 1;
+}
+.custom-search .optionListContainer {
+    z-index: 3;
+    font-size: 14px;
+}
+.custom-search .optionListContainer li:hover {
+    background: #F5F5F5;
+    color: #000;
+}
+.custom-search .optionListContainer li.highlightOption  {
+    background: unset;
+    color: unset;
+}
+.custom-search .search-wrapper .chip {
+    font-size: 10px;
+    background: var(--color-primary);
+}
+
+ion-modal#example-modal {
+    --width: fit-content;
+  --min-width: 350px;
+  --max-width: 450px;
+  --height: auto;
+  --border-radius: 6px;
+  --box-shadow: 0 28px 48px rgba(0, 0, 0, 0.4);
+}
+ion-textarea .textarea-wrapper-inner {
+    max-height: 300px;
+}
+ion-textarea .textarea-wrapper-inner .native-wrapper .native-textarea {
+    max-height: 300px;
+    overflow: auto !important;
+}
+.bg-transparent ion-card ion-item ion-label {
+    font-size: 14px;
+    color: #000;
+}
+.bg-transparent ion-card ion-item ion-label p {
+    font-size: 14px;
+    color: #000;
+}
+.bg-transparent ion-card ion-item ion-label li {
+    font-size: 14px;
+    color: #000;
 }

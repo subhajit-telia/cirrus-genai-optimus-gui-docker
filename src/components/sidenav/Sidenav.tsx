@@ -1,4 +1,5 @@
 import {
+  IonButton,
     IonContent,
     IonIcon,
     IonItem,
@@ -8,11 +9,14 @@ import {
     IonMenu,
     IonMenuToggle,
     IonNote,
+    IonSpinner,
   } from '@ionic/react';
   
   import { useLocation } from 'react-router-dom';
-  import { archiveOutline, archiveSharp, bookmarkOutline, heartOutline, heartSharp, mailOutline, mailSharp, paperPlaneOutline, paperPlaneSharp, trashOutline, trashSharp, warningOutline, warningSharp } from 'ionicons/icons';
+  import { archiveOutline, archiveSharp, bookmarkOutline, codeWorkingOutline, colorFilter, heartOutline, heartSharp, listOutline, mailOutline, mailSharp, optionsOutline, paperPlaneOutline, paperPlaneSharp, peopleOutline, settings, sync, trailSignOutline, trashOutline, trashSharp, warningOutline, warningSharp } from 'ionicons/icons';
   import './Sidenav.css';
+import { NetworkInfo } from '../../routes/network';
+import { useState } from 'react';
   
   interface AppPage {
     url: string;
@@ -23,54 +27,91 @@ import {
   
   const appPages: AppPage[] = [
     {
-      title: 'Inbox',
-      url: '/folder/Inbox',
-      iosIcon: mailOutline,
-      mdIcon: mailSharp
+      title: 'Users',
+      url: '/users',
+      iosIcon: peopleOutline,
+      mdIcon: peopleOutline
     },
     {
-      title: 'Outbox',
-      url: '/folder/Outbox',
-      iosIcon: paperPlaneOutline,
-      mdIcon: paperPlaneSharp
+      title: 'Formats',
+      url: '/formats',
+      iosIcon: optionsOutline,
+      mdIcon: optionsOutline
     },
     {
-      title: 'Favorites',
-      url: '/folder/Favorites',
-      iosIcon: heartOutline,
-      mdIcon: heartSharp
+      title: 'Prompts',
+      url: '/prompts',
+      iosIcon: codeWorkingOutline,
+      mdIcon: codeWorkingOutline
     },
     {
-      title: 'Archived',
-      url: '/folder/Archived',
-      iosIcon: archiveOutline,
-      mdIcon: archiveSharp
+      title: 'Purpose',
+      url: '/purpose',
+      iosIcon: trailSignOutline,
+      mdIcon: trailSignOutline
     },
     {
-      title: 'Trash',
-      url: '/folder/Trash',
-      iosIcon: trashOutline,
-      mdIcon: trashSharp
+      title: 'Segments',
+      url: '/segments',
+      iosIcon: listOutline,
+      mdIcon: listOutline
     },
     {
-      title: 'Spam',
-      url: '/folder/Spam',
-      iosIcon: warningOutline,
-      mdIcon: warningSharp
+      title: 'Examples',
+      url: '/examples',
+      iosIcon: colorFilter,
+      mdIcon: colorFilter
+    },
+    {
+      title: 'Configuration',
+      url: '/config',
+      iosIcon: settings,
+      mdIcon: settings
     }
   ];
   
-  const labels = ['Family', 'Friends', 'Notes', 'Work', 'Travel', 'Reminders'];
-  
   const Sidenav: React.FC = () => {
     const location = useLocation();
+    const [loading, setLoading] = useState<boolean>(false);
+    const [btnMsg, setBtnMsg] = useState('Sync to S3');
+
+    /* -------------get Config data start------------- */
+  const syncToS3 = async () => {
+    setBtnMsg('Sync.....');
+    setLoading(true);
+    try {
+      const urlData = NetworkInfo.URL + '/sync_from_s3';
+
+      const response = await fetch(urlData);
+      const responseData = await response.json();
+      console.log("Success:", responseData);
+
+      if (response.ok && responseData === true) {
+        setBtnMsg('Sync Done.');
+        setLoading(false);
+
+        setTimeout(() => {
+          setBtnMsg('Sync to S3');
+        }, 3000);
+      }else {
+        setBtnMsg('Sync Failed!');
+        setLoading(false);
+      }
+      
+    } catch (error: any) {
+      console.error("catch failed:", error);
+      setLoading(false);
+    }
+  };
+  /* get config data end */
   
     return (
-      <IonMenu contentId="main" type="overlay">
+      <IonMenu className='md:max-w-48' contentId="main" type="overlay">
         <IonContent>
           <IonList id="inbox-list">
-            <IonListHeader>Inbox</IonListHeader>
-            <IonNote>hi@ionicframework.com</IonNote>
+            <IonListHeader className='mb-8'>
+              <img className="w-20" src='src/theme/assets/logo.png'/>
+            </IonListHeader>
             {appPages.map((appPage, index) => {
               return (
                 <IonMenuToggle key={index} autoHide={false}>
@@ -82,16 +123,14 @@ import {
               );
             })}
           </IonList>
-  
-          <IonList id="labels-list">
-            <IonListHeader>Labels</IonListHeader>
-            {labels.map((label, index) => (
-              <IonItem lines="none" key={index}>
-                <IonIcon aria-hidden="true" slot="start" icon={bookmarkOutline} />
-                <IonLabel>{label}</IonLabel>
-              </IonItem>
-            ))}
-          </IonList>
+          <IonButton onClick={() => syncToS3()} className='btn-primary' expand="block" shape="round">
+              {loading ?
+                <IonSpinner className='mr-2' name="bubbles"></IonSpinner>
+                :
+                <IonIcon aria-hidden="true" slot="start" ios={sync} md={sync} />
+              }
+              {btnMsg}
+          </IonButton>
         </IonContent>
       </IonMenu>
     );
