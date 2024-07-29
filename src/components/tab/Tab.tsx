@@ -1,11 +1,20 @@
-import { IonChip, IonIcon } from '@ionic/react';
+import { IonChip, IonIcon, IonSpinner } from '@ionic/react';
 import React, { useState } from 'react';
 import { thumbsDownOutline, thumbsUpOutline } from 'ionicons/icons';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
+import './Tab.css';
 
 interface Tab {
-    id: number;
-    label: string;
-    content: JSX.Element; // Assuming content is JSX.Element (React node)
+  segment_id: string;
+  segment_name: string;
+  data: [innerTab]
+}
+interface innerTab {
+  format_id: string,
+  format_name: string,
+  answer: string
 }
 
 interface TabsProps {
@@ -13,49 +22,79 @@ interface TabsProps {
 }
 
 const Tabs: React.FC<TabsProps> = ({ tabs }) => {
-  const [activeTab, setActiveTab] = useState(tabs[0].id); // Set the first tab as active initially
+  const [activeTab, setActiveTab] = useState(tabs[0].segment_id); // Set the first tab as active initially
 
-  const changeTab = (tabId: number) => {
-    setActiveTab(tabId);
+  const changeTab = (segment_id: string) => {
+    setActiveTab(segment_id);
   };
+
+  console.log('tabs@@@@', tabs)
 
   return (
     <div className="">
-      <div className="flex">
-        {tabs.map((tab) => (
-          <button
-            type='button'
-            key={tab.id}
-            onClick={() => changeTab(tab.id)}
-            className={`${
-              activeTab === tab.id
-                ? '!bg-white'
-                : ''
-            } bg-[#eaeaea] rounded-md rounded-tr-3xl rounded-br-none whitespace-nowrap py-1 px-4 border-b-2 font-medium text-sm focus:outline-none`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-      <div className="bg-white p-4 rounded-md">
-        {tabs.map((tab) => (
-          <div key={tab.id} className={activeTab === tab.id ? 'block' : 'hidden'}>
-            {tab.content}
+      {tabs[0].data ?
+        <>
+          <div className="flex">
+            {tabs.map((tab) => (
+              <button
+                type='button'
+                key={tab.segment_id}
+                onClick={() => changeTab(tab.segment_id)}
+                className={`${
+                  activeTab === tab.segment_id
+                    ? '!bg-white font-bold'
+                    : ''
+                } bg-[#eaeaea] rounded-md rounded-tr-3xl rounded-br-none whitespace-nowrap py-1 px-4 border-b-2 text-md focus:outline-none`}
+              >
+                {tab.segment_name ?
+                  <p>{tab.segment_name}</p>
+                :
+                  <IonSpinner name="dots"></IonSpinner>
+                }
+                
+                
+              </button>
+            ))}
           </div>
-        ))}
-      </div>
-      <div className="flex mt-3 items-center justify-between">
-        <div>
-          <IonIcon className='mr-2.5 cursor-pointer hover:text-primary' slot="icon-only" icon={thumbsUpOutline}></IonIcon>
-          <IonIcon className='mr-2.5 cursor-pointer hover:text-primary' slot="icon-only" icon={thumbsDownOutline}></IonIcon>
+          <div className="bg-white p-4 rounded-md">
+            {tabs.map((tab) => (
+              <div key={tab.segment_id} className={activeTab === tab.segment_id ? 'block' : 'hidden'} >
+                {tab.data.map((tabItem) => (
+                  <div className='mb-5 tab-body border p-4 rounded-md' key={tabItem.format_id}>
+                    {tabItem.format_name &&
+                      <h3 className='capitalize'>{tabItem.format_name}</h3>
+                    }
+
+                    {tabItem.answer ?
+                      <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} children={tabItem.answer}/>
+                    :
+                      <IonSpinner name="dots"></IonSpinner>
+                    }
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        </>
+        :
+        <div className="bg-white p-4 rounded-md">
+          {tabs.map((tabItem:any) => (
+            <div className='mb-5 tab-body border p-4 rounded-md' key={tabItem.format_id}>
+              {tabItem.format_name &&
+                <h3 className='capitalize'>{tabItem.format_name}</h3>
+              }
+
+              {tabItem.answer ?
+                <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} children={tabItem.answer}/>
+              :
+                <IonSpinner name="dots"></IonSpinner>
+              }
+              
+            </div>
+          ))}
         </div>
-        <div>
-          <IonChip className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Rewrite all suggestions</IonChip>
-          <IonChip className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Send to contentfull</IonChip>
-          <IonChip className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Save all suggestions to word.doc</IonChip>
-          <IonChip className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Create new task</IonChip>
-        </div>
-      </div>
+      }
+      
     </div>
   );
 };
