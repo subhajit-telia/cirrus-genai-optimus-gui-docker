@@ -175,14 +175,23 @@ const Purpose: React.FC = () => {
       console.log("Success:", responseData);
 
       if (response.ok) {
-        setIsShowError(true);
-        setIsErrorMsg(responseData);
-        reset();
-        setLoading(false);
-        setIsEdit(false);
-        setTargetIndex(-1);
-        getPurposesData();
-        onModalDismiss();
+        if (responseData.ErrorMessage) {
+          console.error("Error response:", responseData);
+          setIsShowError(true);
+          setIsErrorMsg(responseData.ErrorMessage);
+          setLoading(false);
+          
+        }else {
+          setIsShowError(true);
+          setIsErrorMsg(responseData);
+          reset();
+          setLoading(false);
+          setIsEdit(false);
+          setTargetIndex(-1);
+          getPurposesData();
+          onModalDismiss();
+        }
+        
       }
       
     } catch (error: any) {

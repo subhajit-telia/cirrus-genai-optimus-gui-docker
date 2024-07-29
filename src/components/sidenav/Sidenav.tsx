@@ -17,6 +17,7 @@ import {
   import './Sidenav.css';
 import { NetworkInfo } from '../../routes/network';
 import { useState } from 'react';
+import logo from '../../theme/assets/logo.png'
   
   interface AppPage {
     url: string;
@@ -110,7 +111,7 @@ import { useState } from 'react';
         <IonContent>
           <IonList id="inbox-list">
             <IonListHeader className='mb-8'>
-              <img className="w-20" src='src/theme/assets/logo.png'/>
+              <img className="w-20" src={logo}/>
             </IonListHeader>
             {appPages.map((appPage, index) => {
               return (
