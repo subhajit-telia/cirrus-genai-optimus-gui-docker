@@ -568,7 +568,7 @@ const B2C: React.FC = () => {
               <IonRow>
                 <IonCol>
                   <IonTextarea
-                    className='bottom-textarea rounded-xl mx-2.5'
+                    className='bottom-textarea rounded-xl'
                     aria-label="Custom textarea"
                     placeholder="Write your own promt."
                     autoGrow={true}
