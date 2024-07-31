@@ -63,7 +63,7 @@ const AppHeader: React.FC<ContainerProps> = () => {
                     <img  alt="" src="https://ionicframework.com/docs/img/demos/avatar.svg" />
                 </IonAvatar>
                 {userData && (
-                    <IonLabel className='text-nowrap capitalize'>
+                    <IonLabel className='text-nowrap capitalize !text-black'>
                         {userData.username.replace(/_/g, ' ')}
                         <p>{userData.role}</p>
                     </IonLabel>

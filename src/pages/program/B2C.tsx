@@ -545,7 +545,7 @@ const B2C: React.FC = () => {
             {
               segments.length !== 0 &&
               <div>
-                <p className='text-center mt-2.5'>I want to create versions to the following segments</p>
+                <p className='text-center mt-2.5 text-black'>I want to create versions to the following segments</p>
                 <div className='segments flex max-sm:flex-col max-md:flex-col items-center justify-center mt-2.5'>
                   {segments.map((item, index) => (
                     <IonChip key={index} onClick={() => onClickSegment(index)} className={`${item.isActive} mx-2.5 min-h-6 py-0 bg-[#f5e0ff] text-[#4a2a59]`}>{item.segment_name}</IonChip>
@@ -568,7 +568,7 @@ const B2C: React.FC = () => {
               <IonRow>
                 <IonCol>
                   <IonTextarea
-                    className='bottom-textarea rounded-xl'
+                    className='bottom-textarea rounded-xl text-black'
                     aria-label="Custom textarea"
                     placeholder="Write your own promt."
                     autoGrow={true}
