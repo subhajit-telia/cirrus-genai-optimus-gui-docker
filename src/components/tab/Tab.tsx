@@ -44,7 +44,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs }) => {
                   activeTab === tab.segment_id
                     ? '!bg-white font-bold'
                     : ''
-                } bg-[#eaeaea] rounded-md rounded-tr-3xl rounded-br-none whitespace-nowrap py-1 px-4 border-b-2 text-md focus:outline-none`}
+                } bg-[#eaeaea] text-black rounded-md rounded-tr-3xl rounded-br-none whitespace-nowrap py-1 px-4 border-b-2 text-md focus:outline-none`}
               >
                 {tab.segment_name ?
                   <p>{tab.segment_name}</p>

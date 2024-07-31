@@ -4,7 +4,8 @@ export default {
     theme: {
       colors: {
         primary: 'var(--color-primary)',
-        white: 'var(--color-white)'
+        white: 'var(--color-white)',
+        black: 'var(--color-black)'
       },
       extend: {
         fontFamily: {

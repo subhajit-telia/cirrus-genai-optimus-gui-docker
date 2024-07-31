@@ -112,24 +112,24 @@ const Login: React.FC = () => {
             </div>
             <div className="content flex justify-around flex-col sm:flex-row h-full">
                 <div className='content-box'>
-                    <p className='md:text-8xl text-3xl font-bold'>Welcome to Optimus</p>
+                    <p className='md:text-8xl text-3xl font-bold text-white'>Welcome to Optimus</p>
                 </div>
                 <div className='login-box py-5 px-4 bg-[#6f139ec7] rounded-lg'>
                     <form onSubmit={handleSubmit(handleFormSubmit)} className="w-full">
                         <div className='flex justify-between'>
-                            <p className='mb-3.5 text-xl'>Sign In</p>
+                            <p className='mb-3.5 text-xl text-white'>Sign In</p>
                             <IonSegment onIonChange={handleSegmentChange} className='w-36 h-7 bg-white rounded-[50px]' value={segmentValue}>
-                                <IonSegmentButton className='w-20 min-w-0 h-7 min-h-6 ' value="user">
+                                <IonSegmentButton className='w-20 min-w-0 h-7 min-h-6' value="user">
                                     <IonLabel className='m-0 text-xs'>User</IonLabel>
                                 </IonSegmentButton>
-                                <IonSegmentButton className='w-20 min-w-0 h-7 min-h-6 ' value="admin">
+                                <IonSegmentButton className='w-20 min-w-0 h-7 min-h-6' value="admin">
                                     <IonLabel className='m-0 text-xs'>Admin</IonLabel>
                                 </IonSegmentButton>
                             </IonSegment>
                         </div>
                         
                         <div>
-                            <IonInput label="Username" labelPlacement="stacked" fill="outline"
+                            <IonInput className='text-white' label="Username" labelPlacement="stacked" fill="outline"
                                 {...register("username", {
                                     required: "Username is required",
                                     validate: {},
@@ -137,7 +137,7 @@ const Login: React.FC = () => {
                                 onIonInput={(e:any) => setValue("username", e.detail.value)}
                             ></IonInput>
                             <IonText color="warning"  className='text-xs mb-3.5 block'>{errors?.["username"]?.message} </IonText>
-                            <IonInput type="password" label="Password" labelPlacement="stacked" fill="outline"
+                            <IonInput className='text-white' type="password" label="Password" labelPlacement="stacked" fill="outline"
                                 {...register("password", {
                                     required: "Password is required",
                                     validate: {},
