@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { useHistory } from 'react-router-dom';
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -14,14 +15,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
   const [role, setRole] = useState<string>('');
+  const history = useHistory();
 
   useEffect(() => {
     const storedUser:any = localStorage.getItem('user');
     const parsedUser = JSON.parse(storedUser);
     console.log('parsedUser', parsedUser);
-    if (parsedUser) {
+    if (parsedUser && parsedUser.roles.admin) {
       setIsAuthenticated(true);
-      setRole(parsedUser.role);
+      setRole('admin');
+    }else if (parsedUser && parsedUser.roles.user) {
+      setIsAuthenticated(true);
+      setRole('user');
     }
     setLoading(false);
   }, []);

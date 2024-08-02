@@ -23,7 +23,7 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ component: Component, role, ...re
         isAuthenticated && hasAccess ? (
           <Component {...props} />
         ) : (
-          <Redirect to="/login" />
+          <Redirect to="/notfound" />
         )
       }
     />

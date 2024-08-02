@@ -22,7 +22,8 @@ const Login: React.FC = () => {
   /* Variables start */
   const [loading, setLoading] = useState<boolean>(false);
   const [isShowError, setIsShowError] = useState(false);
-  const [segmentValue, setSegmentValue] = useState('user');
+  const [isErrorMsg, setIsErrorMsg] = useState('');
+  const [segmentValue, setSegmentValue] = useState('tcad');
   const history = useHistory();
   const { login } = useAuth();
   useEffect(() => {
@@ -43,9 +44,16 @@ const Login: React.FC = () => {
   /* -----------Handle form submit start----------- */
   const handleFormSubmit = async (data: any) => {
     setLoading(true);
-    let formUrl = NetworkInfo.URL + '/login/check';
-    data.role = [segmentValue];
+    let formUrl:any;
     console.log('payload', data);
+    console.log('segmentValue', segmentValue);
+
+    if (segmentValue === 'tcad') {
+      formUrl = NetworkInfo.URL + '/tcad_login/check';
+    }else {
+      formUrl = NetworkInfo.URL + '/login/check';
+    }
+
     try {
       const response = await fetch(formUrl, {
         method: HTTPMethod.POST,
@@ -59,17 +67,26 @@ const Login: React.FC = () => {
 
       if (response.ok) {
         setLoading(false);
-        if (responseData === true) {
+        if (responseData.verification === true) {
           console.log('login');
-          let userData = {
-            username: data.username,
-            role: data.role[0]
-          };
-          localStorage.setItem('user', JSON.stringify(userData));
-          handleLogin(data.role[0]);
+          localStorage.setItem('user', JSON.stringify(responseData));
+          setIsShowError(true);
+          if (responseData.roles.admin === true && responseData.roles.user === true) {
+            handleLogin('admin');
+            setIsErrorMsg('Logged in as admin');
+          }else if (responseData.roles.admin === true) {
+            handleLogin('admin');
+            setIsErrorMsg('Logged in as admin');
+          }else if (responseData.roles.user === true) {
+            handleLogin('user');
+            setIsErrorMsg('Logged in as user');
+          }else {
+            setIsErrorMsg('Please check your credential.');
+          }
         }else {
           console.log('login faild');
           setIsShowError(true);
+          setIsErrorMsg('Please check your credential.');
         }
       }
       
@@ -119,11 +136,11 @@ const Login: React.FC = () => {
                         <div className='flex justify-between'>
                             <p className='mb-3.5 text-xl text-white'>Sign In</p>
                             <IonSegment onIonChange={handleSegmentChange} className='w-36 h-7 bg-white rounded-[50px]' value={segmentValue}>
-                                <IonSegmentButton className='w-20 min-w-0 h-7 min-h-6' value="user">
-                                    <IonLabel className='m-0 text-xs'>User</IonLabel>
+                                <IonSegmentButton className='w-20 min-w-0 h-7 min-h-6' value="tcad">
+                                    <IonLabel className='m-0 text-xs'>TCAD</IonLabel>
                                 </IonSegmentButton>
-                                <IonSegmentButton className='w-20 min-w-0 h-7 min-h-6' value="admin">
-                                    <IonLabel className='m-0 text-xs'>Admin</IonLabel>
+                                <IonSegmentButton className='w-20 min-w-0 h-7 min-h-6' value="appId">
+                                    <IonLabel className='m-0 text-xs'>APP ID</IonLabel>
                                 </IonSegmentButton>
                             </IonSegment>
                         </div>
@@ -159,9 +176,9 @@ const Login: React.FC = () => {
                 </div>
             </div>
         <IonToast
-        className='custom-toast'
+          className='custom-toast'
           isOpen={isShowError}
-          message="Please check Username & Password!"
+          message={isErrorMsg}
           duration={3000}
           onDidDismiss={() => setIsShowError(false)}
         ></IonToast>
