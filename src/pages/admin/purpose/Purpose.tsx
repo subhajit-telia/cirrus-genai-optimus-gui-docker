@@ -12,6 +12,7 @@ interface PurposeAddModel {
   purpose_name: string;
   purpose_id: string;
   purpose_definition: string;
+  purpose_written_description: string;
   b2b: number | boolean;
   b2c: number | boolean;
 }
@@ -61,6 +62,7 @@ const Purpose: React.FC = () => {
     setIsOpenModal(false);
     setIsEdit(false);
     setValue("purpose_definition", '');
+    setValue("purpose_written_description", '');
     setValue("purpose_name", '');
     setValue("b2b", false);
     setValue("b2c", false);
@@ -89,6 +91,7 @@ const Purpose: React.FC = () => {
   const handleEdit = (_value:any, _index:number) => {
     console.log('_value', _value);
     setValue("purpose_definition", _value.purpose_definition);
+    setValue("purpose_written_description", _value.purpose_written_description);
     setValue("purpose_name", _value.purpose_name);
 
     if (_value.b2b === 1) {
@@ -120,6 +123,7 @@ const Purpose: React.FC = () => {
     let payLoad:any = {};
     payLoad.purpose_name = data.purpose_name;
     payLoad.purpose_definition = data.purpose_definition;
+    payLoad.purpose_written_description = data.purpose_written_description;
     payLoad.purpose_id = `${data.purpose_name.replace(/\s+/g, '')}`;
 
     if (data.b2b === true) {
@@ -239,6 +243,7 @@ const Purpose: React.FC = () => {
                   <IonItem button={true}>
                     <IonLabel>
                       <p className='font-bold'>Purpose name: {item.purpose_name}</p>
+                      <p>Purpose Description: {item.purpose_written_description}</p>
                       <p>
                         B2B: {item.b2b === 1 ? 'Yes' : item.b2b === 0 ? 'No' : 'invalid value'}
                       </p>
@@ -279,6 +284,12 @@ const Purpose: React.FC = () => {
               <form onSubmit={handleSubmit(handleFormSubmit)} className="w-full">
                 <IonInput className='mb-4 text-sm' label="Purpose Name" labelPlacement="floating" fill="outline" placeholder="Enter Purpose Name"
                   {...register("purpose_name", {
+                    validate: {},
+                  })}
+                ></IonInput>
+
+                <IonInput className='mb-4 text-sm' label="Purpose Description" labelPlacement="floating" fill="outline" placeholder="Enter Purpose Description"
+                  {...register("purpose_written_description", {
                     validate: {},
                   })}
                 ></IonInput>

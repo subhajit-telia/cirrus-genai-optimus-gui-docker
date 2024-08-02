@@ -475,7 +475,7 @@ const B2B: React.FC = () => {
           <form onSubmit={handleSubmit(handleFormSubmit)} className="w-full">
             <div className='text-center'>
               <img className='m-auto' src={optimusLogo} />
-              <p>AI-assistance</p>
+              <p className='text-blacks'>AI-assistance</p>
             </div>
             <IonGrid>
               <IonRow>
@@ -544,7 +544,7 @@ const B2B: React.FC = () => {
             {
               segments.length !== 0 &&
               <div>
-                <p className='text-center mt-2.5'>I want to create versions to the following segments</p>
+                <p className='text-center mt-2.5 text-black'>I want to create versions to the following segments</p>
                 <div className='segments flex max-sm:flex-col max-md:flex-col items-center justify-center mt-2.5'>
                   {segments.map((item, index) => (
                     <IonChip key={index} onClick={() => onClickSegment(index)} className={`${item.isActive} mx-2.5 min-h-6 py-0 bg-[#f5e0ff] text-[#4a2a59]`}>{item.segment_name}</IonChip>
@@ -575,9 +575,6 @@ const B2B: React.FC = () => {
                       validate: {},
                     })}
                   >
-                    <IonButton onClick={() => showLoadingIndicator(true)} size="small" fill="clear" slot="end" type='submit'>
-                      {loading ? <IonIcon className='text-primary animate-spin' slot="icon-only" icon={sync}></IonIcon> : <IonIcon className='text-primary' slot="icon-only" icon={send}></IonIcon>}
-                    </IonButton>
                   </IonTextarea>
                 </IonCol>
               </IonRow>

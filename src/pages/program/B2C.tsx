@@ -475,7 +475,7 @@ const B2C: React.FC = () => {
           <form onSubmit={handleSubmit(handleFormSubmit)} className="w-full">
             <div className='text-center'>
               <img className='m-auto' src={optimusLogo} />
-              <p>AI-assistance</p>
+              <p className="text-black">AI-assistance</p>
             </div>
             <IonGrid>
               <IonRow>
@@ -578,9 +578,7 @@ const B2C: React.FC = () => {
                       validate: {},
                     })}
                   >
-                    <IonButton onClick={() => showLoadingIndicator(true)} size="small" fill="clear" slot="end" type='submit'>
-                      {loading ? <IonIcon className='text-primary animate-spin' slot="icon-only" icon={sync}></IonIcon> : <IonIcon className='text-primary' slot="icon-only" icon={send}></IonIcon>}
-                    </IonButton>
+                    
                   </IonTextarea>
                 </IonCol>
               </IonRow>

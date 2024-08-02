@@ -154,6 +154,18 @@ ion-textarea .textarea-wrapper-inner .native-wrapper .native-textarea {
     font-size: 14px;
     color: var(--color-black);
 }
+.not-found {
+    background-image: url('../theme/assets/404-background.png');
+    background-size: cover;
+    background-position: center;
+    height: 100%;
+    color: var(--color-white);
+    --background: unset;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    padding-left: 20px; 
+}
 @media (prefers-color-scheme: dark) {
     :root.md {
         --checkbox-background: #fff;
@@ -196,6 +208,9 @@ ion-textarea .textarea-wrapper-inner .native-wrapper .native-textarea {
         border-color: var(--color-primary);
     }
     .login-box ion-input label{
+        color: var(--color-white);
+    }
+    .login-box ion-input.input-label-placement-stacked .label-text {
         color: var(--color-white);
     }
     ion-input label, ion-textarea label{
