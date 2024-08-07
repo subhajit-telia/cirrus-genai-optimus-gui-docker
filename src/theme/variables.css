@@ -1,5 +1,6 @@
 /* For information on how to create your own theme, please see:
 http://ionicframework.com/docs/theming/ */
+@import 'react-tooltip/dist/react-tooltip.css';
 @font-face {
     font-family: 'TeliaFont';
     src: url('../theme/fonts/TTF/TeliaSans-Regular.ttf') format('truetype');
