@@ -17,6 +17,7 @@ import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import { Tooltip as ReactTooltip, Tooltip } from 'react-tooltip';
 import { saveAs } from 'file-saver';
+import MultiSelect from '../../components/dropdown/Dropdown';
 
 type Tab = {
   answer: string;
@@ -46,6 +47,7 @@ interface Segment {
 interface Purposes {
   purpose_name: string;
   purpose_id: string;
+  purpose_written_description: string;
 }
 interface Products {
   product_id: string;
@@ -75,6 +77,8 @@ const B2C: React.FC = () => {
   const [isShowError, setIsShowError] = useState(false);
   const [isErrorMsg, setIsErrorMsg] = useState('');
   const [requestData, setRequestData] = useState('');
+  const [selectedFormats, setSelectedFormats] = useState<typeof formats[0][]>([]);
+  const [selectedPurpose, setSelectedPurpose] = useState<typeof purposes[0][]>([]);
 
 
   useEffect(() => {
@@ -125,7 +129,7 @@ const B2C: React.FC = () => {
   const getPurposesData = async () => {
     setLoadingPurposes(true);
     try {
-      const urlData =NetworkInfo.URL + '/resource/get?table=purposes&use_case=content_creation_b2c&columns=purpose_id&columns=purpose_name';
+      const urlData =NetworkInfo.URL + '/resource/get?table=purposes&use_case=content_creation_b2c&columns=purpose_id&columns=purpose_name&columns=purpose_written_description';
 
       const response = await fetch(urlData);
       const responseData = await response.json();
@@ -222,6 +226,11 @@ const B2C: React.FC = () => {
   let arrayTab:any;
   let arrayNoSegment:any;
   const handleFormSubmit = (data:any) => {
+    console.log('selectedPurpose', selectedPurpose);
+    data.format = selectedFormats.map(format => format.format_id);
+    data.purpose = selectedPurpose.length > 0 && selectedPurpose[0].purpose_id 
+    ? selectedPurpose[0].purpose_id 
+    : '';
     setRequestData(data);
     let productIds = selectedProducts.map(product => product.product_id);
     data.segment = segments
@@ -373,7 +382,7 @@ const B2C: React.FC = () => {
       const responseData = await response.json();
       console.log("Success:", responseData);
 
-      if (response.ok) {
+      if (response.ok && !responseData.ErrorMessage) {
         console.log('arrayTab>>>', arrayTab);
         console.log('arrayNoSegment', arrayNoSegment);
         setNoSegmentArray(arrayNoSegment);
@@ -440,6 +449,9 @@ const B2C: React.FC = () => {
         console.log('tabs', tabs);
         setLoading(false);
         showLoadingIndicator(false);
+      }else {
+        setIsShowError(true);
+        setIsErrorMsg(responseData.ErrorMessage || 'Something went wrong!');
       }
       
     } catch (error: any) {
@@ -479,6 +491,8 @@ const B2C: React.FC = () => {
     setSegments(updatedSegments);
     setTabs([]);
     setSelectedProducts([]);
+    setSelectedFormats([]);
+    setSelectedPurpose([]);
     setValue("format", '');
     setValue("purpose", '');
     setValue("products", '');
@@ -546,7 +560,7 @@ const B2C: React.FC = () => {
                     <div className='font-bold p-4 text-sm' data-tooltip-id="my-tooltip" data-tooltip-content="Hello world!">I want to create a...</div>
                     <Tooltip id="my-tooltip" />
                     <div className='px-4 pb-3.5'>
-                      <IonSelect placeholder="Select formats" disabled={formats.length === 0} className='min-h-10 field-item' label="Select desired format below" multiple={true} interface="popover" labelPlacement="stacked" fill="outline"
+                      {/* <IonSelect placeholder="Select formats" disabled={formats.length === 0} className='min-h-10 field-item' label="Select desired format below" multiple={true} interface="popover" labelPlacement="stacked" fill="outline"
                         {...register("format", {
                           validate: {},
                         })}>
@@ -558,7 +572,18 @@ const B2C: React.FC = () => {
                               <Tooltip id={`tooltip${index}`} />
                             </>
                           ))}
-                        </IonSelect>
+                        </IonSelect> */}
+                        <MultiSelect
+                          options={formats}
+                          selectedOptions={selectedFormats}
+                          setSelectedOptions={setSelectedFormats}
+                          multiSelect={true} // Multi-select mode
+                          idKey="format_id"
+                          nameKey="format_name"
+                          tooltipKey="format_written_description"
+                          placeHolder='Select formats'
+                          label='Select desired format below'
+                        />
                         { loadingFormats &&
                           <IonProgressBar className='mt-0.5' type="indeterminate"></IonProgressBar>
                         }
@@ -570,14 +595,25 @@ const B2C: React.FC = () => {
                   <div className='rounded-xl text-[#000] bg-white shadow-md'>
                     <div className='font-bold p-4 text-sm'>With the purpose...</div>
                     <div className='px-4 pb-3.5'>
-                      <IonSelect placeholder="Select purpose" disabled={purposes.length === 0} className='min-h-10 field-item' label="Which product/offer do you want to report on?" interface="popover" labelPlacement="stacked" fill="outline"
+                      {/* <IonSelect placeholder="Select purpose" disabled={purposes.length === 0} className='min-h-10 field-item' label="Which product/offer do you want to report on?" interface="popover" labelPlacement="stacked" fill="outline"
                         {...register("purpose", {
                           validate: {},
                         })}>
                           {purposes.map((item, index) => (
                             <IonSelectOption key={index} value={item.purpose_id}>{item.purpose_name}</IonSelectOption>
                           ))}
-                        </IonSelect>
+                        </IonSelect> */}
+                        <MultiSelect
+                          options={purposes}
+                          selectedOptions={selectedPurpose}
+                          setSelectedOptions={setSelectedPurpose}
+                          multiSelect={false} // Multi-select mode
+                          idKey="purpose_id"
+                          nameKey="purpose_name"
+                          tooltipKey="purpose_written_description"
+                          placeHolder='Select purpose'
+                          label='Which product/offer do you want to report on?'
+                        />
                         { loadingPurposes &&
                           <IonProgressBar className='mt-0.5' type="indeterminate"></IonProgressBar>
                         }
