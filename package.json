@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "test.e2e": "cypress run",
     "test.unit": "vitest",
+    "test": "vitest",
     "lint": "eslint"
   },
   "dependencies": {
@@ -25,6 +26,7 @@
     "@types/react-tooltip": "^4.2.4",
     "aws-sdk": "^2.1649.0",
     "dompurify": "^3.1.6",
+    "file-saver": "^2.0.5",
     "ionicons": "^7.0.0",
     "multiselect-react-dropdown": "^2.0.25",
     "react": "^18.2.0",
@@ -40,10 +42,11 @@
   "devDependencies": {
     "@capacitor/cli": "6.1.0",
     "@testing-library/dom": ">=7.21.4",
-    "@testing-library/jest-dom": "^5.16.5",
+    "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^14.0.0",
     "@testing-library/user-event": "^14.4.3",
     "@types/file-saver": "^2.0.7",
+    "@types/jest": "^29.5.12",
     "@types/react": "^18.0.27",
     "@types/react-dom": "^18.0.10",
     "@vitejs/plugin-legacy": "^5.0.0",
