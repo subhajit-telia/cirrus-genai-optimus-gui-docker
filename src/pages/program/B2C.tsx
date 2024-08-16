@@ -557,8 +557,8 @@ const B2C: React.FC = () => {
               <IonRow>
                 <IonCol size="12" size-lg="4" size-md="4" size-sm="12">
                   <div className='rounded-xl text-[#000] bg-white shadow-md'>
-                    <div className='font-bold p-4 text-sm' data-tooltip-id="my-tooltip" data-tooltip-content="Hello world!">I want to create a...</div>
-                    <Tooltip id="my-tooltip" />
+                    <div className='font-bold p-4 text-sm'>I want to create a...</div>
+                    
                     <div className='px-4 pb-3.5'>
                       {/* <IonSelect placeholder="Select formats" disabled={formats.length === 0} className='min-h-10 field-item' label="Select desired format below" multiple={true} interface="popover" labelPlacement="stacked" fill="outline"
                         {...register("format", {
@@ -612,7 +612,7 @@ const B2C: React.FC = () => {
                           nameKey="purpose_name"
                           tooltipKey="purpose_written_description"
                           placeHolder='Select purpose'
-                          label='Which product/offer do you want to report on?'
+                          label='Select desired purpose below'
                         />
                         { loadingPurposes &&
                           <IonProgressBar className='mt-0.5' type="indeterminate"></IonProgressBar>
@@ -649,7 +649,7 @@ const B2C: React.FC = () => {
             {
               segments.length !== 0 &&
               <div>
-                <p className='text-center mt-2.5 text-black'>I want to create versions to the following segments</p>
+                <p className='text-center mt-2.5 text-black'>I want to create versions for the following segments:</p>
                 <div className='segments flex max-sm:flex-col max-md:flex-col items-center justify-center mt-2.5'>
                   {segments.map((item, index) => (
                     <IonChip key={index} onClick={() => onClickSegment(index)} className={`${item.isActive} mx-2.5 min-h-6 py-0 bg-[#f5e0ff] text-[#4a2a59]`}>{item.segment_name}</IonChip>
@@ -695,17 +695,11 @@ const B2C: React.FC = () => {
                 <IonCol>
                   <div className="mx-2.5 mt-7">
                     <Tabs tabs={tabs} regenarateItem={regenarateItem}/>
-                    <div className="flex mt-3 items-center justify-between">
-                      <div>
-                        <IonIcon className='mr-2.5 cursor-pointer hover:text-primary' slot="icon-only" icon={thumbsUpOutline}></IonIcon>
-                        <IonIcon className='mr-2.5 cursor-pointer hover:text-primary' slot="icon-only" icon={thumbsDownOutline}></IonIcon>
-                      </div>
-                      <div>
-                        <IonChip onClick={() => handleFormSubmit(requestData)} className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Rewrite all suggestions</IonChip>
-                        <IonChip disabled className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Send to contentfull</IonChip>
-                        <IonChip onClick={() => exportToDoc(tabs)} className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Save all suggestions to word.doc</IonChip>
-                        <IonChip onClick={handleReset} className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Create new task</IonChip>
-                      </div>
+                    <div className="text-right mt-3">
+                      <IonChip onClick={() => handleFormSubmit(requestData)} className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Rewrite all suggestions</IonChip>
+                      <IonChip disabled className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Send to contentfull</IonChip>
+                      <IonChip onClick={() => exportToDoc(tabs)} className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Save all suggestions to word.doc</IonChip>
+                      <IonChip onClick={handleReset} className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Create new task</IonChip>
                     </div>
                   </div>
                 </IonCol>
@@ -715,7 +709,7 @@ const B2C: React.FC = () => {
             <div className='text-center mt-6'>
               <IonButton type='submit' className='btn-primary' shape="round">
               {loading && <IonSpinner className='mr-2' name="bubbles"></IonSpinner>}
-                Start the magic
+                Generate
               </IonButton>
             </div>
             }

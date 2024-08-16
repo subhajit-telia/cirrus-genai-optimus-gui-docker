@@ -12,13 +12,11 @@ import { integer } from 'aws-sdk/clients/cloudfront';
 interface ConfigAddModel {
 
     memory_type: string;
-    history_dynamodb_table_name: string;
-    feedback_dynamodb_table: string;
-    model: string;
+    model_name: string;
     agent_type: string;
 
-    quality_gates: boolean;
-    llm_retry_count: number;
+    quality_check_enabled: boolean;
+    quality_check_retry_count: number;
     generation_max_"removed"s: number;
     context_max_"removed"s: number;
     temperature: number;
@@ -48,16 +46,15 @@ const Config: React.FC = () => {
       console.log("Success:", responseData);
 
       if (response.ok) {
-        setValue("quality_gates", responseData.quality_gates);
-        setValue("llm_retry_count", responseData.llm_retry_count);
-        setValue("agent_type", responseData.chat.agent_type);
-        setValue("memory_type", responseData.chat.memory_type);
-        setValue("history_dynamodb_table_name", responseData.chat.history_dynamodb_table_name);
-        setValue("feedback_dynamodb_table", responseData.chat.feedback_dynamodb_table);
-        setValue("model", responseData.chat.model);
-        setValue("context_max_"removed"s", responseData.chat.model_config.context_max_"removed"s);
-        setValue("generation_max_"removed"s", responseData.chat.model_config.generation_max_"removed"s);
-        setValue("temperature", responseData.chat.model_config.temperature);
+        setValue("agent_type", responseData.agent_type);
+        setValue("memory_type", responseData.memory_type);
+        setValue("model_name", responseData.model.model_name);
+        setValue("context_max_"removed"s", responseData.model.context_max_"removed"s);
+        setValue("generation_max_"removed"s", responseData.model.generation_max_"removed"s);
+        setValue("temperature", responseData.model.temperature);
+
+        setValue("quality_check_enabled", responseData.quality_check_enabled);
+        setValue("quality_check_retry_count", responseData.quality_check_retry_count);
         setConfigList(responseData);
         setLoading(false);
       }
@@ -74,15 +71,14 @@ const Config: React.FC = () => {
     setLoadingForm(true);
     console.log('handleFormSubmit', data);
     let payLoad:any = configList;
-    payLoad.chat.memory_type = data.memory_type;
-    payLoad.chat.history_dynamodb_table_name = data.history_dynamodb_table_name;
-    payLoad.chat.feedback_dynamodb_table = data.feedback_dynamodb_table;
-    payLoad.chat.model = data.model;
-    payLoad.chat.agent_type = data.agent_type;
-    payLoad.llm_retry_count = data.llm_retry_count;
-    payLoad.chat.model_config.generation_max_"removed"s = data.generation_max_"removed"s;
-    payLoad.chat.model_config.context_max_"removed"s = data.context_max_"removed"s;
-    payLoad.chat.model_config.temperature = data.temperature;
+    payLoad.memory_type = data.memory_type;
+    payLoad.model.model_name = data.model_name;
+    payLoad.agent_type = data.agent_type;
+    payLoad.quality_check_retry_count = data.quality_check_retry_count;
+    payLoad.model.generation_max_"removed"s = data.generation_max_"removed"s;
+    payLoad.model.context_max_"removed"s = data.context_max_"removed"s;
+    payLoad.model.temperature = data.temperature;
+    payLoad.quality_check_enabled = data.quality_check_enabled;
 
     console.log('payLoad', payLoad)
     handleConfigUpdate(payLoad);
@@ -128,7 +124,7 @@ const Config: React.FC = () => {
     },
   });
 
-  // const isQualityGates = watch('quality_gates');
+  const isQualityGates = watch('quality_check_enabled');
   /* Handle form input field changes end */
 
   return (
@@ -156,24 +152,8 @@ const Config: React.FC = () => {
                             </IonCol>
 
                             <IonCol size="4">
-                                <IonInput className='mb-4 text-sm' label="History table name" labelPlacement="floating" fill="outline" placeholder="Enter History table name"
-                                {...register("history_dynamodb_table_name", {
-                                    validate: {},
-                                })}
-                                ></IonInput>
-                            </IonCol>
-
-                            <IonCol size="4">
-                                <IonInput className='mb-4 text-sm' label="Feedback table name" labelPlacement="floating" fill="outline" placeholder="Enter Feedback table name"
-                                {...register("feedback_dynamodb_table", {
-                                    validate: {},
-                                })}
-                                ></IonInput>
-                            </IonCol>
-
-                            <IonCol size="4">
                                 <IonInput className='mb-4 text-sm' label="Model" labelPlacement="floating" fill="outline" placeholder="Enter Model"
-                                {...register("model", {
+                                {...register("model_name", {
                                     validate: {},
                                 })}
                                 ></IonInput>
@@ -189,7 +169,7 @@ const Config: React.FC = () => {
 
                             <IonCol size="4">
                                 <IonInput type='number' className='mb-4 text-sm' label="Retry count" labelPlacement="floating" fill="outline" placeholder="Enter Retry count"
-                                {...register("llm_retry_count", {
+                                {...register("quality_check_retry_count", {
                                     validate: {},
                                 })}
                                 ></IonInput>
@@ -219,18 +199,18 @@ const Config: React.FC = () => {
                                 ></IonInput>
                             </IonCol>
 
-                            {/* <IonCol size="4">
+                            <IonCol size="4" className='flex items-center'>
                                 <IonCheckbox 
-                                {...register("quality_gates", {
+                                {...register("quality_check_enabled", {
                                     validate: {},
                                 })}
                                 checked={isQualityGates as boolean}
                                 onIonChange={(event: any) => {
                                     console.log('event', event.detail.checked);
-                                    setValue("quality_gates", event.detail.checked);
+                                    setValue("quality_check_enabled", event.detail.checked);
                                 }}
                                 className='mb-4 text-sm' labelPlacement="start">Quality checked?</IonCheckbox>
-                            </IonCol> */}
+                            </IonCol>
 
                         </IonRow>
                     </IonGrid>

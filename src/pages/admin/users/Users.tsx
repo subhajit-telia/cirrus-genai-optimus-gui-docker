@@ -11,6 +11,7 @@ import { useForm } from 'react-hook-form';
 interface UserAddModel {
   username: string;
   password: string;
+  newPassword: string;
   role: string;
   hashed: number;
 }
@@ -102,12 +103,22 @@ const Users: React.FC = () => {
 
   /* -----------Handle form submit start----------- */
   const handleFormSubmit = async (data: any) => {
+    console.log('data', data);
+    if (data.newPassword) {
+      data.password = data.newPassword;
+    }
+    let formData:any = {
+      username: data.username,
+      role: data.role,
+      password: data.password,
+    };
+
     let prevUserList = userList;
     let index:any = targetIndex;
     if (isEdit === true) {
-      prevUserList.splice(index, 1, data);
+      prevUserList.splice(index, 1, formData);
     }else {
-      prevUserList = [...userList, data];
+      prevUserList = [...userList, formData];
     }
 
     
@@ -259,15 +270,27 @@ const Users: React.FC = () => {
                     validate: {},
                   })}
                 ></IonInput>
-              
-                <IonInput className='text-sm' label="Password" labelPlacement="floating" fill="outline" placeholder="Enter Password"
-                  {...register("password", {
-                    validate: {},
-                  })}
-                ></IonInput>
-                {isEdit === true && (
-                  <IonText className='text-xs' color="danger">Password is encripted!</IonText>
-                )}
+                {isEdit === true ?
+                  <>
+                    <IonInput className='text-sm' label="New Password" labelPlacement="floating" fill="outline" placeholder="Enter Password"
+                      {...register("newPassword", {
+                        validate: {},
+                      })}
+                    ></IonInput>
+                    <input type='hidden' 
+                      {...register("password", {
+                        validate: {},
+                      })}
+                    />
+                  </>
+                :
+                  <IonInput className='text-sm' label="Password" labelPlacement="floating" fill="outline" placeholder="Enter Password"
+                    {...register("password", {
+                      validate: {},
+                    })}
+                  ></IonInput>
+                
+                }
                 <div className='text-center mt-4'>
                   <IonButton size='small' type='submit' className='btn-primary' shape="round">
                     {loading && <IonSpinner className='mr-2' name="bubbles"></IonSpinner>}

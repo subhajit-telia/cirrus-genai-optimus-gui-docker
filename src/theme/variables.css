@@ -167,6 +167,16 @@ ion-textarea .textarea-wrapper-inner .native-wrapper .native-textarea {
     align-items: center;
     padding-left: 20px; 
 }
+.feedback-alert textarea {
+    border: 1px solid #d9d9d9 !important;
+    border-radius: 6px;
+    padding: 4px !important;
+    height: 80px;
+}
+.feedback-alert .alert-input-group {
+    padding-top: 0px;
+    padding-bottom: 0px;
+}
 @media (prefers-color-scheme: dark) {
     :root.md {
         --checkbox-background: #fff;
