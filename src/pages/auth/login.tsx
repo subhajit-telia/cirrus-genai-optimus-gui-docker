@@ -33,11 +33,7 @@ const Login: React.FC = () => {
 
   const handleLogin = (_role:string) => {
     login(_role);
-    if (_role === 'user') {
-      history.push('/b2c');
-    }else {
-      history.push('/users');
-    }
+    history.push('/b2c');
     
   };
 
@@ -165,7 +161,6 @@ const Login: React.FC = () => {
                             </IonInput>
                             <IonText color="warning"  className='text-xs mb-3.5 block'>{errors?.["password"]?.message} </IonText>
                         </div>
-                        <p className='mb-3.5 cursor-pointer'>Forgot password?</p>
                         <div className='text-center mb-3.5'>
                             <IonButton type='submit' className='btn-primary' shape="round">
                                 {loading && <IonSpinner className='mr-2' name="bubbles"></IonSpinner>}

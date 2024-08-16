@@ -45,7 +45,7 @@ const AppHeader: React.FC<ContainerProps> = () => {
         <div>
             <IonToolbar>
                 {(userData) && (currentPath === 'b2c' || currentPath === 'b2b') ?
-                    <IonTitle><img className="w-20" src={logo}/></IonTitle>
+                    <IonTitle className='cursor-pointer'><IonRouterLink routerLink={currentPath} routerDirection="none"><img className="w-20" src={logo}/></IonRouterLink></IonTitle>
                 : 
                 <IonTitle className='capitalize p-0'>{currentPath} List</IonTitle>
                 }
@@ -80,12 +80,12 @@ const AppHeader: React.FC<ContainerProps> = () => {
                         {(userData && userData.roles.admin) && (currentPath === 'b2c' || currentPath === 'b2b') ?
                             <IonItem routerLink="users" className='text-sm' button={true} detail={false}>
                                 <IonIcon className='text-base' aria-hidden="true" icon={person} slot="start"></IonIcon>
-                                <IonLabel>Admin Profile</IonLabel>
+                                <IonLabel>Admin Page</IonLabel>
                             </IonItem>
                         : (userData && userData.roles.admin) && (currentPath !== 'b2c' || 'b2b') ?
                             <IonItem routerLink="b2c" className='text-sm' button={true} detail={false}>
                                 <IonIcon className='text-base' aria-hidden="true" icon={person} slot="start"></IonIcon>
-                                <IonLabel>User Profile</IonLabel>
+                                <IonLabel>User Page</IonLabel>
                             </IonItem>
                         :
                         <></>

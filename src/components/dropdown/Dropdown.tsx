@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import './Dropdown.css';
 import { Tooltip } from 'react-tooltip';
 import { IonIcon } from '@ionic/react';
-import { caretDownOutline, caretUpOutline } from 'ionicons/icons';
+import { caretDownOutline, caretUpOutline, closeCircleOutline, informationCircleOutline } from 'ionicons/icons';
 
 interface MultiSelectProps<T> {
   options: T[];
@@ -62,24 +62,48 @@ const MultiSelect = <T extends Record<string, any>>({
     }
   };
 
+
+  const handleRemoveClick = () => {
+    setSelectedOptions([]);
+  };
+
   return (
     <div className="multi-select" ref={dropdownRef}>
       <div className="multi-select-dropdown" onClick={toggleDropdown}>
         <span className='label-name'>{label}</span>
-        <span className='selectedText'>{selectedOptions.length > 0 ? selectedOptions.map(option => option[nameKey]).join(', ') : placeHolder}</span>
+        {/* <span className='selectedText'>{selectedOptions.length > 0 ? selectedOptions.map(option => option[nameKey]).join(', ') : placeHolder}</span> */}
+        {selectedOptions.length > 0 ? (
+          <div className="selected-options selectedText">
+            {multiSelect ? (
+              selectedOptions.map((option, index) => (
+                <span key={option[idKey]}>
+                  {option[nameKey]}
+                  {index < selectedOptions.length - 1 && ', '}
+                </span>
+              ))
+            ) : (
+              <span className="selected-option flex items-center">
+                {selectedOptions[0][nameKey]}
+                <IonIcon className='ml-1' onClick={(e) => {
+                    e.stopPropagation();
+                    handleRemoveClick();
+                  }} icon={closeCircleOutline}></IonIcon>
+              </span>
+            )}
+          </div>
+        ) : placeHolder}
         {isOpen ? <IonIcon icon={caretUpOutline}></IonIcon> : <IonIcon icon={caretDownOutline}></IonIcon>}
       </div>
       {isOpen && (
         <ul className="multi-select-options">
           {options.map((option) => (
             <>
-            <li
-                data-tooltip-id={option[idKey]} data-tooltip-content={option[tooltipKey]}
-              key={option[idKey]}
-              className={`multi-select-option ${selectedOptions.some(o => o[idKey] === option[idKey]) ? 'selected' : ''}`}
+            <li key={option[idKey]}
+              className={`multi-select-option ${selectedOptions.some(o => o[idKey] === option[idKey]) ? 'selected' : ''} flex items-center justify-between`}
               onClick={() => handleOptionClick(option)}
             >
               {option[nameKey]}
+              <IonIcon data-tooltip-id={option[idKey]} data-tooltip-content={option[tooltipKey]} aria-hidden="true" icon={informationCircleOutline} slot="start"></IonIcon>
             </li>
             <Tooltip id={option[idKey]} />
             </>
