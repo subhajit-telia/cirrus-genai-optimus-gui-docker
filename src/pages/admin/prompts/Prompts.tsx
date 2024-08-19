@@ -147,14 +147,23 @@ const Prompts: React.FC = () => {
       console.log("Success:", responseData);
 
       if (response.ok) {
-        setIsShowError(true);
-        setIsErrorMsg(responseData);
-        reset();
-        setLoading(false);
-        setIsEdit(false);
-        setTargetIndex(-1);
-        getPromptsData();
-        onModalDismiss();
+        if (responseData.ErrorMessage) {
+          console.error("Error response:", responseData);
+          setIsShowError(true);
+          setIsErrorMsg(responseData.ErrorMessage);
+          setLoading(false);
+          
+        }else {
+          setIsShowError(true);
+          setIsErrorMsg(responseData);
+          reset();
+          setLoading(false);
+          setIsEdit(false);
+          setTargetIndex(-1);
+          getPromptsData();
+          onModalDismiss();
+        }
+        
       }
       
     } catch (error: any) {

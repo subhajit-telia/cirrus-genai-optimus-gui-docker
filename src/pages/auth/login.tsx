@@ -22,7 +22,8 @@ const Login: React.FC = () => {
   /* Variables start */
   const [loading, setLoading] = useState<boolean>(false);
   const [isShowError, setIsShowError] = useState(false);
-  const [segmentValue, setSegmentValue] = useState('user');
+  const [isErrorMsg, setIsErrorMsg] = useState('');
+  const [segmentValue, setSegmentValue] = useState('tcad');
   const history = useHistory();
   const { login } = useAuth();
   useEffect(() => {
@@ -32,20 +33,23 @@ const Login: React.FC = () => {
 
   const handleLogin = (_role:string) => {
     login(_role);
-    if (_role === 'user') {
-      history.push('/b2c');
-    }else {
-      history.push('/users');
-    }
+    history.push('/b2c');
     
   };
 
   /* -----------Handle form submit start----------- */
   const handleFormSubmit = async (data: any) => {
     setLoading(true);
-    let formUrl = NetworkInfo.URL + '/login/check';
-    data.role = [segmentValue];
+    let formUrl:any;
     console.log('payload', data);
+    console.log('segmentValue', segmentValue);
+
+    if (segmentValue === 'tcad') {
+      formUrl = NetworkInfo.URL + '/tcad_login/check';
+    }else {
+      formUrl = NetworkInfo.URL + '/login/check';
+    }
+
     try {
       const response = await fetch(formUrl, {
         method: HTTPMethod.POST,
@@ -59,17 +63,26 @@ const Login: React.FC = () => {
 
       if (response.ok) {
         setLoading(false);
-        if (responseData === true) {
+        if (responseData.verification === true) {
           console.log('login');
-          let userData = {
-            username: data.username,
-            role: data.role[0]
-          };
-          localStorage.setItem('user', JSON.stringify(userData));
-          handleLogin(data.role[0]);
+          localStorage.setItem('user', JSON.stringify(responseData));
+          setIsShowError(true);
+          if (responseData.roles.admin === true && responseData.roles.user === true) {
+            handleLogin('admin');
+            setIsErrorMsg('Logged in as admin');
+          }else if (responseData.roles.admin === true) {
+            handleLogin('admin');
+            setIsErrorMsg('Logged in as admin');
+          }else if (responseData.roles.user === true) {
+            handleLogin('user');
+            setIsErrorMsg('Logged in as user');
+          }else {
+            setIsErrorMsg('Please check your credential.');
+          }
         }else {
           console.log('login faild');
           setIsShowError(true);
+          setIsErrorMsg('Please check your credential.');
         }
       }
       
@@ -112,24 +125,24 @@ const Login: React.FC = () => {
             </div>
             <div className="content flex justify-around flex-col sm:flex-row h-full">
                 <div className='content-box'>
-                    <p className='md:text-8xl text-3xl font-bold'>Welcome to Optimus</p>
+                    <p className='md:text-8xl text-3xl font-bold text-white'>Welcome to Optimus</p>
                 </div>
                 <div className='login-box py-5 px-4 bg-[#6f139ec7] rounded-lg'>
                     <form onSubmit={handleSubmit(handleFormSubmit)} className="w-full">
                         <div className='flex justify-between'>
-                            <p className='mb-3.5 text-xl'>Sign In</p>
+                            <p className='mb-3.5 text-xl text-white'>Sign In</p>
                             <IonSegment onIonChange={handleSegmentChange} className='w-36 h-7 bg-white rounded-[50px]' value={segmentValue}>
-                                <IonSegmentButton className='w-20 min-w-0 h-7 min-h-6 ' value="user">
-                                    <IonLabel className='m-0 text-xs'>User</IonLabel>
+                                <IonSegmentButton className='w-20 min-w-0 h-7 min-h-6' value="tcad">
+                                    <IonLabel className='m-0 text-xs'>TCAD</IonLabel>
                                 </IonSegmentButton>
-                                <IonSegmentButton className='w-20 min-w-0 h-7 min-h-6 ' value="admin">
-                                    <IonLabel className='m-0 text-xs'>Admin</IonLabel>
+                                <IonSegmentButton className='w-20 min-w-0 h-7 min-h-6' value="appId">
+                                    <IonLabel className='m-0 text-xs'>APP ID</IonLabel>
                                 </IonSegmentButton>
                             </IonSegment>
                         </div>
                         
                         <div>
-                            <IonInput label="Username" labelPlacement="stacked" fill="outline"
+                            <IonInput className='text-white' label="Username" labelPlacement="stacked" fill="outline"
                                 {...register("username", {
                                     required: "Username is required",
                                     validate: {},
@@ -137,7 +150,7 @@ const Login: React.FC = () => {
                                 onIonInput={(e:any) => setValue("username", e.detail.value)}
                             ></IonInput>
                             <IonText color="warning"  className='text-xs mb-3.5 block'>{errors?.["username"]?.message} </IonText>
-                            <IonInput type="password" label="Password" labelPlacement="stacked" fill="outline"
+                            <IonInput className='text-white' type="password" label="Password" labelPlacement="stacked" fill="outline"
                                 {...register("password", {
                                     required: "Password is required",
                                     validate: {},
@@ -148,7 +161,6 @@ const Login: React.FC = () => {
                             </IonInput>
                             <IonText color="warning"  className='text-xs mb-3.5 block'>{errors?.["password"]?.message} </IonText>
                         </div>
-                        <p className='mb-3.5 cursor-pointer'>Forgot password?</p>
                         <div className='text-center mb-3.5'>
                             <IonButton type='submit' className='btn-primary' shape="round">
                                 {loading && <IonSpinner className='mr-2' name="bubbles"></IonSpinner>}
@@ -159,9 +171,9 @@ const Login: React.FC = () => {
                 </div>
             </div>
         <IonToast
-        className='custom-toast'
+          className='custom-toast'
           isOpen={isShowError}
-          message="Please check Username & Password!"
+          message={isErrorMsg}
           duration={3000}
           onDidDismiss={() => setIsShowError(false)}
         ></IonToast>

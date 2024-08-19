@@ -27,7 +27,7 @@ import '@ionic/react/css/display.css';
 
 /* import '@ionic/react/css/palettes/dark.always.css'; */
 /* import '@ionic/react/css/palettes/dark.class.css'; */
-import '@ionic/react/css/palettes/dark.system.css';
+// import '@ionic/react/css/palettes/dark.system.css';
 
 /* Theme variables */
 
@@ -46,6 +46,7 @@ import B2C from './pages/program/B2C';
 import B2B from './pages/program/B2B';
 import Examples from './pages/admin/examples/Examples';
 import Config from './pages/admin/configuration/Config';
+import NotFoundPage from './pages/NotFoundPage';
 
 
 const App: React.FC = () => (
@@ -54,8 +55,8 @@ const App: React.FC = () => (
       <IonRouterOutlet>
         <AuthProvider>
             <Switch>
-              <AuthGuard path="/b2c" component={B2C} role="user"/>
-              <AuthGuard path="/b2b" component={B2B} role="user"/>
+              <AuthGuard path="/b2c" component={B2C}/>
+              <AuthGuard path="/b2b" component={B2B}/>
               <AuthGuard path="/users" component={Users} role="admin"/>
               <AuthGuard path="/formats" component={Formats} role="admin"/>
               <AuthGuard path="/prompts" component={Prompts} role="admin"/>
@@ -64,10 +65,10 @@ const App: React.FC = () => (
               <AuthGuard path="/examples" component={Examples} role="admin"/>
               <AuthGuard path="/config" component={Config} role="admin"/>
               
+              <Route path="/notfound" component={NotFoundPage} />
               <Route exact path="/login">
                 <Login />
               </Route>
-              
               <Route path="/" component={Login} />
             </Switch>
         </AuthProvider>
