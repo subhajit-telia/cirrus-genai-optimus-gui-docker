@@ -15,8 +15,12 @@ import optimusLogo from '../../theme/assets/optimus-logo.png'
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
+import { Tooltip as ReactTooltip, Tooltip } from 'react-tooltip';
+import { saveAs } from 'file-saver';
+import MultiSelect from '../../components/dropdown/Dropdown';
 
 type Tab = {
+  answer: string;
   segment_id: string;
   segment_name: string;
   data: [innerTab]
@@ -24,7 +28,8 @@ type Tab = {
 interface innerTab {
   format_id: string,
   format_name: string,
-  answer: string
+  answer: string,
+  input_params: string
 }
 
 interface UserAddModel {
@@ -42,6 +47,7 @@ interface Segment {
 interface Purposes {
   purpose_name: string;
   purpose_id: string;
+  purpose_written_description: string;
 }
 interface Products {
   product_id: string;
@@ -50,6 +56,7 @@ interface Products {
 interface Formats {
   format_name: string;
   format_id: string;
+  format_written_description: string;
 }
 
 const B2B: React.FC = () => {
@@ -60,6 +67,8 @@ const B2B: React.FC = () => {
   const [products, setProducts] = useState<Products[]>([]);
   const [formats, setFormats] = useState<Formats[]>([]);
   const [tabs, setTabs] = useState<Tab[]>([]);
+  const [noSegmentArray, setNoSegmentArray] = useState<[]>([]);
+  const [tabArray, setTabArray] = useState<[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [loadingSegments, setLoadingSegments] = useState<boolean>(false);
   const [loadingPurposes, setLoadingPurposes] = useState<boolean>(false);
@@ -67,6 +76,10 @@ const B2B: React.FC = () => {
   const [loadingProducts, setLoadingProducts] = useState<boolean>(false);
   const [isShowError, setIsShowError] = useState(false);
   const [isErrorMsg, setIsErrorMsg] = useState('');
+  const [requestData, setRequestData] = useState('');
+  const [selectedFormats, setSelectedFormats] = useState<typeof formats[0][]>([]);
+  const [selectedPurpose, setSelectedPurpose] = useState<typeof purposes[0][]>([]);
+
 
   useEffect(() => {
     getSegmentsData();
@@ -74,7 +87,7 @@ const B2B: React.FC = () => {
     getFormatsData();
     getProductsData();
 
-  }, [setSegments]);
+  }, [setSegments, setTabs]);
 
   const onSelect = (selectedList:any, selectedItem:any) => {
     setSelectedProducts(selectedList);
@@ -116,7 +129,7 @@ const B2B: React.FC = () => {
   const getPurposesData = async () => {
     setLoadingPurposes(true);
     try {
-      const urlData =NetworkInfo.URL + '/resource/get?table=purposes&use_case=content_creation_b2b&columns=purpose_id&columns=purpose_name';
+      const urlData =NetworkInfo.URL + '/resource/get?table=purposes&use_case=content_creation_b2b&columns=purpose_id&columns=purpose_name&columns=purpose_written_description';
 
       const response = await fetch(urlData);
       const responseData = await response.json();
@@ -158,7 +171,7 @@ const B2B: React.FC = () => {
   const getFormatsData = async () => {
     setLoadingFormats(true);
     try {
-      const urlData =NetworkInfo.URL + '/resource/get?table=formats&use_case=content_creation_b2b&columns=format_id&columns=format_name';
+      const urlData =NetworkInfo.URL + '/resource/get?table=formats&use_case=content_creation_b2b&columns=format_id&columns=format_name&columns=format_written_description';
 
       const response = await fetch(urlData);
       const responseData = await response.json();
@@ -213,6 +226,12 @@ const B2B: React.FC = () => {
   let arrayTab:any;
   let arrayNoSegment:any;
   const handleFormSubmit = (data:any) => {
+    console.log('selectedPurpose', selectedPurpose);
+    data.format = selectedFormats.map(format => format.format_id);
+    data.purpose = selectedPurpose.length > 0 && selectedPurpose[0].purpose_id 
+    ? selectedPurpose[0].purpose_id 
+    : '';
+    setRequestData(data);
     let productIds = selectedProducts.map(product => product.product_id);
     data.segment = segments
     .filter(segment => segment.isActive)
@@ -228,6 +247,7 @@ const B2B: React.FC = () => {
         data: data.format.map((format: any) => ({
           format_id: format,
           format_name: formats.find(f => f.format_id === format)?.format_name,
+          answer: ''
         }))
       }));
 
@@ -239,7 +259,8 @@ const B2B: React.FC = () => {
         segment_name: segments.find(s => s.segment_id === segment)?.segment_name,
         data: [{
           format_id: 'customPrompts',
-          format_name: data.question
+          format_name: data.question,
+          answer: ''
         }]
       }));
       
@@ -249,6 +270,7 @@ const B2B: React.FC = () => {
       arrayNoSegment = data.format.map((format: any) => ({
         format_id: format,
         format_name: formats.find(f => f.format_id === format)?.format_name,
+        answer: ''
       }))
       
     }
@@ -331,7 +353,8 @@ const B2B: React.FC = () => {
         arrayNoSegment= [];
         let customFormat = {
           format_id: 'customPrompts',
-          format_name: data.question
+          format_name: data.question,
+          answer: ''
         };
         arrayNoSegment.push(customFormat);
         handleApiCall(eachItem);
@@ -359,9 +382,11 @@ const B2B: React.FC = () => {
       const responseData = await response.json();
       console.log("Success:", responseData);
 
-      if (response.ok) {
+      if (response.ok && !responseData.ErrorMessage) {
         console.log('arrayTab>>>', arrayTab);
         console.log('arrayNoSegment', arrayNoSegment);
+        setNoSegmentArray(arrayNoSegment);
+        setTabArray(arrayTab);
         console.log('tabs>>>', tabs);
         let updatedDataArray = tabs;
         if (arrayTab !== undefined) {
@@ -374,12 +399,14 @@ const B2B: React.FC = () => {
                     return {
                       ...format,
                       answer: DOMPurify.sanitize(responseData.answer),
+                      input_params: responseData.input_params,
                       format_name: responseData.input_params.format_name
                     };
                   }else if (responseData.input_params.format_id === "" || responseData.input_params.format_id === undefined){
                     return {
                       ...format,
                       answer: DOMPurify.sanitize(responseData.answer),
+                      input_params: responseData.input_params,
                       format_name: responseData.input_params.question
                     };
                   }
@@ -390,6 +417,7 @@ const B2B: React.FC = () => {
                 let noFormat = {
                   format_id: responseData.input_params.segment_id,
                   answer: DOMPurify.sanitize(responseData.answer),
+                  input_params: responseData.input_params,
                   format_name: ' '
                 };
                 segment.data.push(noFormat);
@@ -407,6 +435,7 @@ const B2B: React.FC = () => {
               return {
                 ...format,
                 answer: DOMPurify.sanitize(responseData.answer),
+                input_params: responseData.input_params,
                 format_name: responseData.input_params.format_name === '' ? responseData.input_params.question : responseData.input_params.format_name
               };
             }
@@ -420,6 +449,9 @@ const B2B: React.FC = () => {
         console.log('tabs', tabs);
         setLoading(false);
         showLoadingIndicator(false);
+      }else {
+        setIsShowError(true);
+        setIsErrorMsg(responseData.ErrorMessage || 'Something went wrong!');
       }
       
     } catch (error: any) {
@@ -459,13 +491,57 @@ const B2B: React.FC = () => {
     setSegments(updatedSegments);
     setTabs([]);
     setSelectedProducts([]);
+    setSelectedFormats([]);
+    setSelectedPurpose([]);
     setValue("format", '');
     setValue("purpose", '');
     setValue("products", '');
     setValue("question", '');
   };
-
   /*  Reset form end */
+
+  /* ---------------Regenarate item start--------------- */
+  const regenarateItem = (data: any): void => {
+    console.log('noSegmentArray', noSegmentArray);
+    
+    data.user = 'ibu4416';
+    arrayNoSegment = noSegmentArray;
+    arrayTab = tabArray;
+    handleApiCall(data);
+  };
+  /* Regenarate item end */
+
+  /* ---------------Export to doc start--------------- */
+  const exportToDoc = (data:any) => {
+    console.log('data', data);
+    let answers: any;
+
+    if (data[0].data) {
+      answers = [];
+      data.forEach((segment: { data: any[]; }) => {
+        segment.data.forEach(item => {
+            if (item.answer) {
+                answers.push(item.answer + '\n\n\n');
+            }
+        });
+      });
+    }else {
+      answers = data.map((item: { answer: any; }) => item.answer + '\n\n\n' );
+    }
+
+
+    console.log('answers', answers);
+    
+    const blob = new Blob([answers], {
+      type: 'application/msword;charset=utf-8',
+    });
+
+    const fileName = 'optimus.doc';
+  
+    // Save the file
+    saveAs(blob, fileName);
+  };
+  /* Export to doc end */
 
   return (
     <IonPage>
@@ -475,25 +551,43 @@ const B2B: React.FC = () => {
           <form onSubmit={handleSubmit(handleFormSubmit)} className="w-full">
             <div className='text-center'>
               <img className='m-auto' src={optimusLogo} />
-              <p>AI-assistance</p>
+              <p className="text-black">AI-assistance</p>
             </div>
             <IonGrid>
               <IonRow>
                 <IonCol size="12" size-lg="4" size-md="4" size-sm="12">
                   <div className='rounded-xl text-[#000] bg-white shadow-md'>
                     <div className='font-bold p-4 text-sm'>I want to create a...</div>
+                    
                     <div className='px-4 pb-3.5'>
-                      <IonSelect placeholder="Select formats" disabled={formats.length === 0} className='min-h-10 field-item' label="Select desired format below" multiple={true} interface="popover" labelPlacement="stacked" fill="outline"
+                      {/* <IonSelect placeholder="Select formats" disabled={formats.length === 0} className='min-h-10 field-item' label="Select desired format below" multiple={true} interface="popover" labelPlacement="stacked" fill="outline"
                         {...register("format", {
                           validate: {},
                         })}>
                           {formats.map((item, index) => (
-                            <IonSelectOption key={index} value={item.format_id}>{item.format_name}</IonSelectOption>
+                            <>
+                              <IonSelectOption key={index} value={item.format_id}  data-tooltip-id={`tooltip${index}`} data-tooltip-content={item.format_written_description}>
+                                {item.format_name}
+                              </IonSelectOption>
+                              <Tooltip id={`tooltip${index}`} />
+                            </>
                           ))}
-                        </IonSelect>
+                        </IonSelect> */}
+                        <MultiSelect
+                          options={formats}
+                          selectedOptions={selectedFormats}
+                          setSelectedOptions={setSelectedFormats}
+                          multiSelect={true} // Multi-select mode
+                          idKey="format_id"
+                          nameKey="format_name"
+                          tooltipKey="format_written_description"
+                          placeHolder='Select formats'
+                          label='Select desired format below'
+                        />
                         { loadingFormats &&
                           <IonProgressBar className='mt-0.5' type="indeterminate"></IonProgressBar>
                         }
+                        
                     </div>
                   </div>
                 </IonCol>
@@ -501,14 +595,25 @@ const B2B: React.FC = () => {
                   <div className='rounded-xl text-[#000] bg-white shadow-md'>
                     <div className='font-bold p-4 text-sm'>With the purpose...</div>
                     <div className='px-4 pb-3.5'>
-                      <IonSelect placeholder="Select purpose" disabled={purposes.length === 0} className='min-h-10 field-item' label="Which product/offer do you want to report on?" interface="popover" labelPlacement="stacked" fill="outline"
+                      {/* <IonSelect placeholder="Select purpose" disabled={purposes.length === 0} className='min-h-10 field-item' label="Which product/offer do you want to report on?" interface="popover" labelPlacement="stacked" fill="outline"
                         {...register("purpose", {
                           validate: {},
                         })}>
                           {purposes.map((item, index) => (
                             <IonSelectOption key={index} value={item.purpose_id}>{item.purpose_name}</IonSelectOption>
                           ))}
-                        </IonSelect>
+                        </IonSelect> */}
+                        <MultiSelect
+                          options={purposes}
+                          selectedOptions={selectedPurpose}
+                          setSelectedOptions={setSelectedPurpose}
+                          multiSelect={false} // Multi-select mode
+                          idKey="purpose_id"
+                          nameKey="purpose_name"
+                          tooltipKey="purpose_written_description"
+                          placeHolder='Select purpose'
+                          label='Select desired purpose below'
+                        />
                         { loadingPurposes &&
                           <IonProgressBar className='mt-0.5' type="indeterminate"></IonProgressBar>
                         }
@@ -544,7 +649,7 @@ const B2B: React.FC = () => {
             {
               segments.length !== 0 &&
               <div>
-                <p className='text-center mt-2.5'>I want to create versions to the following segments</p>
+                <p className='text-center mt-2.5 text-black'>I want to create versions for the following segments:</p>
                 <div className='segments flex max-sm:flex-col max-md:flex-col items-center justify-center mt-2.5'>
                   {segments.map((item, index) => (
                     <IonChip key={index} onClick={() => onClickSegment(index)} className={`${item.isActive} mx-2.5 min-h-6 py-0 bg-[#f5e0ff] text-[#4a2a59]`}>{item.segment_name}</IonChip>
@@ -561,11 +666,13 @@ const B2B: React.FC = () => {
             </div>
             }
             
+            
+            
             <IonGrid className='mt-7'>
               <IonRow>
                 <IonCol>
                   <IonTextarea
-                    className='bottom-textarea rounded-xl mx-2.5'
+                    className='bottom-textarea rounded-xl text-black'
                     aria-label="Custom textarea"
                     placeholder="Write your own promt."
                     autoGrow={true}
@@ -575,9 +682,7 @@ const B2B: React.FC = () => {
                       validate: {},
                     })}
                   >
-                    <IonButton onClick={() => showLoadingIndicator(true)} size="small" fill="clear" slot="end" type='submit'>
-                      {loading ? <IonIcon className='text-primary animate-spin' slot="icon-only" icon={sync}></IonIcon> : <IonIcon className='text-primary' slot="icon-only" icon={send}></IonIcon>}
-                    </IonButton>
+                    
                   </IonTextarea>
                 </IonCol>
               </IonRow>
@@ -589,18 +694,12 @@ const B2B: React.FC = () => {
               <IonRow>
                 <IonCol>
                   <div className="mx-2.5 mt-7">
-                    <Tabs tabs={tabs} />
-                    <div className="flex mt-3 items-center justify-between">
-                      <div>
-                        <IonIcon className='mr-2.5 cursor-pointer hover:text-primary' slot="icon-only" icon={thumbsUpOutline}></IonIcon>
-                        <IonIcon className='mr-2.5 cursor-pointer hover:text-primary' slot="icon-only" icon={thumbsDownOutline}></IonIcon>
-                      </div>
-                      <div>
-                        <IonChip className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Rewrite all suggestions</IonChip>
-                        <IonChip className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Send to contentfull</IonChip>
-                        <IonChip className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Save all suggestions to word.doc</IonChip>
-                        <IonChip onClick={handleReset} className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Create new task</IonChip>
-                      </div>
+                    <Tabs tabs={tabs} regenarateItem={regenarateItem}/>
+                    <div className="text-right mt-3">
+                      <IonChip onClick={() => handleFormSubmit(requestData)} className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Rewrite all suggestions</IonChip>
+                      <IonChip disabled className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Send to contentfull</IonChip>
+                      <IonChip onClick={() => exportToDoc(tabs)} className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Save all suggestions to word.doc</IonChip>
+                      <IonChip onClick={handleReset} className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Create new task</IonChip>
                     </div>
                   </div>
                 </IonCol>
@@ -610,14 +709,13 @@ const B2B: React.FC = () => {
             <div className='text-center mt-6'>
               <IonButton type='submit' className='btn-primary' shape="round">
               {loading && <IonSpinner className='mr-2' name="bubbles"></IonSpinner>}
-                Start the magic
+                Generate
               </IonButton>
             </div>
             }
             
           </form>
         </div>
-        
 
         <IonFab slot="fixed" vertical="bottom" horizontal="end">
           <IonFabButton size="small">

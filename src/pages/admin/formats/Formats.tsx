@@ -16,6 +16,7 @@ interface FormatAddModel {
   format_id: string;
   format_class_name: string;
   format_class_definition: string;
+  format_written_description: string;
   quality_check: number | boolean;
   b2b: number | boolean;
   b2c: number | boolean;
@@ -66,6 +67,7 @@ const Formats: React.FC = () => {
     setIsOpenModal(false);
     setIsEdit(false);
     setValue("format_class_definition", '');
+    setValue("format_written_description", '');
     setValue("format_name", '');
     setValue("format_class_name", '');
     setValue("b2b", false);
@@ -96,6 +98,7 @@ const Formats: React.FC = () => {
   const handleEdit = (_value:any, _index:number) => {
     console.log('_value', _value);
     setValue("format_class_definition", _value.format_class_definition);
+    setValue("format_written_description", _value.format_written_description);
     setValue("format_name", _value.format_name);
     setValue("format_class_name", _value.format_class_name);
     if (_value.b2b === 1) {
@@ -132,6 +135,7 @@ const Formats: React.FC = () => {
     let payLoad:any = {};
     payLoad.format_name = data.format_name;
     payLoad.format_class_definition = data.format_class_definition;
+    payLoad.format_written_description = data.format_written_description;
     payLoad.format_id = `${data.format_name.replace(/\s+/g, '')}${data.b2b === true ? 'B2B' : ''}${data.b2c === true ? 'B2C' : ''}`
     payLoad.format_class_name = data.format_class_name;
     
@@ -194,14 +198,22 @@ const Formats: React.FC = () => {
       console.log("Success:", responseData);
 
       if (response.ok) {
-        setIsShowError(true);
-        setIsErrorMsg(responseData);
-        reset();
-        setLoading(false);
-        setIsEdit(false);
-        setTargetIndex(-1);
-        getFormatsData();
-        onModalDismiss();
+        if (responseData.ErrorMessage) {
+          console.error("Error response:", responseData);
+          setIsShowError(true);
+          setIsErrorMsg(responseData.ErrorMessage);
+          setLoading(false);
+          
+        }else {
+          setIsShowError(true);
+          setIsErrorMsg(responseData);
+          reset();
+          setLoading(false);
+          setIsEdit(false);
+          setTargetIndex(-1);
+          getFormatsData();
+          onModalDismiss();
+        }
       }
       
     } catch (error: any) {
@@ -251,6 +263,7 @@ const Formats: React.FC = () => {
                   <IonItem button={true}>
                     <IonLabel>
                       <p className='font-bold'>Format name: {item.format_name}</p>
+                      <p>Format description: {item.format_written_description}</p>
                       <p>Class name: {item.format_class_name}</p>
                       <p>
                         B2B: {item.b2b === 1 ? 'Yes' : item.b2b === 0 ? 'No' : 'invalid value'}
@@ -294,6 +307,12 @@ const Formats: React.FC = () => {
               <form onSubmit={handleSubmit(handleFormSubmit)} className="w-full">
                 <IonInput className='mb-4 text-sm' label="Format Name" labelPlacement="floating" fill="outline" placeholder="Enter Format Name"
                   {...register("format_name", {
+                    validate: {},
+                  })}
+                ></IonInput>
+
+                <IonInput className='mb-4 text-sm' label="Format Description" labelPlacement="floating" fill="outline" placeholder="Enter Format Description"
+                  {...register("format_written_description", {
                     validate: {},
                   })}
                 ></IonInput>
