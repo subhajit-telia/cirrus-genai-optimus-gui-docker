@@ -1,12 +1,6 @@
-import { IonButton, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonChip, IonCol, IonContent, IonGrid, IonHeader, IonIcon, IonInput, IonInputPasswordToggle, IonLabel, IonLoading, IonPage, IonRow, IonSegment, IonSegmentButton, IonSelect, IonSelectOption, IonSpinner, IonText, IonTextarea, IonTitle, IonToast, IonToolbar } from '@ionic/react';
-import ExploreContainer from '../../components/ExploreContainer';
-import AppHeader from '../../components/header/Header';
-import { lockClosed, send, sync } from 'ionicons/icons';
+import { IonButton, IonContent, IonInput, IonInputPasswordToggle, IonLabel, IonPage, IonSegment, IonSegmentButton, IonSpinner, IonText, IonToast } from '@ionic/react';
 import { useEffect, useState } from 'react';
-import Tabs from '../../components/tab/Tab';
-import templateData from '../../template.json';
 import { useForm } from "react-hook-form";
-import AWS from 'aws-sdk';
 import { HTTPMethod, NetworkInfo } from '../../routes/network';
 import './Login.css';
 import loginVideo from '../../theme/assets/bg-video.mp4'

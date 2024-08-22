@@ -8,12 +8,11 @@ import {
     IonListHeader,
     IonMenu,
     IonMenuToggle,
-    IonNote,
     IonSpinner,
   } from '@ionic/react';
   
   import { useLocation } from 'react-router-dom';
-  import { archiveOutline, archiveSharp, bookmarkOutline, codeWorkingOutline, colorFilter, heartOutline, heartSharp, listOutline, mailOutline, mailSharp, optionsOutline, paperPlaneOutline, paperPlaneSharp, peopleOutline, settings, sync, trailSignOutline, trashOutline, trashSharp, warningOutline, warningSharp } from 'ionicons/icons';
+  import { codeWorkingOutline, colorFilter, listOutline, optionsOutline, peopleOutline, settings, sync, trailSignOutline } from 'ionicons/icons';
   import './Sidenav.css';
 import { NetworkInfo } from '../../routes/network';
 import { useState } from 'react';
