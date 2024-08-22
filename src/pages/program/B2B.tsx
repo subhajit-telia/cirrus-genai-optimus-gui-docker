@@ -1,23 +1,16 @@
-import { IonButton, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonChip, IonCol, IonContent, IonFab, IonFabButton, IonFabList, IonGrid, IonHeader, IonIcon, IonInput, IonLoading, IonPage, IonPopover, IonProgressBar, IonRow, IonSelect, IonSelectOption, IonSkeletonText, IonSpinner, IonText, IonTextarea, IonTitle, IonToast, IonToolbar } from '@ionic/react';
-import ExploreContainer from '../../components/ExploreContainer';
+import { IonButton, IonChip, IonCol, IonContent, IonFab, IonFabButton, IonFabList, IonGrid, IonIcon, IonPage, IonProgressBar, IonRow, IonSkeletonText, IonSpinner, IonTextarea, IonToast } from '@ionic/react';
 import AppHeader from '../../components/header/Header';
-import { chevronUpCircle, colorPalette, globe, information, link, lockClosed, send, sync, thumbsDownOutline, thumbsUpOutline } from 'ionicons/icons';
+import { globe, information, link } from 'ionicons/icons';
 import { useEffect, useState } from 'react';
 import Tabs from '../../components/tab/Tab';
-import templateData from '../../template.json';
 import { useForm } from "react-hook-form";
-import AWS from 'aws-sdk';
 import { HTTPMethod, NetworkInfo } from '../../routes/network';
 import DOMPurify from 'dompurify';
 import packageJson from '../../../package.json';
 import Multiselect from 'multiselect-react-dropdown';
 import optimusLogo from '../../theme/assets/optimus-logo.png'
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import rehypeRaw from 'rehype-raw';
-import { Tooltip as ReactTooltip, Tooltip } from 'react-tooltip';
 import { saveAs } from 'file-saver';
-import MultiSelect from '../../components/dropdown/Dropdown';
+import SelectDropdown from '../../components/dropdown/Dropdown';
 
 type Tab = {
   answer: string;
@@ -560,20 +553,7 @@ const B2B: React.FC = () => {
                     <div className='font-bold p-4 text-sm'>I want to create a...</div>
                     
                     <div className='px-4 pb-3.5'>
-                      {/* <IonSelect placeholder="Select formats" disabled={formats.length === 0} className='min-h-10 field-item' label="Select desired format below" multiple={true} interface="popover" labelPlacement="stacked" fill="outline"
-                        {...register("format", {
-                          validate: {},
-                        })}>
-                          {formats.map((item, index) => (
-                            <>
-                              <IonSelectOption key={index} value={item.format_id}  data-tooltip-id={`tooltip${index}`} data-tooltip-content={item.format_written_description}>
-                                {item.format_name}
-                              </IonSelectOption>
-                              <Tooltip id={`tooltip${index}`} />
-                            </>
-                          ))}
-                        </IonSelect> */}
-                        <MultiSelect
+                        <SelectDropdown
                           options={formats}
                           selectedOptions={selectedFormats}
                           setSelectedOptions={setSelectedFormats}
@@ -595,15 +575,7 @@ const B2B: React.FC = () => {
                   <div className='rounded-xl text-[#000] bg-white shadow-md'>
                     <div className='font-bold p-4 text-sm'>With the purpose...</div>
                     <div className='px-4 pb-3.5'>
-                      {/* <IonSelect placeholder="Select purpose" disabled={purposes.length === 0} className='min-h-10 field-item' label="Which product/offer do you want to report on?" interface="popover" labelPlacement="stacked" fill="outline"
-                        {...register("purpose", {
-                          validate: {},
-                        })}>
-                          {purposes.map((item, index) => (
-                            <IonSelectOption key={index} value={item.purpose_id}>{item.purpose_name}</IonSelectOption>
-                          ))}
-                        </IonSelect> */}
-                        <MultiSelect
+                        <SelectDropdown
                           options={purposes}
                           selectedOptions={selectedPurpose}
                           setSelectedOptions={setSelectedPurpose}

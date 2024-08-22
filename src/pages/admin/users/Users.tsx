@@ -1,11 +1,9 @@
-import { IonAlert, IonButton, IonButtons, IonCard, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonItemOption, IonItemOptions, IonItemSliding, IonLabel, IonList, IonModal, IonPage, IonProgressBar, IonSegment, IonSegmentButton, IonSpinner, IonSplitPane, IonText, IonTitle, IonToast, IonToolbar } from '@ionic/react';
+import { IonAlert, IonButton, IonButtons, IonCard, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonItemOption, IonItemOptions, IonItemSliding, IonLabel, IonList, IonModal, IonPage, IonProgressBar, IonSegment, IonSegmentButton, IonSpinner, IonSplitPane, IonTitle, IonToast, IonToolbar } from '@ionic/react';
 import { useEffect, useRef, useState } from 'react';
 import AppHeader from '../../../components/header/Header';
 import Sidenav from '../../../components/sidenav/Sidenav';
-import { add, closeOutline, createOutline, information, listCircle, trashOutline } from 'ionicons/icons';
-import templateData from '../../../template.json';
+import { add, closeOutline, createOutline, trashOutline } from 'ionicons/icons';
 import { HTTPMethod, NetworkInfo } from '../../../routes/network';
-import { OverlayEventDetail } from '@ionic/core/components';
 import { useForm } from 'react-hook-form';
 
 interface UserAddModel {

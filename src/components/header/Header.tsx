@@ -1,4 +1,4 @@
-import { IonAvatar, IonButtons, IonCol, IonContent, IonGrid, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonMenuButton, IonPage, IonPopover, IonRouterLink, IonRow, IonTitle, IonToolbar } from '@ionic/react';
+import { IonAvatar, IonButtons, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonMenuButton, IonPopover, IonRouterLink, IonTitle, IonToolbar } from '@ionic/react';
 import './Header.css';
 import { person, power } from 'ionicons/icons';
 import { useHistory, useLocation } from 'react-router-dom';

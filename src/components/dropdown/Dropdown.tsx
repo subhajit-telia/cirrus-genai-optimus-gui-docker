@@ -4,7 +4,7 @@ import { Tooltip } from 'react-tooltip';
 import { IonIcon } from '@ionic/react';
 import { caretDownOutline, caretUpOutline, closeCircleOutline, informationCircleOutline } from 'ionicons/icons';
 
-interface MultiSelectProps<T> {
+interface SelectDropdownProps<T> {
   options: T[];
   selectedOptions: T[];
   setSelectedOptions: React.Dispatch<React.SetStateAction<T[]>>;
@@ -16,7 +16,7 @@ interface MultiSelectProps<T> {
   label:string;
 }
 
-const MultiSelect = <T extends Record<string, any>>({
+const SelectDropdown = <T extends Record<string, any>>({
   options,
   selectedOptions,
   setSelectedOptions,
@@ -26,7 +26,7 @@ const MultiSelect = <T extends Record<string, any>>({
   tooltipKey,
   placeHolder,
   label,
-}: MultiSelectProps<T>) => {
+}: SelectDropdownProps<T>) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -71,7 +71,6 @@ const MultiSelect = <T extends Record<string, any>>({
     <div className="multi-select" ref={dropdownRef}>
       <div className="multi-select-dropdown" onClick={toggleDropdown}>
         <span className='label-name'>{label}</span>
-        {/* <span className='selectedText'>{selectedOptions.length > 0 ? selectedOptions.map(option => option[nameKey]).join(', ') : placeHolder}</span> */}
         {selectedOptions.length > 0 ? (
           <div className="selected-options selectedText">
             {multiSelect ? (
@@ -114,4 +113,4 @@ const MultiSelect = <T extends Record<string, any>>({
   );
 };
 
-export default MultiSelect;
+export default SelectDropdown;

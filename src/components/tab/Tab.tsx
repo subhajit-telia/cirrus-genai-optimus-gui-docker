@@ -1,4 +1,4 @@
-import { IonButton, IonChip, IonIcon, IonSpinner, IonTextarea } from '@ionic/react';
+import { IonButton, IonIcon, IonSpinner, IonTextarea } from '@ionic/react';
 import React, { useEffect, useRef, useState } from 'react';
 import { chatbubblesOutline, closeOutline, copyOutline, createOutline, documentTextOutline, refreshOutline, send, thumbsDownOutline, thumbsUpOutline } from 'ionicons/icons';
 import ReactMarkdown from 'react-markdown';
@@ -7,7 +7,6 @@ import rehypeRaw from 'rehype-raw';
 import './Tab.css';
 import { saveAs } from 'file-saver';
 import FeedbackAlert from '../feedback/Feedback';
-import { Json } from 'aws-sdk/clients/robomaker';
 
 interface Tab {
   answer: string;
