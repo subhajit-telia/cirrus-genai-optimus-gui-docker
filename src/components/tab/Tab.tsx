@@ -12,6 +12,7 @@ interface Tab {
   answer: string;
   segment_id: string;
   segment_name: string;
+  outputs:[]
   data: [innerTab]
 }
 interface innerTab {
@@ -19,6 +20,7 @@ interface innerTab {
   format_name: string,
   answer: string,
   input_params: any
+  outputs:[]
 }
 
 interface TabsProps {
@@ -74,55 +76,64 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem }) => {
   };
 
   /* --------------Edit answer start-------------- */
-  const [editVisibility, setEditVisibility] = useState(
-    tabs.map(item => item.data ? item.data.map(() => false) : false)
+
+  const [editVisibility, setEditVisibility] = useState({ tabIndex: null, itemIndex: null, outputIndex: null });
+  const [editInputValues, setEditInputValues] = useState(
+    tabs.map(item => {
+      if (item.outputs) {
+        return (item.outputs as { answer: string }[]).map(outputItem => outputItem.answer);
+      } else if (item.data) {
+        return item.data.map(innerItem => (innerItem.outputs as { answer: string }[]).map(outputItem => outputItem.answer));
+      }
+      return [];
+    })
   );
 
-  const [editInputValues, setEditInputValues] = useState<string[][] | string[]>(
-    tabs.every(item => item.data) 
-      ? tabs.map(item => (item.data as { format_id: string; answer: string }[]).map(innerItem => innerItem.answer))
-      : tabs.map(item => item.answer)
-  );
+  const editAnswerVisibility = (tabIndex:any, itemIndex:any, outputIndex:any) => {
+    // Check if the currently active input is the same as the one being clicked
+    if (
+      editVisibility.tabIndex === tabIndex &&
+      editVisibility.itemIndex === itemIndex &&
+      editVisibility.outputIndex === outputIndex
+    ) {
+      // If it is the same, hide the input by setting editVisibility to null
+      setEditVisibility({ tabIndex: null, itemIndex: null, outputIndex: null });
+    } else {
+      // Otherwise, set the new active input
+      setEditVisibility({ tabIndex, itemIndex, outputIndex });
+    }
+  };
 
-  
+  const handleEditChange = (tabIndex:any, itemIndex:any, outputIndex:any, event:any) => {
+    const newValues = [...editInputValues];
+    if (Array.isArray(newValues[tabIndex])) {
+      if (Array.isArray(newValues[tabIndex][itemIndex])) {
+        newValues[tabIndex][itemIndex][outputIndex] = event.target.value;
+      } else {
+        newValues[tabIndex][outputIndex] = event.target.value;
+      }
+    }
+    setEditInputValues(newValues);
+  };
+  /* Edit answer end */
 
   useEffect(() => {
-    let copyAnswer = tabs.every(item => item.data) 
-      ? tabs.map(item => (item.data as { format_id: string; answer: string }[]).map(innerItem => innerItem.answer))
-      : tabs.map(item => item.answer)
+    let copyAnswer = tabs.map(item => {
+      if (item.outputs) {
+        return (item.outputs as { answer: string }[]).map(outputItem => outputItem.answer);
+      } else if (item.data) {
+        return item.data.map(innerItem => (innerItem.outputs as { answer: string }[]).map(outputItem => outputItem.answer));
+      }
+      return [];
+    })
     setEditInputValues(copyAnswer);
     console.log('editInputValues', editInputValues);
     console.log('tabs', tabs);
 
   }, [tabs]);
 
-  const editAnswerVisibility = (tabIndex: number, itemIndex: number | null = null) => {
-
-    console.log('h@@@',(editInputValues[tabIndex]))
-    const newVisibility:any = tabs.map((item, index) => {
-      if (index === tabIndex) {
-        if (itemIndex !== null && Array.isArray(editVisibility[tabIndex])) {
-          return (editVisibility[tabIndex] as boolean[]).map((isVisible, i) => i === itemIndex ? !isVisible : false);
-        } else {
-          return !editVisibility[tabIndex];
-        }
-      } else {
-        return item.data ? item.data.map(() => false) : false;
-      }
-    });
-    setEditVisibility(newVisibility);
-  };
-
-  const handleEditChange = (tabIndex:any, event:any, itemIndex:any) => {
-    const newValues:any = [...editInputValues];
-    if (itemIndex !== null && Array.isArray(newValues[tabIndex])) {
-      (newValues[tabIndex] as string[])[itemIndex] = event.target.value;
-    } else if (typeof newValues[tabIndex] === 'string') {
-      newValues[tabIndex] = event.target.value;
-    }
-    setEditInputValues(newValues);
-  };
-  /* Edit answer end */
+  
+  
   
 
   /* -------Show hide question input start------- */
@@ -185,9 +196,16 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem }) => {
   /* Show hide question input end */
 
   /* ----------Copy text to clipboard start---------- */
-  const copyToClipboard = async (text:any) => {
+  const copyToClipboard = async (identifier:any, text:any) => {
+    let content;
+    if (identifier  === 'multiple') {
+      content = text.map((item: { answer: any; }) => item.answer + '\n\n\n')
+      console.log('content>>', content);
+    }else {
+      content = text;
+    }
     try {
-      await navigator.clipboard.writeText(text);
+      await navigator.clipboard.writeText(content);
     } catch (err) {
       console.log('err', err);
     }
@@ -195,14 +213,22 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem }) => {
   /* Copy text to clipboard end */
 
   /* ---------------Export to doc start--------------- */
-  const exportToDoc = (data:any) => {
+  const exportToDoc = (identifier:any, data:any) => {
     console.log('data', data);
-    const blob = new Blob([data.answer], {
+    let content;
+    if (identifier  === 'multiple') {
+      content = data.map((item: { answer: any; }) => item.answer + '\n\n\n')
+      console.log('content>>', content);
+    }else {
+      content = data;
+    }
+
+    const blob = new Blob([content], {
       type: 'application/msword;charset=utf-8',
     });
   
     // Save the file
-    saveAs(blob, data.format_name);
+    saveAs(blob, 'optimus.doc');
   };
   /* Export to doc end */
 
@@ -249,25 +275,55 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem }) => {
                       <h3 className='capitalize'>{tabItem.format_name}</h3>
                     }
 
-                    {tabItem.answer ?
+                    {tabItem.outputs.length !== 0 ?
                       <>
-                        {editVisibility[tabIndex] && Array.isArray(editVisibility[tabIndex]) && editVisibility[tabIndex][itemIndex] ? 
-                          <IonTextarea
-                            className='bottom-textarea rounded-xl text-black'
-                            aria-label="Custom textarea"
-                            placeholder="Write your question."
-                            autoGrow={true}
-                            counter={true}
-                            maxlength={2000}
-                            value={(editInputValues[tabIndex] as string[])[itemIndex]}
-                            onIonInput={(event) => handleEditChange(tabIndex, event, itemIndex)}
-                          >
-                            <IonButton title='Copy text' onClick={() => copyToClipboard((editInputValues[tabIndex] as string[])[itemIndex])} size="small" fill="clear" slot="end" >
-                              <IonIcon className='text-primary' slot="icon-only" icon={copyOutline}></IonIcon>
-                            </IonButton>
-                          </IonTextarea>
-                          :
-                          <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} children={tabItem.answer}/>
+                        {tabItem.outputs.map((outputItem:any, outputIndex) => (
+                          <div className='shadow-md rounded-md p-2 mb-1.5'>
+                            <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} children={outputItem.answer}/>
+
+                            {/* Edit answer for each output */}
+                            {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === itemIndex && editVisibility.outputIndex === outputIndex && 
+                              <IonTextarea
+                                className='bottom-textarea rounded-xl mt-5 mb-2.5 text-black'
+                                aria-label="Custom textarea"
+                                placeholder="Write your question."
+                                autoGrow={true}
+                                counter={true}
+                                maxlength={2000}
+                                value={editInputValues[tabIndex][itemIndex][outputIndex]}
+                                onIonInput={(event) => handleEditChange(tabIndex, itemIndex, outputIndex, event)}
+                              >
+                                <IonButton title='Copy text' onClick={() => copyToClipboard('single', editInputValues[tabIndex][itemIndex][outputIndex])} size="small" fill="clear" slot="end" >
+                                  <IonIcon className='text-primary' slot="icon-only" icon={copyOutline}></IonIcon>
+                                </IonButton>
+                              </IonTextarea>
+                            }
+                            {/* Action buttons for each output */}
+                            <div className='flex items-center justify-between'>
+                              <div>
+                                <IonIcon title='Positive' onClick={() => openFeedbackAlert(outputItem.input_params.session_id, 'positive')} className='mr-2.5 cursor-pointer hover:text-primary' slot="icon-only" icon={thumbsUpOutline}></IonIcon>
+                                <IonIcon title='Negative' onClick={() => openFeedbackAlert(outputItem.input_params.session_id, 'negative')} className='mr-2.5 cursor-pointer hover:text-primary' slot="icon-only" icon={thumbsDownOutline}></IonIcon>
+                              </div>
+                              <div>
+                                <IonButton fill="clear" title='Copy text' className='text-xs' onClick={() => copyToClipboard('single', outputItem.answer)} shape="round">
+                                  <IonIcon className='' slot="icon-only" icon={copyOutline}></IonIcon>
+                                </IonButton>
+                                <IonButton fill="clear" title='Edit answer' className='text-xs' onClick={() => editAnswerVisibility(tabIndex, itemIndex, outputIndex)} shape="round">
+                                  {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === itemIndex && editVisibility.outputIndex === outputIndex ? 
+                                    <IonIcon className='' slot="icon-only" icon={closeOutline}></IonIcon>
+                                  :
+                                    <IonIcon className='' slot="icon-only" icon={createOutline}></IonIcon>
+                                  }
+                                </IonButton>
+                                <IonButton fill="clear" title='Download as .doc' className='text-xs' onClick={() => exportToDoc('single', outputItem.answer)} shape="round">
+                                  <IonIcon className='' slot="icon-only" icon={documentTextOutline}></IonIcon>
+                                </IonButton>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                        {!tabItem.answer &&
+                          <IonSpinner name="dots"></IonSpinner>
                         }
                         
                         {inputVisibility[tabIndex] && Array.isArray(inputVisibility[tabIndex]) && inputVisibility[tabIndex][itemIndex] && (
@@ -286,11 +342,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem }) => {
                             </IonButton>
                           </IonTextarea>
                         )}
-                        <div className='flex items-center justify-between'>
-                          <div>
-                            <IonIcon onClick={() => openFeedbackAlert(tabItem.input_params.session_id, 'positive')} className='mr-2.5 cursor-pointer hover:text-primary' slot="icon-only" icon={thumbsUpOutline}></IonIcon>
-                            <IonIcon onClick={() => openFeedbackAlert(tabItem.input_params.session_id, 'negative')} className='mr-2.5 cursor-pointer hover:text-primary' slot="icon-only" icon={thumbsDownOutline}></IonIcon>
-                          </div>
+                        <div className='text-right'>
                           <div>
                             <IonButton title='Chat with answer' onClick={() => toggleInputVisibility(tabIndex, itemIndex)} className='text-xs' shape="round">
                               {inputVisibility[tabIndex] && Array.isArray(inputVisibility[tabIndex]) && inputVisibility[tabIndex][itemIndex] ? 
@@ -302,17 +354,10 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem }) => {
                             <IonButton title='Regenarate answer' className='text-xs' onClick={() => handleButtonClick('regenarate', tabIndex, itemIndex, tabItem.input_params)} shape="round">
                               <IonIcon className='' slot="icon-only" icon={refreshOutline}></IonIcon>
                             </IonButton>
-                            <IonButton title='Copy text' className='text-xs' onClick={() => copyToClipboard(tabItem.answer)} shape="round">
+                            <IonButton title='Copy all' className='text-xs' onClick={() => copyToClipboard('multiple', tabItem.outputs)} shape="round">
                               <IonIcon className='' slot="icon-only" icon={copyOutline}></IonIcon>
                             </IonButton>
-                            <IonButton title='Edit answer' className='text-xs' onClick={() => editAnswerVisibility(tabIndex, itemIndex)} shape="round">
-                              {editVisibility[tabIndex] && Array.isArray(editVisibility[tabIndex]) && editVisibility[tabIndex][itemIndex] ? 
-                                <IonIcon className='' slot="icon-only" icon={closeOutline}></IonIcon>
-                              :
-                                <IonIcon className='' slot="icon-only" icon={createOutline}></IonIcon>
-                              }
-                            </IonButton>
-                            <IonButton title='Download as .doc' className='text-xs' onClick={() => exportToDoc(tabItem)} shape="round">
+                            <IonButton title='Download all' className='text-xs' onClick={() => exportToDoc('multiple', tabItem.outputs)} shape="round">
                               <IonIcon className='' slot="icon-only" icon={documentTextOutline}></IonIcon>
                             </IonButton>
                           </div>
@@ -336,31 +381,60 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem }) => {
                 <h3 className='capitalize'>{tabItem.format_name}</h3>
               }
 
-              {tabItem.answer ?
+              {tabItem.outputs.length !== 0 ?
                 <>
-                  {typeof editVisibility[tabIndex] === 'boolean' && editVisibility[tabIndex] ?
-                    <IonTextarea
-                      className='bottom-textarea rounded-xl text-black'
-                      aria-label="Custom textarea"
-                      placeholder="Write your question."
-                      autoGrow={true}
-                      counter={true}
-                      maxlength={2000}
-                      value={editInputValues[tabIndex] as string}
-                      onIonInput={(event) => handleEditChange(tabIndex, event, null)}
-                    >
-                      <IonButton title='Copy text' onClick={() => copyToClipboard(editInputValues[tabIndex] as string)} size="small" fill="clear" slot="end" >
-                        <IonIcon className='text-primary' slot="icon-only" icon={copyOutline}></IonIcon>
-                      </IonButton>
-                    </IonTextarea>
-                    
-                  :
-                    <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} children={tabItem.answer}/>
+                  {tabItem.outputs.map((outputItem:any, outputIndex:number) => (
+                    <div key={outputIndex} className='shadow-md rounded-md p-2 mb-1.5'>
+                      <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} children={outputItem.answer}/>
+                      
+                      {/* Edit answer for each output */}
+                      {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === null && editVisibility.outputIndex === outputIndex && (
+                        <IonTextarea
+                          className='bottom-textarea rounded-xl text-black'
+                          aria-label="Custom textarea"
+                          placeholder="Write your question."
+                          autoGrow={true}
+                          counter={true}
+                          maxlength={2000}
+                          value={editInputValues[tabIndex][outputIndex] as string}
+                          onIonInput={(event) => handleEditChange(tabIndex,null,outputIndex, event)}
+                        >
+                          <IonButton title='Copy text' onClick={() => copyToClipboard('single', editInputValues[tabIndex][outputIndex] as string)} size="small" fill="clear" slot="end" >
+                            <IonIcon className='text-primary' slot="icon-only" icon={copyOutline}></IonIcon>
+                          </IonButton>
+                        </IonTextarea>
+                      )}
+                      {/* Action buttons for each output */}
+                      <div className='flex items-center justify-between'>
+                        <div>
+                          <IonIcon title='Positive' onClick={() => openFeedbackAlert(outputItem.input_params.session_id, 'positive')} className='mr-2.5 cursor-pointer hover:text-primary' slot="icon-only" icon={thumbsUpOutline}></IonIcon>
+                          <IonIcon title='Negative' onClick={() => openFeedbackAlert(outputItem.input_params.session_id, 'negative')} className='mr-2.5 cursor-pointer hover:text-primary' slot="icon-only" icon={thumbsDownOutline}></IonIcon>
+                        </div>
+                        <div >
+                          <IonButton fill="clear" title='Copy text' className='text-xs' onClick={() => copyToClipboard('single', editInputValues[tabIndex][outputIndex] as string)} shape="round">
+                            <IonIcon className='' slot="icon-only" icon={copyOutline}></IonIcon>
+                          </IonButton>
+                          <IonButton fill="clear" title='Edit answer' className='text-xs' onClick={() => editAnswerVisibility(tabIndex, null, outputIndex)} shape="round">
+                            {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === null && editVisibility.outputIndex === outputIndex ?
+                              <IonIcon className='' slot="icon-only" icon={closeOutline}></IonIcon>
+                            :
+                              <IonIcon className='' slot="icon-only" icon={createOutline}></IonIcon>
+                            }
+                          </IonButton>
+                          <IonButton fill="clear" title='Download as .doc' className='text-xs' onClick={() => exportToDoc('single', outputItem.answer)} shape="round">
+                            <IonIcon className='' slot="icon-only" icon={documentTextOutline}></IonIcon>
+                          </IonButton>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  {!tabItem.answer &&
+                    <IonSpinner name="dots"></IonSpinner>
                   }
                   
                   {typeof inputVisibility[tabIndex] === 'boolean' && inputVisibility[tabIndex] && (
                     <IonTextarea
-                      className='bottom-textarea rounded-xl text-black'
+                      className='bottom-textarea rounded-xl mt-5 mb-2.5 text-black'
                       aria-label="Custom textarea"
                       placeholder="Write your question."
                       autoGrow={true}
@@ -374,36 +448,24 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem }) => {
                       </IonButton>
                     </IonTextarea>
                   )}
-                  <div className='flex items-center justify-between'>
-                    <div>
-                      <IonIcon onClick={() => openFeedbackAlert(tabItem.input_params.session_id, 'positive')} className='mr-2.5 cursor-pointer hover:text-primary' slot="icon-only" icon={thumbsUpOutline}></IonIcon>
-                      <IonIcon onClick={() => openFeedbackAlert(tabItem.input_params.session_id, 'negative')} className='mr-2.5 cursor-pointer hover:text-primary' slot="icon-only" icon={thumbsDownOutline}></IonIcon>
-                    </div>
-                    <div>
-                      <IonButton onClick={() => toggleInputVisibility(tabIndex, null)} className='text-xs' shape="round">
-                      {typeof inputVisibility[tabIndex] === 'boolean' && inputVisibility[tabIndex] ? 
-                        <IonIcon className='' slot="icon-only" icon={closeOutline}></IonIcon>
-                        :
-                        <IonIcon className='' slot="icon-only" icon={chatbubblesOutline}></IonIcon>
-                      }
-                      </IonButton>
-                      <IonButton className='text-xs' onClick={() => handleButtonClick('regenarate', tabIndex, '', tabItem.input_params)} shape="round">
-                        <IonIcon className='' slot="icon-only" icon={refreshOutline}></IonIcon>
-                      </IonButton>
-                      <IonButton  className='text-xs' onClick={() => copyToClipboard(tabItem.answer)} shape="round">
-                        <IonIcon className='' slot="icon-only" icon={copyOutline}></IonIcon>
-                      </IonButton>
-                      <IonButton  className='text-xs' onClick={() => editAnswerVisibility(tabIndex, null)} shape="round">
-                        {typeof editVisibility[tabIndex] === 'boolean' && editVisibility[tabIndex] ?
+                  <div className='text-right'>
+                      <IonButton fill="clear" title='Chat with answer' onClick={() => toggleInputVisibility(tabIndex, null)} className='text-xs' shape="round">
+                        {typeof inputVisibility[tabIndex] === 'boolean' && inputVisibility[tabIndex] ? 
                           <IonIcon className='' slot="icon-only" icon={closeOutline}></IonIcon>
-                        :
-                          <IonIcon className='' slot="icon-only" icon={createOutline}></IonIcon>
+                          :
+                          <IonIcon className='' slot="icon-only" icon={chatbubblesOutline}></IonIcon>
                         }
                       </IonButton>
-                      <IonButton title='Download as .doc' className='text-xs' onClick={() => exportToDoc(tabItem)} shape="round">
+                      <IonButton fill="clear" title='Regenarate' className='text-xs' onClick={() => handleButtonClick('regenarate', tabIndex, '', tabItem.input_params)} shape="round">
+                        <IonIcon className='' slot="icon-only" icon={refreshOutline}></IonIcon>
+                      </IonButton>
+                      <IonButton fill="clear" title='Copy all' className='text-xs' onClick={() => copyToClipboard('multiple', tabItem.outputs)} shape="round">
+                        <IonIcon className='' slot="icon-only" icon={copyOutline}></IonIcon>
+                      </IonButton>
+                      
+                      <IonButton fill="clear" title='Download all' className='text-xs' onClick={() => exportToDoc('multiple', tabItem.outputs)} shape="round">
                         <IonIcon className='' slot="icon-only" icon={documentTextOutline}></IonIcon>
                       </IonButton>
-                    </div>
                   </div>
                 </>
               :
