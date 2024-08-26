@@ -46,6 +46,10 @@ body {
     font-family: 'TeliaFont', sans-serif;
     scrollbar-color: #888 #f1f1f1; 
 }
+ul {
+    padding-inline-start: 30px;
+    list-style:disc;
+}
 
 .page-body {
     --background: #F4F4F9;
