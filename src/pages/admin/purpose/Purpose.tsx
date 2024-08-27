@@ -91,6 +91,7 @@ const Purpose: React.FC = () => {
     setValue("purpose_definition", _value.purpose_definition);
     setValue("purpose_written_description", _value.purpose_written_description);
     setValue("purpose_name", _value.purpose_name);
+    setValue("purpose_id", _value.purpose_id);
 
     if (_value.b2b === 1) {
       setValue("b2b", true);
@@ -116,7 +117,13 @@ const Purpose: React.FC = () => {
     payLoad.purpose_name = data.purpose_name;
     payLoad.purpose_definition = data.purpose_definition;
     payLoad.purpose_written_description = data.purpose_written_description;
-    payLoad.purpose_id = `${data.purpose_name.replace(/\s+/g, '')}`;
+    
+
+    if (isEdit) {
+      payLoad.purpose_id = getValues("purpose_id");
+    }else {
+      payLoad.purpose_id = `${data.purpose_name.replace(/\s+/g, '')}`;
+    }
 
     if (data.b2b === true) {
       payLoad.b2b = 1;
@@ -203,6 +210,7 @@ const Purpose: React.FC = () => {
     handleSubmit: handleSubmit,
     reset,
     setValue,
+    getValues,
     watch,
     formState: { errors }
   } = useForm<PurposeAddModel>({
