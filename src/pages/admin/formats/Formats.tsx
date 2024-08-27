@@ -98,6 +98,7 @@ const Formats: React.FC = () => {
     setValue("format_class_definition", _value.format_class_definition);
     setValue("format_written_description", _value.format_written_description);
     setValue("format_name", _value.format_name);
+    setValue("format_id", _value.format_id);
     setValue("format_class_name", _value.format_class_name);
     if (_value.b2b === 1) {
       setValue("b2b", true);
@@ -128,8 +129,13 @@ const Formats: React.FC = () => {
     payLoad.format_name = data.format_name;
     payLoad.format_class_definition = data.format_class_definition;
     payLoad.format_written_description = data.format_written_description;
-    payLoad.format_id = `${data.format_name.replace(/\s+/g, '')}${data.b2b === true ? 'B2B' : ''}${data.b2c === true ? 'B2C' : ''}`
     payLoad.format_class_name = data.format_class_name;
+
+    if (isEdit) {
+      payLoad.format_id = getValues("format_id");
+    }else {
+      payLoad.format_id = `${data.format_name.replace(/\s+/g, '')}${data.b2b === true ? 'B2B' : ''}${data.b2c === true ? 'B2C' : ''}`
+    }
     
     if (data.b2b === true) {
       payLoad.b2b = 1;
@@ -221,6 +227,7 @@ const Formats: React.FC = () => {
     handleSubmit: handleSubmit,
     reset,
     setValue,
+    getValues,
     watch,
     formState: { errors }
   } = useForm<FormatAddModel>({

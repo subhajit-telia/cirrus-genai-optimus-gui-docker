@@ -88,6 +88,7 @@ const Segments: React.FC = () => {
     console.log('_value', _value);
     setValue("segment_definition", _value.segment_definition);
     setValue("segment_name", _value.segment_name);
+    setValue("segment_id", _value.segment_id);
 
     if (_value.b2b === 1) {
       setValue("b2b", true);
@@ -105,20 +106,20 @@ const Segments: React.FC = () => {
     setTargetIndex(_index);
   }
   /* handle edit end */
-  
-  /* check password hashed or not start */
-  const isBcryptHash = (password:any) => {
-    return typeof password === 'string' && password.length === 60 && (password.startsWith('$2a$') || password.startsWith('$2b$') || password.startsWith('$2y$'));
-  };
-  /* check password hashed or not end */
 
   /* -----------Handle form submit start----------- */
   const handleFormSubmit = async (data: any) => {
     console.log('handleFormSubmit', data);
+    console.log('isEdit', isEdit);
     let payLoad:any = {};
     payLoad.segment_name = data.segment_name;
     payLoad.segment_definition = data.segment_definition;
-    payLoad.segment_id = `${data.segment_name.replace(/\s+/g, '')}`;
+    if (isEdit) {
+      payLoad.segment_id = getValues("segment_id");
+    }else {
+      payLoad.segment_id = `${data.segment_name.replace(/\s+/g, '')}`;
+    }
+    
 
     if (data.b2b === true) {
       payLoad.b2b = 1;
@@ -205,6 +206,7 @@ const Segments: React.FC = () => {
     handleSubmit: handleSubmit,
     reset,
     setValue,
+    getValues,
     watch,
     formState: { errors }
   } = useForm<SegmentAddModel>({
