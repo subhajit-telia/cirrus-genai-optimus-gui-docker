@@ -143,7 +143,7 @@ const B2B: React.FC = () => {
   const getProductsData = async () => {
     setLoadingProducts(true);
     try {
-      const urlData =NetworkInfo.URL + '/resource/get?table=products_b2b&use_case=content_creation_b2b&columns=product_id&columns=product_name';
+      const urlData =NetworkInfo.URL + '/resource/get?table=products_b2b&columns=product_id&columns=product_name';
 
       const response = await fetch(urlData);
       const responseData = await response.json();
@@ -257,7 +257,7 @@ const B2B: React.FC = () => {
           outputs: []
         }]
       }));
-    } else if (data.segment.length === 0 && data.format !== undefined && data.format !== '') {
+    } else if (data.segment.length === 0 && data.format !== undefined && data.format !== '' && data.format.length !== 0) {
       console.log('>>>C');
       arrayNoSegment = data.format.map((format: any) => ({
         format_id: format,
@@ -284,7 +284,7 @@ const B2B: React.FC = () => {
       setTabs(arrayTab);
     } else {
       console.log('>>>4');
-      if ((data.format === undefined || data.format === '') && data.question === '') {
+      if ((data.format === undefined || data.format === '' || data.format.length === 0) && data.question === '') {
         setIsShowError(true);
         setIsErrorMsg('You have to choose any format or write any prompts.');
       } else {
@@ -332,7 +332,7 @@ const B2B: React.FC = () => {
         });
       });
       setTabs(arrayTab);
-    } else if (data.format !== undefined && data.format !== '' && data.segment.length === 0) {
+    } else if (data.format !== undefined && data.format !== '' && data.format.length !== 0 && data.segment.length === 0) {
       console.log('>>>2');
       data.format.forEach((format: any) => {
         let eachItem = {
@@ -522,11 +522,15 @@ const B2B: React.FC = () => {
       <AppHeader/>
       <IonContent className='page-body'>
         <div className='max-w-[80%] m-auto relative'>
-          <form onSubmit={handleSubmit(handleFormSubmit)} className="w-full">
-            <div className='text-center'>
+          <div className='text-center relative'>
+            {tabs.length > 0 &&
+              <IonChip onClick={handleReset} className='absolute left-0 top-1/2 translate-x-0 text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Clear all</IonChip>
+            }
               <img className='m-auto' src={optimusLogo} />
-              <p className="text-black">AI-assistance</p>
-            </div>
+            <p className="text-black">AI-assistance</p>
+          </div>
+          <form className='w-full' onSubmit={handleSubmit(handleFormSubmit)}>
+            
             <IonGrid>
               <IonRow>
                 <IonCol size="12" size-lg="4" size-md="4" size-sm="12">
@@ -642,7 +646,23 @@ const B2B: React.FC = () => {
             </IonGrid>
             
             
-            {tabs.length > 0 ?
+            
+              <div className='text-center mt-6'>
+                <IonButton type='submit' className='btn-primary' shape="round">
+                {loading && <IonSpinner className='mr-2' name="bubbles"></IonSpinner>}
+                {tabs.length === 0 && !loading ?
+                  'Generate'
+                : tabs.length !== 0 && loading ?
+                  'Generating...'
+                :
+                  'Regenerate all'
+                }
+                </IonButton>
+              </div>
+            
+          </form>
+
+          {tabs.length > 0 &&
             <IonGrid>
               <IonRow>
                 <IonCol>
@@ -652,21 +672,13 @@ const B2B: React.FC = () => {
                       <IonChip onClick={() => handleFormSubmit(requestData)} className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Rewrite all suggestions</IonChip>
                       <IonChip disabled className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Send to contentful</IonChip>
                       <IonChip onClick={() => exportToDoc(tabs)} className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Save all suggestions to word.doc</IonChip>
-                      <IonChip onClick={handleReset} className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Create new task</IonChip>
+                      {/* <IonChip onClick={handleReset} className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Create new task</IonChip> */}
                     </div>
                   </div>
                 </IonCol>
               </IonRow>
             </IonGrid>
-            :
-            <div className='text-center mt-6'>
-              <IonButton type='submit' className='btn-primary' shape="round">
-              {loading && <IonSpinner className='mr-2' name="bubbles"></IonSpinner>}
-                Generate
-              </IonButton>
-            </div>
-            }
-          </form>
+          }
         </div>
 
         <IonFab slot="fixed" vertical="bottom" horizontal="end">

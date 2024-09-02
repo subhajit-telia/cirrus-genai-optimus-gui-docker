@@ -119,6 +119,10 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem }) => {
   /* Edit answer end */
 
   useEffect(() => {
+    if (tabs[0].data && tabs.length === 1) {
+      setActiveTab(tabs[0].segment_id)
+    }
+    
     let copyAnswer = tabs.map(item => {
       if (item.outputs) {
         return (item.outputs as { answer: string }[]).map(outputItem => outputItem.answer);
@@ -129,7 +133,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem }) => {
     })
     setEditInputValues(copyAnswer);
     console.log('editInputValues', editInputValues);
-    console.log('tabs', tabs);
+    console.log('tabs>><<', tabs);
 
   }, [tabs]);
 
@@ -345,14 +349,14 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem }) => {
                         )}
                         <div className='text-right'>
                           <div>
-                            <IonButton data-tooltip-id='tooltip' data-tooltip-content='Chat with answer' onClick={() => toggleInputVisibility(tabIndex, itemIndex)} className='text-xs' shape="round">
+                            <IonButton data-tooltip-id='tooltip' data-tooltip-content='Refine Answer' onClick={() => toggleInputVisibility(tabIndex, itemIndex)} className='text-xs' shape="round">
                               {inputVisibility[tabIndex] && Array.isArray(inputVisibility[tabIndex]) && inputVisibility[tabIndex][itemIndex] ? 
                                 <IonIcon className='' slot="icon-only" icon={closeOutline}></IonIcon>
                                 :
                                 <IonIcon className='' slot="icon-only" icon={chatbubblesOutline}></IonIcon>
                               }
                             </IonButton>
-                            <IonButton data-tooltip-id='tooltip' data-tooltip-content='Regenarate' className='text-xs' onClick={() => handleButtonClick('regenarate', tabIndex, itemIndex, tabItem.input_params)} shape="round">
+                            <IonButton data-tooltip-id='tooltip' data-tooltip-content='Regenerate' className='text-xs' onClick={() => handleButtonClick('regenarate', tabIndex, itemIndex, tabItem.input_params)} shape="round">
                               <IonIcon className='' slot="icon-only" icon={refreshOutline}></IonIcon>
                             </IonButton>
                             <IonButton data-tooltip-id='tooltip' data-tooltip-content='Copy all' className='text-xs' onClick={() => copyToClipboard('multiple', tabItem.outputs)} shape="round">
@@ -450,22 +454,22 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem }) => {
                     </IonTextarea>
                   )}
                   <div className='text-right'>
-                      <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Chat with answer' onClick={() => toggleInputVisibility(tabIndex, null)} className='text-xs' shape="round">
+                      <IonButton data-tooltip-id='tooltip' data-tooltip-content='Refine Answer' onClick={() => toggleInputVisibility(tabIndex, null)} className='text-xs' shape="round">
                         {typeof inputVisibility[tabIndex] === 'boolean' && inputVisibility[tabIndex] ? 
-                          <IonIcon className='' slot="icon-only" icon={closeOutline}></IonIcon>
+                          <IonIcon slot="icon-only" icon={closeOutline}></IonIcon>
                           :
-                          <IonIcon className='' slot="icon-only" icon={chatbubblesOutline}></IonIcon>
+                          <IonIcon slot="icon-only" icon={chatbubblesOutline}></IonIcon>
                         }
                       </IonButton>
-                      <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Regenarate' className='text-xs' onClick={() => handleButtonClick('regenarate', tabIndex, '', tabItem.input_params)} shape="round">
-                        <IonIcon className='' slot="icon-only" icon={refreshOutline}></IonIcon>
+                      <IonButton data-tooltip-id='tooltip' data-tooltip-content='Regenerate' className='text-xs' onClick={() => handleButtonClick('regenarate', tabIndex, '', tabItem.input_params)} shape="round">
+                        <IonIcon slot="icon-only" icon={refreshOutline}></IonIcon>
                       </IonButton>
-                      <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Copy all' className='text-xs' onClick={() => copyToClipboard('multiple', tabItem.outputs)} shape="round">
-                        <IonIcon className='' slot="icon-only" icon={copyOutline}></IonIcon>
+                      <IonButton data-tooltip-id='tooltip' data-tooltip-content='Copy all' className='text-xs' onClick={() => copyToClipboard('multiple', tabItem.outputs)} shape="round">
+                        <IonIcon slot="icon-only" icon={copyOutline}></IonIcon>
                       </IonButton>
                       
-                      <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Download all' className='text-xs' onClick={() => exportToDoc('multiple', tabItem.outputs)} shape="round">
-                        <IonIcon className='' slot="icon-only" icon={documentTextOutline}></IonIcon>
+                      <IonButton data-tooltip-id='tooltip' data-tooltip-content='Download all' className='text-xs' onClick={() => exportToDoc('multiple', tabItem.outputs)} shape="round">
+                        <IonIcon slot="icon-only" icon={documentTextOutline}></IonIcon>
                       </IonButton>
                   </div>
                 </>
