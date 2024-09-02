@@ -46,6 +46,11 @@ body {
     font-family: 'TeliaFont', sans-serif;
     scrollbar-color: #888 #f1f1f1; 
 }
+.disabled {
+    pointer-events: none;
+    opacity: 0.6;
+    cursor: not-allowed;
+}
 ul {
     padding-inline-start: 30px;
     list-style:disc;
@@ -242,5 +247,8 @@ ion-textarea .textarea-wrapper-inner .native-wrapper .native-textarea {
     }
     ion-button ion-icon , ion-fab-button ion-icon {
         color: var(--color-white) !important;
+    }
+    ion-button.button-clear ion-icon {
+        color: var(--color-primary) !important;
     }
 }
