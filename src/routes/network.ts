@@ -5,6 +5,10 @@ class NetworkInfo {
             : import.meta.env.VITE_API_URL;
 }
 
+class AccessToken {
+    static readonly "removed": string = 'REMOVED';
+}
+
 class HTTPMethod {
     static readonly GET: string = "get";
     static readonly POST: string = "post";
@@ -14,4 +18,4 @@ class HTTPMethod {
 
 }
 
-export {NetworkInfo, HTTPMethod};
+export {NetworkInfo, AccessToken, HTTPMethod};
