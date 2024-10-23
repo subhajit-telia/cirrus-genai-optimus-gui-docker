@@ -47,7 +47,7 @@ const Login: React.FC = () => {
     console.log('segmentValue', segmentValue);
 
     if (segmentValue === 'tcad') {
-      formUrl = NetworkInfo.URL + '/tcad_login/check';
+      formUrl = apiUrl + '/tcad_login/check';
     }else {
       formUrl = apiUrl + '/login/check';
     }
