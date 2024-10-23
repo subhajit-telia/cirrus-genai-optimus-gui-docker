@@ -26,8 +26,10 @@ const Login: React.FC = () => {
   const [segmentValue, setSegmentValue] = useState('tcad');
   const history = useHistory();
   const { login } = useAuth();
-  useEffect(() => {
+  const apiUrl = window.RUNTIME_ENV?.REACT_APP_API_URL || NetworkInfo.URL;
 
+  useEffect(() => {
+    console.log(`Using API URL: ${apiUrl}`);
     
   }, []);
 
@@ -47,7 +49,7 @@ const Login: React.FC = () => {
     if (segmentValue === 'tcad') {
       formUrl = NetworkInfo.URL + '/tcad_login/check';
     }else {
-      formUrl = NetworkInfo.URL + '/login/check';
+      formUrl = apiUrl + '/login/check';
     }
 
     try {
