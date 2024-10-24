@@ -4,7 +4,7 @@ import AppHeader from '../../../components/header/Header';
 import Sidenav from '../../../components/sidenav/Sidenav';
 import { add, closeOutline, createOutline, listCircle, trashOutline } from 'ionicons/icons';
 import templateData from '../../../template.json';
-import { HTTPMethod, NetworkInfo } from '../../../routes/network';
+import { AccessToken, HTTPMethod, NetworkInfo } from '../../../routes/network';
 import { OverlayEventDetail } from '@ionic/core/components';
 import { useForm } from 'react-hook-form';
 import ReactMarkdown from 'react-markdown';
@@ -51,6 +51,7 @@ const Examples: React.FC = () => {
   const [formats, setFormats] = useState<Formats[]>([]);
   const [isShowError, setIsShowError] = useState(false);
   const [isErrorMsg, setIsErrorMsg] = useState('');
+  const apiUrl = window.RUNTIME_ENV?.REACT_APP_API_URL || NetworkInfo.URL;
 
   useEffect(() => {
 
@@ -64,9 +65,15 @@ const Examples: React.FC = () => {
   const getExamplesData = async () => {
     setLoading(true);
     try {
-      const urlData = NetworkInfo.URL + '/resource/get?table=examples';
+      const urlData = apiUrl + '/resource/get?table=examples';
 
-      const response = await fetch(urlData);
+      const response = await fetch(urlData, {
+        method: 'GET',
+        headers: {
+          '"removed"': AccessToken."removed",
+          'Content-Type': 'application/json',
+        },
+      });
       const responseData = await response.json();
       console.log("Success:", responseData);
 
@@ -85,9 +92,15 @@ const Examples: React.FC = () => {
   /* -------------get segments data start------------- */
   const getSegmentsData = async () => {
     try {
-      const urlData =NetworkInfo.URL + '/resource/get?table=segments&use_case=content_creation_b2c&columns=segment_id&columns=segment_name';
+      const urlData =apiUrl + '/resource/get?table=segments&use_case=content_creation_b2c&columns=segment_id&columns=segment_name';
 
-      const response = await fetch(urlData);
+      const response = await fetch(urlData, {
+        method: 'GET',
+        headers: {
+          '"removed"': AccessToken."removed",
+          'Content-Type': 'application/json',
+        },
+      });
       const responseData = await response.json();
       console.log("Success:", responseData);
       if (response.ok) {
@@ -103,9 +116,15 @@ const Examples: React.FC = () => {
   /* -------------get purposes data start------------- */
   const getPurposesData = async () => {
     try {
-      const urlData =NetworkInfo.URL + '/resource/get?table=purposes&use_case=content_creation_b2c&columns=purpose_id&columns=purpose_name';
+      const urlData =apiUrl + '/resource/get?table=purposes&use_case=content_creation_b2c&columns=purpose_id&columns=purpose_name';
 
-      const response = await fetch(urlData);
+      const response = await fetch(urlData, {
+        method: 'GET',
+        headers: {
+          '"removed"': AccessToken."removed",
+          'Content-Type': 'application/json',
+        },
+      });
       const responseData = await response.json();
       console.log("Success:", responseData);
 
@@ -121,9 +140,15 @@ const Examples: React.FC = () => {
   /* -------------get formats data start------------- */
   const getFormatsData = async () => {
     try {
-      const urlData =NetworkInfo.URL + '/resource/get?table=formats&use_case=content_creation_b2c&columns=format_id&columns=format_name';
+      const urlData =apiUrl + '/resource/get?table=formats&use_case=content_creation_b2c&columns=format_id&columns=format_name';
 
-      const response = await fetch(urlData);
+      const response = await fetch(urlData, {
+        method: 'GET',
+        headers: {
+          '"removed"': AccessToken."removed",
+          'Content-Type': 'application/json',
+        },
+      });
       const responseData = await response.json();
       console.log("Success:", responseData);
       
@@ -263,7 +288,7 @@ const Examples: React.FC = () => {
   }
   const handleExamplesUpdate = async (allExample: ExampleAddModel[]) => {
     setLoading(true);
-    let formUrl = NetworkInfo.URL + '/resource/put';
+    let formUrl = apiUrl + '/resource/put';
     console.log('payload', allExample);
 
     let updatedExamples = allExample;
@@ -277,8 +302,9 @@ const Examples: React.FC = () => {
       const response = await fetch(formUrl, {
         method: HTTPMethod.PUT,
         headers: {
-            'Content-Type': 'application/json'
-          },
+          '"removed"': AccessToken."removed",
+          'Content-Type': 'application/json'
+        },
         body: JSON.stringify(finalPayload),
       });
       const responseData = await response.json();

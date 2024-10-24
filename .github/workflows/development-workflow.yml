@@ -1,0 +1,23 @@
+name: Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - "*"
+      - "!release-please*"
+    tags:
+      - "v*"
+jobs:
+  build-docker:
+    uses: telia-company/devx-cicd-workflows-and-actions/.github/workflows/build-docker.yml@main
+    with:
+      name: "genai/ai-optimus-gui"
+      dockerRegistry: "cirrus-docker.jfrog.teliacompany.io"
+      dockerLocalRegistry: "cirrus-docker-local.jfrog.teliacompany.io"
+      pythonVirtualRepoName: "cirrus-python"
+    secrets: 
+      mirrorUsername: ${{ secrets.CIRRUS_JFROG_READER_USERNAME }}
+      mirrorPassword: ${{ secrets.CIRRUS_JFROG_READER_PASSWORD }}
+      repositoryUsername: ${{ secrets.CIRRUS_JFROG_WRITER_USERNAME }}
+      repositoryPassword: ${{ secrets.CIRRUS_JFROG_WRITER_PASSWORD }}

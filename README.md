@@ -6,11 +6,11 @@ Getting Started
 
 Ensure you have the following installed on your local development environment:
 
-•	Node.js: LTS version (preferably v16+) 
+•	Node.js: LTS version (preferably v16+) https://nodejs.org/en
 
 •	npm: Comes with Node.js. Recommended version: 6.x or higher
 
-•	Ionic CLI: You can install the Ionic CLI globally by running:
+•	Ionic CLI: You can install the Ionic CLI globally by running: https://ionicframework.com/docs/cli
 
 npm install -g @ionic/cli
 

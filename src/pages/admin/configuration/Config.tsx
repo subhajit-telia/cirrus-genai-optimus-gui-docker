@@ -4,7 +4,7 @@ import AppHeader from '../../../components/header/Header';
 import Sidenav from '../../../components/sidenav/Sidenav';
 import { add, closeOutline, createOutline, listCircle, trashOutline } from 'ionicons/icons';
 import templateData from '../../../template.json';
-import { HTTPMethod, NetworkInfo } from '../../../routes/network';
+import { AccessToken, HTTPMethod, NetworkInfo } from '../../../routes/network';
 import { OverlayEventDetail } from '@ionic/core/components';
 import { useForm } from 'react-hook-form';
 import { integer } from 'aws-sdk/clients/cloudfront';
@@ -29,6 +29,7 @@ const Config: React.FC = () => {
   const [configList, setConfigList] = useState<ConfigAddModel[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [loadingForm, setLoadingForm] = useState<boolean>(false);
+  const apiUrl = window.RUNTIME_ENV?.REACT_APP_API_URL || NetworkInfo.URL;
 
   useEffect(() => {
 
@@ -39,9 +40,16 @@ const Config: React.FC = () => {
   const getConfigData = async () => {
     setLoading(true);
     try {
-      const urlData = NetworkInfo.URL + '/config/get';
+      const urlData = apiUrl + '/config/get';
 
-      const response = await fetch(urlData);
+      const response = await fetch(urlData, {
+        method: 'GET',
+        headers: {
+          '"removed"': AccessToken."removed",
+          'Content-Type': 'application/json',
+        },
+      });
+      
       const responseData = await response.json();
       console.log("Success:", responseData);
 
@@ -85,15 +93,16 @@ const Config: React.FC = () => {
   }
   const handleConfigUpdate = async (allConfig: ConfigAddModel[]) => {
     setLoadingForm(true);
-    let formUrl = NetworkInfo.URL + '/config/put';
+    let formUrl = apiUrl + '/config/put';
     console.log('allConfig', allConfig);
     
     try {
       const response = await fetch(formUrl, {
         method: HTTPMethod.PUT,
         headers: {
-            'Content-Type': 'application/json'
-          },
+          '"removed"': AccessToken."removed",
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify(allConfig),
       });
       const responseData = await response.json();
