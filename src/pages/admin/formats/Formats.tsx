@@ -4,7 +4,7 @@ import AppHeader from '../../../components/header/Header';
 import Sidenav from '../../../components/sidenav/Sidenav';
 import { add, closeOutline, createOutline, information, listCircle, trashOutline } from 'ionicons/icons';
 import templateData from '../../../template.json';
-import { HTTPMethod, NetworkInfo } from '../../../routes/network';
+import { AccessToken, HTTPMethod, NetworkInfo } from '../../../routes/network';
 import { OverlayEventDetail } from '@ionic/core/components';
 import { useForm } from 'react-hook-form';
 import ReactMarkdown from 'react-markdown';
@@ -33,6 +33,7 @@ const Formats: React.FC = () => {
   const [targetIndex, setTargetIndex] = useState<number>();
   const [isShowError, setIsShowError] = useState(false);
   const [isErrorMsg, setIsErrorMsg] = useState('');
+  const apiUrl = window.RUNTIME_ENV?.REACT_APP_API_URL || NetworkInfo.URL;
 
   useEffect(() => {
 
@@ -43,9 +44,15 @@ const Formats: React.FC = () => {
   const getFormatsData = async () => {
     setLoading(true);
     try {
-      const urlData = NetworkInfo.URL + '/resource/get?table=formats';
+      const urlData = apiUrl + '/resource/get?table=formats';
 
-      const response = await fetch(urlData);
+      const response = await fetch(urlData, {
+        method: 'GET',
+        headers: {
+          '"removed"': AccessToken."removed",
+          'Content-Type': 'application/json',
+        },
+      });
       const responseData = await response.json();
       console.log("Success:", responseData);
 
@@ -176,7 +183,7 @@ const Formats: React.FC = () => {
   }
   const handleFormatsUpdate = async (allFormat: FormatAddModel[]) => {
     setLoading(true);
-    let formUrl = NetworkInfo.URL + '/resource/put';
+    let formUrl = apiUrl + '/resource/put';
     console.log('payload', allFormat);
 
     let updatedFormats = allFormat;
@@ -190,8 +197,9 @@ const Formats: React.FC = () => {
       const response = await fetch(formUrl, {
         method: HTTPMethod.PUT,
         headers: {
-            'Content-Type': 'application/json'
-          },
+          '"removed"': AccessToken."removed",
+          'Content-Type': 'application/json'
+        },
         body: JSON.stringify(finalPayload),
       });
       const responseData = await response.json();
