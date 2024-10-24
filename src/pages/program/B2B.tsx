@@ -7,7 +7,7 @@ import Tabs from '../../components/tab/Tab';
 import templateData from '../../template.json';
 import { useForm } from "react-hook-form";
 import AWS from 'aws-sdk';
-import { HTTPMethod, NetworkInfo } from '../../routes/network';
+import { AccessToken, HTTPMethod, NetworkInfo } from '../../routes/network';
 import DOMPurify from 'dompurify';
 import packageJson from '../../../package.json';
 import Multiselect from 'multiselect-react-dropdown';
@@ -79,6 +79,7 @@ const B2B: React.FC = () => {
   const [requestData, setRequestData] = useState('');
   const [selectedFormats, setSelectedFormats] = useState<typeof formats[0][]>([]);
   const [selectedPurpose, setSelectedPurpose] = useState<typeof purposes[0][]>([]);
+  const apiUrl = window.RUNTIME_ENV?.REACT_APP_API_URL || NetworkInfo.URL;
 
 
   useEffect(() => {
@@ -108,9 +109,15 @@ const B2B: React.FC = () => {
   const getSegmentsData = async () => {
     setLoadingSegments(true);
     try {
-      const urlData =NetworkInfo.URL + '/resource/get?table=segments&use_case=content_creation_b2b&columns=segment_id&columns=segment_name';
+      const urlData =apiUrl + '/resource/get?table=segments&use_case=content_creation_b2b&columns=segment_id&columns=segment_name';
 
-      const response = await fetch(urlData);
+      const response = await fetch(urlData, {
+        method: 'GET',
+        headers: {
+          '"removed"': AccessToken."removed",
+          'Content-Type': 'application/json',
+        },
+      });
       const responseData = await response.json();
       console.log("Success:", responseData);
       if (response.ok) {
@@ -129,9 +136,15 @@ const B2B: React.FC = () => {
   const getPurposesData = async () => {
     setLoadingPurposes(true);
     try {
-      const urlData =NetworkInfo.URL + '/resource/get?table=purposes&use_case=content_creation_b2b&columns=purpose_id&columns=purpose_name&columns=purpose_written_description';
+      const urlData =apiUrl + '/resource/get?table=purposes&use_case=content_creation_b2b&columns=purpose_id&columns=purpose_name&columns=purpose_written_description';
 
-      const response = await fetch(urlData);
+      const response = await fetch(urlData, {
+        method: 'GET',
+        headers: {
+          '"removed"': AccessToken."removed",
+          'Content-Type': 'application/json',
+        },
+      });
       const responseData = await response.json();
       console.log("Success:", responseData);
 
@@ -150,9 +163,15 @@ const B2B: React.FC = () => {
   const getProductsData = async () => {
     setLoadingProducts(true);
     try {
-      const urlData =NetworkInfo.URL + '/resource/get?table=products&use_case=content_creation_b2b&columns=product_id&columns=product_name';
+      const urlData =apiUrl + '/resource/get?table=products_b2b&columns=product_id&columns=product_name';
 
-      const response = await fetch(urlData);
+      const response = await fetch(urlData, {
+        method: 'GET',
+        headers: {
+          '"removed"': AccessToken."removed",
+          'Content-Type': 'application/json',
+        },
+      });
       const responseData = await response.json();
       console.log("Success:", responseData);
       
@@ -171,9 +190,15 @@ const B2B: React.FC = () => {
   const getFormatsData = async () => {
     setLoadingFormats(true);
     try {
-      const urlData =NetworkInfo.URL + '/resource/get?table=formats&use_case=content_creation_b2b&columns=format_id&columns=format_name&columns=format_written_description';
+      const urlData =apiUrl + '/resource/get?table=formats&use_case=content_creation_b2b&columns=format_id&columns=format_name&columns=format_written_description';
 
-      const response = await fetch(urlData);
+      const response = await fetch(urlData, {
+        method: 'GET',
+        headers: {
+          '"removed"': AccessToken."removed",
+          'Content-Type': 'application/json',
+        },
+      });
       const responseData = await response.json();
       console.log("Success:", responseData);
       
@@ -368,13 +393,13 @@ const B2B: React.FC = () => {
   };
   const handleApiCall = async (data: any) => {
     setLoading(true);
-    let formUrl = NetworkInfo.URL + '/process_json';
+    let formUrl = apiUrl + '/process_json';
     console.log('payload', data);
     try {
       const response = await fetch(formUrl, {
         method: HTTPMethod.POST,
         headers: {
-          Authorization: `Bearer`,
+          '"removed"': AccessToken."removed",
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(data),
