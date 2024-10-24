@@ -45,7 +45,7 @@ const Config: React.FC = () => {
       const response = await fetch(urlData, {
         method: 'GET',
         headers: {
-          '"removed"': `IgGuQSjs60HH0R6MTs6c9WiAZupfFYWc`,
+          '"removed"': AccessToken."removed",
           'Content-Type': 'application/json',
         },
       });
@@ -93,15 +93,16 @@ const Config: React.FC = () => {
   }
   const handleConfigUpdate = async (allConfig: ConfigAddModel[]) => {
     setLoadingForm(true);
-    let formUrl = NetworkInfo.URL + '/config/put';
+    let formUrl = apiUrl + '/config/put';
     console.log('allConfig', allConfig);
     
     try {
       const response = await fetch(formUrl, {
         method: HTTPMethod.PUT,
         headers: {
-            'Content-Type': 'application/json'
-          },
+          '"removed"': AccessToken."removed",
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify(allConfig),
       });
       const responseData = await response.json();
