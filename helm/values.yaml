@@ -11,11 +11,11 @@ deployment:
       protocol: TCP
   livenessProbe:
     httpGet:
-      path: /login
+      path: /
       port: 80
   readinessProbe:
     httpGet:
-      path: /login
+      path: /
       port: 80
   serviceAccountName: "deployment"
 
