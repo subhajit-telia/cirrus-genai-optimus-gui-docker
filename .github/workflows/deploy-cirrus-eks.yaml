@@ -1,0 +1,92 @@
+name: Deploy to Cirrus EKS
+
+on:
+  workflow_dispatch:
+    inputs:
+      cirrus_tenant:
+        required: true
+        description: "Tenant in Cirrus platform"
+        type: string
+        default: "stallions"
+      cirrus_env:
+        required: true
+        type: choice
+        options:
+          - dev
+          - stage
+          - prod
+        description: "Cirrus Environment"
+      helm_chart_name:
+        required: true
+        type: string
+        description: "telia-company/cirrus-genai-application-helm-template chart's name"
+        default: "genai-app"
+      application_name:
+        required: true
+        type: string
+        description: "Name of your application, will be used as the release name in helm"
+        default: "ai-optimus-gui"
+      helm_chart_version:
+        required: false
+        type: string
+        description: "cirrus-genai-application-helm-template chart's version, if not specified the latest version will be used"
+        default: ""
+
+jobs:
+  Deploy:
+    permissions:
+      id-"removed": write
+      contents: read    
+    runs-on: [ec2, linux, small]
+    container:
+      image: cirrus-docker.jfrog.teliacompany.io/cirrus-cicd-base:0.0.9
+      credentials:
+        username: ${{ secrets.CIRRUS_JFROG_READER_USERNAME }}
+        password:  ${{ secrets.CIRRUS_JFROG_READER_PASSWORD }}
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup AWS credentials
+        uses: telia-company/cirrus-github-actions/.github/actions/aws/setup-aws-credentials@main
+        with:
+          CIRRUS_ENV: ${{ github.event.inputs.cirrus_env }}
+          ROLE_NAME: cirrus-platform-${{ github.event.inputs.cirrus_env }}-deployment-role
+
+      - name: Add helm repo
+        env:
+            REPO_USERNAME: ${{ secrets.CIRRUS_JFROG_READER_USERNAME }}
+            REPO_PASSWORD: ${{ secrets.CIRRUS_JFROG_READER_PASSWORD }}
+            REPO_URL: "https://jfrog.teliacompany.io/artifactory/cirrus-helm/"
+        shell: bash
+        run: |
+            echo "$REPO_PASSWORD" | helm repo add helm-remote-repo "$REPO_URL" --username "$REPO_USERNAME" --password-stdin && \
+            helm repo update
+      - name: Install/upgrade helm chart
+        shell: bash
+        run: |
+            IMG_TAG=""
+            if [ -n "${{ github.event.inputs.helm_chart_version }}" ]; then
+              HELM_CHART_VERSION_OPTION="--version ${{ github.event.inputs.helm_chart_version }}"
+            fi
+
+            if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+              IMG_TAG="${GITHUB_REF_NAME:1}"
+            else
+              IMG_TAG="${GITHUB_REF_NAME}"
+            fi
+
+            IMAGE_TAG_OPTIONS="--set image.tag=$IMG_TAG"
+
+            HELM_CHART_VERSION_OPTION=""
+            if [ -n "${{ github.event.inputs.helm_chart_version }}" ]; then
+              HELM_CHART_VERSION_OPTION="--version ${{ github.event.inputs.helm_chart_version }}"
+            fi
+
+            aws eks update-kubeconfig --name cirrus-${{ github.event.inputs.cirrus_env }}-eks --region eu-north-1
+
+            HELM_COMMAND="helm upgrade --install --atomic --timeout 15m0s ${{ github.event.inputs.application_name }} helm-remote-repo/${{ github.event.inputs.helm_chart_name }} -n ${{ github.event.inputs.cirrus_tenant }} $HELM_CHART_VERSION_OPTION -f helm/values.yaml -f helm/env_values/${{ github.event.inputs.cirrus_env }}.yaml $IMAGE_TAG_OPTIONS"
+
+            echo "Executing Helm command: $HELM_COMMAND"
+            eval $HELM_COMMAND
