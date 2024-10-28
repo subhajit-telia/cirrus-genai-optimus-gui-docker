@@ -393,7 +393,7 @@ const B2C: React.FC = () => {
   };
   const handleApiCall = async (data: any) => {
     setLoading(true);
-    let formUrl = apiUrl + '/process_json/';
+    let formUrl = apiUrl + '/process_json';
     console.log('payload', data);
     try {
       const response = await fetch(formUrl, {
