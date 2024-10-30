@@ -2,19 +2,19 @@ import { IonButton, IonCard, IonCheckbox, IonCol, IonContent, IonGrid, IonInput,
 import { useEffect, useState } from 'react';
 import AppHeader from '../../../components/header/Header';
 import Sidenav from '../../../components/sidenav/Sidenav';
-import { HTTPMethod, NetworkInfo } from '../../../routes/network';
+import { AccessToken, HTTPMethod, NetworkInfo } from '../../../routes/network';
 import { useForm } from 'react-hook-form';
 
 interface ConfigAddModel {
-
-    memory_type: string;
-    model_name: string;
-    agent_type: string;
+    llm_name: string;
+    wait_min: number;
+    wait_increment: number;
+    max_attempts: number;
+    history_unit_test: boolean;
 
     quality_check_enabled: boolean;
     quality_check_retry_count: number;
     generation_max_"removed"s: number;
-    context_max_"removed"s: number;
     temperature: number;
 
 
@@ -25,6 +25,7 @@ const Config: React.FC = () => {
   const [configList, setConfigList] = useState<ConfigAddModel[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [loadingForm, setLoadingForm] = useState<boolean>(false);
+  const apiUrl = window.RUNTIME_ENV?.REACT_APP_API_URL || NetworkInfo.URL;
 
   useEffect(() => {
 
@@ -35,22 +36,33 @@ const Config: React.FC = () => {
   const getConfigData = async () => {
     setLoading(true);
     try {
-      const urlData = NetworkInfo.URL + '/config/get';
+      const urlData = apiUrl + '/config/get';
 
-      const response = await fetch(urlData);
+      const response = await fetch(urlData, {
+        method: 'GET',
+        headers: {
+          '"removed"': AccessToken."removed",
+          'Content-Type': 'application/json',
+        },
+      });
+      
       const responseData = await response.json();
       console.log("Success:", responseData);
 
       if (response.ok) {
-        setValue("agent_type", responseData.agent_type);
-        setValue("memory_type", responseData.memory_type);
-        setValue("model_name", responseData.model.model_name);
-        setValue("context_max_"removed"s", responseData.model.context_max_"removed"s);
+        setValue("quality_check_enabled", responseData.quality_check_enabled);
+        setValue("quality_check_retry_count", responseData.quality_check_retry_count);
+
+        setValue("llm_name", responseData.model.llm_name);
         setValue("generation_max_"removed"s", responseData.model.generation_max_"removed"s);
         setValue("temperature", responseData.model.temperature);
 
-        setValue("quality_check_enabled", responseData.quality_check_enabled);
-        setValue("quality_check_retry_count", responseData.quality_check_retry_count);
+        setValue("wait_min", responseData.retry.wait_min);
+        setValue("wait_increment", responseData.retry.wait_increment);
+        setValue("max_attempts", responseData.retry.max_attempts);
+
+        setValue("history_unit_test", responseData.history_unit_test);
+        
         setConfigList(responseData);
         setLoading(false);
       }
@@ -67,29 +79,36 @@ const Config: React.FC = () => {
     setLoadingForm(true);
     console.log('handleFormSubmit', data);
     let payLoad:any = configList;
-    payLoad.memory_type = data.memory_type;
-    payLoad.model.model_name = data.model_name;
-    payLoad.agent_type = data.agent_type;
-    payLoad.quality_check_retry_count = data.quality_check_retry_count;
-    payLoad.model.generation_max_"removed"s = data.generation_max_"removed"s;
-    payLoad.model.context_max_"removed"s = data.context_max_"removed"s;
-    payLoad.model.temperature = data.temperature;
+
     payLoad.quality_check_enabled = data.quality_check_enabled;
+    payLoad.quality_check_retry_count = data.quality_check_retry_count;
+
+    payLoad.model.llm_name = data.llm_name;
+    payLoad.model.generation_max_"removed"s = data.generation_max_"removed"s;
+    payLoad.model.temperature = data.temperature;
+
+    payLoad.retry.wait_min = data.wait_min;
+    payLoad.retry.wait_increment = data.wait_increment;
+    payLoad.retry.max_attempts = data.max_attempts;
+
+    payLoad.history_unit_test = data.history_unit_test;
+    
 
     console.log('payLoad', payLoad)
     handleConfigUpdate(payLoad);
   }
   const handleConfigUpdate = async (allConfig: ConfigAddModel[]) => {
     setLoadingForm(true);
-    let formUrl = NetworkInfo.URL + '/config/put';
+    let formUrl = apiUrl + '/config/put';
     console.log('allConfig', allConfig);
     
     try {
       const response = await fetch(formUrl, {
         method: HTTPMethod.PUT,
         headers: {
-            'Content-Type': 'application/json'
-          },
+          '"removed"': AccessToken."removed",
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify(allConfig),
       });
       const responseData = await response.json();
@@ -121,6 +140,7 @@ const Config: React.FC = () => {
   });
 
   const isQualityGates = watch('quality_check_enabled');
+  const isHistoryUnitTest = watch('history_unit_test');
   /* Handle form input field changes end */
 
   return (
@@ -139,33 +159,42 @@ const Config: React.FC = () => {
                 <form onSubmit={handleSubmit(handleFormSubmit)} className="w-full">
                     <IonGrid>
                         <IonRow>
+
                             <IonCol size="4">
-                                <IonInput className='mb-4 text-sm' label="Memory Type" labelPlacement="floating" fill="outline" placeholder="Enter Memory Type"
-                                {...register("memory_type", {
+                                <IonInput className='mb-4 text-sm' label="LLM Name" labelPlacement="floating" fill="outline" placeholder="Enter LLM"
+                                {...register("llm_name", {
                                     validate: {},
                                 })}
                                 ></IonInput>
                             </IonCol>
 
                             <IonCol size="4">
-                                <IonInput className='mb-4 text-sm' label="Model" labelPlacement="floating" fill="outline" placeholder="Enter Model"
-                                {...register("model_name", {
-                                    validate: {},
-                                })}
-                                ></IonInput>
-                            </IonCol>
-
-                            <IonCol size="4">
-                                <IonInput className='mb-4 text-sm' label="Agent Type" labelPlacement="floating" fill="outline" placeholder="Enter Agent Type"
-                                {...register("agent_type", {
-                                    validate: {},
-                                })}
-                                ></IonInput>
-                            </IonCol>
-
-                            <IonCol size="4">
-                                <IonInput type='number' className='mb-4 text-sm' label="Retry count" labelPlacement="floating" fill="outline" placeholder="Enter Retry count"
+                                <IonInput type='number' className='mb-4 text-sm' label="Number of retries for LLM fix answer" labelPlacement="floating" fill="outline" placeholder="Enter the value"
                                 {...register("quality_check_retry_count", {
+                                    validate: {},
+                                })}
+                                ></IonInput>
+                            </IonCol>
+
+                            <IonCol size="4">
+                                <IonInput type='number' className='mb-4 text-sm' label="Wait period (s) if LLM does not return answer" labelPlacement="floating" fill="outline" placeholder="Enter the value"
+                                {...register("wait_min", {
+                                    validate: {},
+                                })}
+                                ></IonInput>
+                            </IonCol>
+
+                            <IonCol size="4">
+                                <IonInput type='number' className='mb-4 text-sm' label="Wait increase (s) if LLM does not return answer" labelPlacement="floating" fill="outline" placeholder="Enter the value"
+                                {...register("wait_increment", {
+                                    validate: {},
+                                })}
+                                ></IonInput>
+                            </IonCol>
+
+                            <IonCol size="4">
+                                <IonInput type='number' className='mb-4 text-sm' label="Maximum times to wait for LLM to return answer" labelPlacement="floating" fill="outline" placeholder="Enter the value"
+                                {...register("max_attempts", {
                                     validate: {},
                                 })}
                                 ></IonInput>
@@ -174,14 +203,6 @@ const Config: React.FC = () => {
                             <IonCol size="4">
                                 <IonInput type='number' className='mb-4 text-sm' label="Genaration max "removed"s" labelPlacement="floating" fill="outline" placeholder="Enter Max "removed"s"
                                 {...register("generation_max_"removed"s", {
-                                    validate: {},
-                                })}
-                                ></IonInput>
-                            </IonCol>
-
-                            <IonCol size="4">
-                                <IonInput  type='number' className='mb-4 text-sm' label="Context max "removed"s" labelPlacement="floating" fill="outline" placeholder="Enter Context max "removed"s"
-                                {...register("context_max_"removed"s", {
                                     validate: {},
                                 })}
                                 ></IonInput>
@@ -205,7 +226,20 @@ const Config: React.FC = () => {
                                     console.log('event', event.detail.checked);
                                     setValue("quality_check_enabled", event.detail.checked);
                                 }}
-                                className='mb-4 text-sm' labelPlacement="start">Quality checked?</IonCheckbox>
+                                className='mb-4 text-sm' labelPlacement="start">Allowing LLM to fix answer</IonCheckbox>
+                            </IonCol>
+
+                            <IonCol size="4" className='flex items-center'>
+                                <IonCheckbox 
+                                {...register("history_unit_test", {
+                                    validate: {},
+                                })}
+                                checked={isHistoryUnitTest as boolean}
+                                onIonChange={(event: any) => {
+                                    console.log('event', event.detail.checked);
+                                    setValue("history_unit_test", event.detail.checked);
+                                }}
+                                className='mb-4 text-sm' labelPlacement="start">Save user history and feedback</IonCheckbox>
                             </IonCol>
 
                         </IonRow>

@@ -1,0 +1,23 @@
+replicaCount: 2
+
+image:
+  repository: "cirrus-docker.jfrog.teliacompany.io/genai/ai-optimus-gui"
+  pullPolicy: IfNotPresent
+
+deployment:
+  ports:
+    - name: http
+      containerPort: 80
+      protocol: TCP
+  livenessProbe:
+    httpGet:
+      path: /
+      port: 80
+  readinessProbe:
+    httpGet:
+      path: /
+      port: 80
+  serviceAccountName: "deployment"
+
+service:
+  port: 80
