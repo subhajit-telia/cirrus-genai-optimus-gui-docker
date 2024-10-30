@@ -1,6 +1,6 @@
 import React, { useState, useImperativeHandle, forwardRef } from 'react';
 import { IonAlert, IonToast } from '@ionic/react';
-import { HTTPMethod, NetworkInfo } from '../../routes/network';
+import { AccessToken, HTTPMethod, NetworkInfo } from '../../routes/network';
 
 const FeedbackAlert = forwardRef((_, ref) => {
   const [showAlert, setShowAlert] = useState(false);
@@ -8,6 +8,7 @@ const FeedbackAlert = forwardRef((_, ref) => {
   const [feedbackType, setFeedbackType] = useState('');
   const [isShowError, setIsShowError] = useState(false);
   const [isErrorMsg, setIsErrorMsg] = useState('');
+  const apiUrl = window.RUNTIME_ENV?.REACT_APP_API_URL || NetworkInfo.URL;
 
   useImperativeHandle(ref, () => ({
     open: (qId: string, type: string) => {
@@ -27,14 +28,15 @@ const FeedbackAlert = forwardRef((_, ref) => {
         "rate": feedbackType,
         "comment": data.comment
      }
-    let formUrl = NetworkInfo.URL + '/feedback';
+    let formUrl = apiUrl + '/feedback';
     
     try {
       const response = await fetch(formUrl, {
         method: HTTPMethod.PUT,
         headers: {
-            'Content-Type': 'application/json'
-          },
+          '"removed"': AccessToken."removed",
+          'Content-Type': 'application/json'
+        },
         body: JSON.stringify(payLoad),
       });
       const responseData = await response.json();

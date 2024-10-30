@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import AppHeader from '../../../components/header/Header';
 import Sidenav from '../../../components/sidenav/Sidenav';
 import { add, closeOutline, createOutline, trashOutline } from 'ionicons/icons';
-import { HTTPMethod, NetworkInfo } from '../../../routes/network';
+import { AccessToken, HTTPMethod, NetworkInfo } from '../../../routes/network';
 import { useForm } from 'react-hook-form';
 
 interface UserAddModel {
@@ -25,6 +25,7 @@ const Users: React.FC = () => {
   const [targetIndex, setTargetIndex] = useState<number>();
   const [isShowError, setIsShowError] = useState(false);
   const [isErrorMsg, setIsErrorMsg] = useState('');
+  const apiUrl = window.RUNTIME_ENV?.REACT_APP_API_URL || NetworkInfo.URL;
 
   useEffect(() => {
 
@@ -35,9 +36,15 @@ const Users: React.FC = () => {
   const getUsersData = async () => {
     setLoading(true);
     try {
-      const urlData = NetworkInfo.URL + '/resource/get?table=users';
+      const urlData = apiUrl + '/resource/get?table=users';
 
-      const response = await fetch(urlData);
+      const response = await fetch(urlData, {
+        method: 'GET',
+        headers: {
+          '"removed"': AccessToken."removed",
+          'Content-Type': 'application/json',
+        },
+      });
       const responseData = await response.json();
       console.log("Success:", responseData);
 
