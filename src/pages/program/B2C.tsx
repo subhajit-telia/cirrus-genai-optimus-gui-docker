@@ -1,35 +1,30 @@
-import { IonButton, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonChip, IonCol, IonContent, IonFab, IonFabButton, IonFabList, IonGrid, IonHeader, IonIcon, IonInput, IonLoading, IonPage, IonPopover, IonProgressBar, IonRow, IonSelect, IonSelectOption, IonSkeletonText, IonSpinner, IonText, IonTextarea, IonTitle, IonToast, IonToolbar } from '@ionic/react';
-import ExploreContainer from '../../components/ExploreContainer';
+import { IonButton, IonChip, IonCol, IonContent, IonFab, IonFabButton, IonFabList, IonGrid, IonIcon, IonPage, IonProgressBar, IonRow, IonSkeletonText, IonSpinner, IonTextarea, IonToast } from '@ionic/react';
 import AppHeader from '../../components/header/Header';
-import { chevronUpCircle, colorPalette, globe, information, link, lockClosed, send, sync, thumbsDownOutline, thumbsUpOutline } from 'ionicons/icons';
+import { globe, information, link } from 'ionicons/icons';
 import { useEffect, useState } from 'react';
 import Tabs from '../../components/tab/Tab';
-import templateData from '../../template.json';
 import { useForm } from "react-hook-form";
-import AWS from 'aws-sdk';
 import { AccessToken, HTTPMethod, NetworkInfo } from '../../routes/network';
 import DOMPurify from 'dompurify';
 import packageJson from '../../../package.json';
 import Multiselect from 'multiselect-react-dropdown';
 import optimusLogo from '../../theme/assets/optimus-logo.png'
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import rehypeRaw from 'rehype-raw';
-import { Tooltip as ReactTooltip, Tooltip } from 'react-tooltip';
 import { saveAs } from 'file-saver';
-import MultiSelect from '../../components/dropdown/Dropdown';
+import SelectDropdown from '../../components/dropdown/Dropdown';
 
 type Tab = {
   answer: string;
   segment_id: string;
   segment_name: string;
+  outputs:[]
   data: [innerTab]
 }
 interface innerTab {
   format_id: string,
   format_name: string,
   answer: string,
-  input_params: string
+  input_params: string,
+  outputs: []
 }
 
 interface UserAddModel {
@@ -95,8 +90,6 @@ const B2C: React.FC = () => {
     console.log('onSelect', selectedList);
     console.log('onSelect', selectedItem);
     
-    // const ids = selectedList.map((product: { product_id: any; }) => product.product_id);
-    // setPurposeIds(ids);
   };
 
   const onRemove = (selectedList:any, removedItem:any) => {
@@ -248,19 +241,20 @@ const B2C: React.FC = () => {
   };
 
   /* -----------Handle form submit start----------- */
-  let arrayTab:any;
-  let arrayNoSegment:any;
-  const handleFormSubmit = (data:any) => {
+  let arrayTab: any;
+  let arrayNoSegment: any;
+
+  const handleFormSubmit = (data: any) => {
     console.log('selectedPurpose', selectedPurpose);
+    
     data.format = selectedFormats.map(format => format.format_id);
     data.purpose = selectedPurpose.length > 0 && selectedPurpose[0].purpose_id 
-    ? selectedPurpose[0].purpose_id 
-    : '';
+      ? selectedPurpose[0].purpose_id 
+      : '';
+    
     setRequestData(data);
     let productIds = selectedProducts.map(product => product.product_id);
-    data.segment = segments
-    .filter(segment => segment.isActive)
-    .map(segment => segment.segment_id);
+    data.segment = segments.filter(segment => segment.isActive).map(segment => segment.segment_id);
 
     console.log('data', data);
 
@@ -272,12 +266,11 @@ const B2C: React.FC = () => {
         data: data.format.map((format: any) => ({
           format_id: format,
           format_name: formats.find(f => f.format_id === format)?.format_name,
-          answer: ''
+          answer: '',
+          outputs: []
         }))
       }));
-
-      
-    }else if (data.segment.length !== 0 && (data.format === undefined || data.format === '') && data.question !== '') {
+    } else if (data.segment.length !== 0 && (data.format === undefined || data.format === '') && data.question !== '') {
       console.log('>>>B');
       arrayTab  =  data.segment.map((segment: any) => ({
         segment_id: segment,
@@ -285,116 +278,117 @@ const B2C: React.FC = () => {
         data: [{
           format_id: 'customPrompts',
           format_name: data.question,
-          answer: ''
+          answer: '',
+          outputs: []
         }]
       }));
-      
-    }else if (data.segment.length === 0 && data.format !== undefined && data.format !== ''){
+    } else if (data.segment.length === 0 && data.format !== undefined && data.format !== '' && data.format.length !== 0) {
       console.log('>>>C');
-      console.log(data.format.length);
       arrayNoSegment = data.format.map((format: any) => ({
         format_id: format,
         format_name: formats.find(f => f.format_id === format)?.format_name,
-        answer: ''
-      }))
-      
-    }
-    
-
-    
-    
-
-    if (data.format !== undefined && data.format !== '' && data.segment.length > 0) {
-      console.log('>>>1');
-      data.format.forEach((format: any) => {
-        data.segment.forEach((segment: any) => {
-          console.log('call>>>>',format, segment);
-          let eachItem = {
-            user : 'ibu4416',
-            session_id : generateDateTimeString(),
-            qid : generateDateTimeString(),
-            use_case : 'content_creation_b2c',
-            product_ids : productIds,
-            question: data.question,
-            purpose_id: data.purpose,
-            segment_id: segment,
-            format_id: format
-          }
-          handleApiCall(eachItem);
-        });
-      });
-      setTabs(arrayTab);
-    }else if (data.format !== undefined && data.format !== '' && data.segment.length === 0) {
-      console.log('>>>2');
-      data.format.forEach((format: any) => {
-        let eachItem = {
-          user : 'ibu4416',
-          session_id : generateDateTimeString(),
-          qid : generateDateTimeString(),
-          use_case : 'content_creation_b2c',
-          product_ids : productIds,
-          question: data.question,
-          purpose_id: data.purpose,
-          segment_id: '',
-          format_id: format
-        }
-        handleApiCall(eachItem);
-      });
-      setTabs(arrayNoSegment);
-    }else if ((data.format === undefined || data.format === '') && data.segment.length !== 0 && data.question !== '') {
+        answer: '',
+        outputs: []
+      }));
+    } else if ((data.format === undefined || data.format === '') && data.segment.length !== 0 && data.question !== '') {
       console.log('>>>3');
       data.segment.forEach((segment: any) => {
         let eachItem = {
-          user : 'ibu4416',
-          session_id : generateDateTimeString(),
-          qid : generateDateTimeString(),
-          use_case : 'content_creation_b2c',
-          product_ids : productIds,
+          user: 'ibu4416',
+          session_id: generateDateTimeString(),
+          qid: generateDateTimeString(),
+          use_case: 'content_creation_b2c',
+          product_ids: productIds,
           question: data.question,
           purpose_id: data.purpose,
           segment_id: segment,
           format_id: ''
-        }
+        };
         handleApiCall(eachItem);
       });
       setTabs(arrayTab);
-    }else {
+    } else {
       console.log('>>>4');
-      if ((data.format === undefined || data.format === '') && data.question === '') {
+      if ((data.format === undefined || data.format === '' || data.format.length === 0) && data.question === '') {
         setIsShowError(true);
         setIsErrorMsg('You have to choose any format or write any prompts.');
-      }else {
+      } else {
         let eachItem = {
-          user : 'ibu4416',
-          session_id : generateDateTimeString(),
-          qid : generateDateTimeString(),
-          use_case : 'content_creation_b2c',
-          product_ids : productIds,
+          user: 'ibu4416',
+          session_id: generateDateTimeString(),
+          qid: generateDateTimeString(),
+          use_case: 'content_creation_b2c',
+          product_ids: productIds,
           question: data.question,
           purpose_id: data.purpose,
           segment_id: '',
           format_id: ''
-        }
-        arrayNoSegment= [];
-        let customFormat = {
-          format_id: 'customPrompts',
-          format_name: data.question,
-          answer: ''
         };
-        arrayNoSegment.push(customFormat);
+        arrayNoSegment = [
+          {
+            format_id: 'customPrompts',
+            format_name: data.question,
+            answer: '',
+            outputs: []
+          }
+        ];
         handleApiCall(eachItem);
         setTabs(arrayNoSegment);
       }
-      
     }
+
+    // Trigger API call based on the conditions
+    if (data.format !== undefined && data.format !== '' && data.segment.length > 0) {
+      console.log('>>>1');
+      data.format.forEach((format: any) => {
+        data.segment.forEach((segment: any) => {
+          let eachItem = {
+            user: 'ibu4416',
+            session_id: generateDateTimeString(),
+            qid: generateDateTimeString(),
+            use_case: 'content_creation_b2c',
+            product_ids: productIds,
+            question: data.question,
+            purpose_id: data.purpose,
+            segment_id: segment,
+            format_id: format
+          };
+          handleApiCall(eachItem);
+        });
+      });
+      setTabs(arrayTab);
+    } else if (data.format !== undefined && data.format !== '' && data.format.length !== 0 && data.segment.length === 0) {
+      console.log('>>>2');
+      data.format.forEach((format: any) => {
+        let eachItem = {
+          user: 'ibu4416',
+          session_id: generateDateTimeString(),
+          qid: generateDateTimeString(),
+          use_case: 'content_creation_b2c',
+          product_ids: productIds,
+          question: data.question,
+          purpose_id: data.purpose,
+          segment_id: '',
+          format_id: format
+        };
+        handleApiCall(eachItem);
+      });
+      setTabs(arrayNoSegment);
+    }
+
     console.log('arrayTab', arrayTab);
     console.log('arrayNoSegment', arrayNoSegment);
-    
   };
+
+
   const handleApiCall = async (data: any) => {
+    console.log('data>>', data);
     setLoading(true);
     let formUrl = apiUrl + '/process_json';
     console.log('payload', data);
+    console.log('arrayTab>>>', arrayTab);
+    console.log('arrayNoSegment', arrayNoSegment);
+  
     try {
       const response = await fetch(formUrl, {
         method: HTTPMethod.POST,
@@ -404,89 +398,72 @@ const B2C: React.FC = () => {
         },
         body: JSON.stringify(data),
       });
+  
       const responseData = await response.json();
-      console.log("Success:", responseData);
-
+      console.log('Success:', responseData);
+  
       if (response.ok && !responseData.ErrorMessage) {
-        console.log('arrayTab>>>', arrayTab);
-        console.log('arrayNoSegment', arrayNoSegment);
         setNoSegmentArray(arrayNoSegment);
         setTabArray(arrayTab);
         console.log('tabs>>>', tabs);
-        let updatedDataArray = tabs;
+  
         if (arrayTab !== undefined) {
-          updatedDataArray = arrayTab.map((segment: { segment_id: any; segment_name: any; data: any[]; }) => {
+          arrayTab = arrayTab.map((segment: { segment_id: any; segment_name: any; data: any[] }) => {
             if (segment.segment_id === responseData.input_params.segment_id) {
-              segment.segment_name = responseData.input_params.segment_name;
-              if (segment.data.length !== 0) {
-                segment.data = segment.data.map(format => {
-                  if (format.format_id === responseData.input_params.format_id) {
-                    return {
-                      ...format,
-                      answer: DOMPurify.sanitize(responseData.answer),
-                      input_params: responseData.input_params,
-                      format_name: responseData.input_params.format_name
-                    };
-                  }else if (responseData.input_params.format_id === "" || responseData.input_params.format_id === undefined){
-                    return {
-                      ...format,
-                      answer: DOMPurify.sanitize(responseData.answer),
-                      input_params: responseData.input_params,
-                      format_name: responseData.input_params.question
-                    };
-                  }
-                  return format;
-                });
-              }else {
-                console.log('Seg....',segment.data.length)
-                let noFormat = {
-                  format_id: responseData.input_params.segment_id,
-                  answer: DOMPurify.sanitize(responseData.answer),
-                  input_params: responseData.input_params,
-                  format_name: ' '
-                };
-                segment.data.push(noFormat);
-              }
-              
+              segment.data = segment.data.map((format: any) => {
+                if (format.format_id === responseData.input_params.format_id) {
+                  return {
+                    ...format,
+                    answer: DOMPurify.sanitize(responseData.answer),
+                    input_params: responseData.input_params,
+                    outputs: [
+                      ...(format.outputs || []),
+                      { answer: DOMPurify.sanitize(responseData.answer), input_params: responseData.input_params }
+                    ]
+                  };
+                }
+                return format;
+              });
             }
             return segment;
           });
-          console.log('updatedDataArray', updatedDataArray);
-  
-          setTabs(updatedDataArray);
-        }else {
-          arrayNoSegment = arrayNoSegment.map((format: { format_id: any; }) => {
+          setTabs(arrayTab);
+        } else {
+          arrayNoSegment = arrayNoSegment.map((format: { format_id: any; outputs?: any[] }) => {
             if (format.format_id === responseData.input_params.format_id || format.format_id === 'customPrompts') {
+              const currentOutputs = format.outputs || [];
               return {
                 ...format,
                 answer: DOMPurify.sanitize(responseData.answer),
                 input_params: responseData.input_params,
-                format_name: responseData.input_params.format_name === '' ? responseData.input_params.question : responseData.input_params.format_name
+                outputs: [
+                  ...currentOutputs,
+                  { answer: DOMPurify.sanitize(responseData.answer), input_params: responseData.input_params }
+                ]
               };
             }
             return format;
           });
-          console.log('prevArray', arrayNoSegment);
           setTabs(arrayNoSegment);
         }
-        
-
-        console.log('tabs', tabs);
+  
         setLoading(false);
         showLoadingIndicator(false);
-      }else {
+      } else {
         setIsShowError(true);
         setIsErrorMsg(responseData.ErrorMessage || 'Something went wrong!');
       }
-      
     } catch (error: any) {
-      console.error("Login failed:", error);
+      console.error('Login failed:', error);
       setIsShowError(true);
       setIsErrorMsg('Something went wrong!');
       setLoading(false);
       showLoadingIndicator(false);
     }
   };
+  
+  
+  
   /* Handle form submit end */
 
   /* ------Handle form input field changes start------ */
@@ -527,10 +504,10 @@ const B2C: React.FC = () => {
 
   /* ---------------Regenarate item start--------------- */
   const regenarateItem = (data: any): void => {
-    console.log('noSegmentArray', noSegmentArray);
+    console.log('tabArray', tabArray);
     
     data.user = 'ibu4416';
-    arrayNoSegment = noSegmentArray;
+    arrayNoSegment = tabs;
     arrayTab = tabArray;
     handleApiCall(data);
   };
@@ -542,16 +519,13 @@ const B2C: React.FC = () => {
     let answers: any;
 
     if (data[0].data) {
-      answers = [];
-      data.forEach((segment: { data: any[]; }) => {
-        segment.data.forEach(item => {
-            if (item.answer) {
-                answers.push(item.answer + '\n\n\n');
-            }
-        });
-      });
+      answers = data.flatMap((segment: { data: any[]; }) =>
+        segment.data.flatMap(item =>
+            item.outputs.map((output: { answer: any; }) => output.answer  + '\n\n\n' )
+        )
+      );
     }else {
-      answers = data.map((item: { answer: any; }) => item.answer + '\n\n\n' );
+      answers = data.flatMap((item: { outputs: any[]; }) => item.outputs.map(output => output.answer + '\n\n\n'));
     }
 
 
@@ -573,11 +547,15 @@ const B2C: React.FC = () => {
       <AppHeader/>
       <IonContent className='page-body'>
         <div className='max-w-[80%] m-auto relative'>
-          <form onSubmit={handleSubmit(handleFormSubmit)} className="w-full">
-            <div className='text-center'>
+          <div className='text-center relative'>
+            {tabs.length > 0 &&
+              <IonChip onClick={handleReset} className='absolute left-0 top-1/2 translate-x-0 text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Clear all</IonChip>
+            }
               <img className='m-auto' src={optimusLogo} />
-              <p className="text-black">AI-assistance</p>
-            </div>
+            <p className="text-black">AI-assistance</p>
+          </div>
+          <form className='w-full' onSubmit={handleSubmit(handleFormSubmit)}>
+            
             <IonGrid>
               <IonRow>
                 <IonCol size="12" size-lg="4" size-md="4" size-sm="12">
@@ -585,20 +563,7 @@ const B2C: React.FC = () => {
                     <div className='font-bold p-4 text-sm'>I want to create a...</div>
                     
                     <div className='px-4 pb-3.5'>
-                      {/* <IonSelect placeholder="Select formats" disabled={formats.length === 0} className='min-h-10 field-item' label="Select desired format below" multiple={true} interface="popover" labelPlacement="stacked" fill="outline"
-                        {...register("format", {
-                          validate: {},
-                        })}>
-                          {formats.map((item, index) => (
-                            <>
-                              <IonSelectOption key={index} value={item.format_id}  data-tooltip-id={`tooltip${index}`} data-tooltip-content={item.format_written_description}>
-                                {item.format_name}
-                              </IonSelectOption>
-                              <Tooltip id={`tooltip${index}`} />
-                            </>
-                          ))}
-                        </IonSelect> */}
-                        <MultiSelect
+                        <SelectDropdown
                           options={formats}
                           selectedOptions={selectedFormats}
                           setSelectedOptions={setSelectedFormats}
@@ -620,15 +585,7 @@ const B2C: React.FC = () => {
                   <div className='rounded-xl text-[#000] bg-white shadow-md'>
                     <div className='font-bold p-4 text-sm'>With the purpose...</div>
                     <div className='px-4 pb-3.5'>
-                      {/* <IonSelect placeholder="Select purpose" disabled={purposes.length === 0} className='min-h-10 field-item' label="Which product/offer do you want to report on?" interface="popover" labelPlacement="stacked" fill="outline"
-                        {...register("purpose", {
-                          validate: {},
-                        })}>
-                          {purposes.map((item, index) => (
-                            <IonSelectOption key={index} value={item.purpose_id}>{item.purpose_name}</IonSelectOption>
-                          ))}
-                        </IonSelect> */}
-                        <MultiSelect
+                        <SelectDropdown
                           options={purposes}
                           selectedOptions={selectedPurpose}
                           setSelectedOptions={setSelectedPurpose}
@@ -699,7 +656,7 @@ const B2C: React.FC = () => {
                   <IonTextarea
                     className='bottom-textarea rounded-xl text-black'
                     aria-label="Custom textarea"
-                    placeholder="Write your own promt."
+                    placeholder="Write your own prompt."
                     autoGrow={true}
                     counter={true}
                     maxlength={2000}
@@ -714,7 +671,23 @@ const B2C: React.FC = () => {
             </IonGrid>
             
             
-            {tabs.length > 0 ?
+            
+              <div className='text-center mt-6'>
+                <IonButton type='submit' className='btn-primary' shape="round">
+                {loading && <IonSpinner className='mr-2' name="bubbles"></IonSpinner>}
+                {tabs.length === 0 && !loading ?
+                  'Generate'
+                : tabs.length !== 0 && loading ?
+                  'Generating...'
+                :
+                  'Regenerate all'
+                }
+                </IonButton>
+              </div>
+            
+          </form>
+
+          {tabs.length > 0 &&
             <IonGrid>
               <IonRow>
                 <IonCol>
@@ -722,24 +695,15 @@ const B2C: React.FC = () => {
                     <Tabs tabs={tabs} regenarateItem={regenarateItem}/>
                     <div className="text-right mt-3">
                       <IonChip onClick={() => handleFormSubmit(requestData)} className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Rewrite all suggestions</IonChip>
-                      <IonChip disabled className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Send to contentfull</IonChip>
+                      <IonChip disabled className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Send to contentful</IonChip>
                       <IonChip onClick={() => exportToDoc(tabs)} className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Save all suggestions to word.doc</IonChip>
-                      <IonChip onClick={handleReset} className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Create new task</IonChip>
+                      {/* <IonChip onClick={handleReset} className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Create new task</IonChip> */}
                     </div>
                   </div>
                 </IonCol>
               </IonRow>
             </IonGrid>
-            :
-            <div className='text-center mt-6'>
-              <IonButton type='submit' className='btn-primary' shape="round">
-              {loading && <IonSpinner className='mr-2' name="bubbles"></IonSpinner>}
-                Generate
-              </IonButton>
-            </div>
-            }
-            
-          </form>
+          }
         </div>
 
         <IonFab slot="fixed" vertical="bottom" horizontal="end">

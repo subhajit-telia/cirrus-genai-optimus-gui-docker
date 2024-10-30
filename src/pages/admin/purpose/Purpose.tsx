@@ -1,11 +1,9 @@
-import { IonAlert, IonButton, IonButtons, IonCard, IonCheckbox, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonItemOption, IonItemOptions, IonItemSliding, IonLabel, IonList, IonModal, IonPage, IonProgressBar, IonRadio, IonRadioGroup, IonSegment, IonSegmentButton, IonSpinner, IonSplitPane, IonTextarea, IonTitle, IonToast, IonToolbar } from '@ionic/react';
+import { IonAlert, IonButton, IonButtons, IonCard, IonCheckbox, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonItemOption, IonItemOptions, IonItemSliding, IonLabel, IonList, IonModal, IonPage, IonProgressBar, IonSpinner, IonSplitPane, IonTextarea, IonTitle, IonToast, IonToolbar } from '@ionic/react';
 import { useEffect, useRef, useState } from 'react';
 import AppHeader from '../../../components/header/Header';
 import Sidenav from '../../../components/sidenav/Sidenav';
-import { add, closeOutline, createOutline, listCircle, trashOutline } from 'ionicons/icons';
-import templateData from '../../../template.json';
+import { add, closeOutline, createOutline, trashOutline } from 'ionicons/icons';
 import { AccessToken, HTTPMethod, NetworkInfo } from '../../../routes/network';
-import { OverlayEventDetail } from '@ionic/core/components';
 import { useForm } from 'react-hook-form';
 
 interface PurposeAddModel {
@@ -100,6 +98,7 @@ const Purpose: React.FC = () => {
     setValue("purpose_definition", _value.purpose_definition);
     setValue("purpose_written_description", _value.purpose_written_description);
     setValue("purpose_name", _value.purpose_name);
+    setValue("purpose_id", _value.purpose_id);
 
     if (_value.b2b === 1) {
       setValue("b2b", true);
@@ -117,12 +116,6 @@ const Purpose: React.FC = () => {
     setTargetIndex(_index);
   }
   /* handle edit end */
-  
-  /* check password hashed or not start */
-  const isBcryptHash = (password:any) => {
-    return typeof password === 'string' && password.length === 60 && (password.startsWith('$2a$') || password.startsWith('$2b$') || password.startsWith('$2y$'));
-  };
-  /* check password hashed or not end */
 
   /* -----------Handle form submit start----------- */
   const handleFormSubmit = async (data: any) => {
@@ -131,7 +124,13 @@ const Purpose: React.FC = () => {
     payLoad.purpose_name = data.purpose_name;
     payLoad.purpose_definition = data.purpose_definition;
     payLoad.purpose_written_description = data.purpose_written_description;
-    payLoad.purpose_id = `${data.purpose_name.replace(/\s+/g, '')}`;
+    
+
+    if (isEdit) {
+      payLoad.purpose_id = getValues("purpose_id");
+    }else {
+      payLoad.purpose_id = `${data.purpose_name.replace(/\s+/g, '')}`;
+    }
 
     if (data.b2b === true) {
       payLoad.b2b = 1;
@@ -219,6 +218,7 @@ const Purpose: React.FC = () => {
     handleSubmit: handleSubmit,
     reset,
     setValue,
+    getValues,
     watch,
     formState: { errors }
   } = useForm<PurposeAddModel>({

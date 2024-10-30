@@ -1,11 +1,9 @@
-import { IonAlert, IonButton, IonButtons, IonCard, IonCheckbox, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonItemOption, IonItemOptions, IonItemSliding, IonLabel, IonList, IonModal, IonPage, IonProgressBar, IonRadio, IonRadioGroup, IonSegment, IonSegmentButton, IonSpinner, IonSplitPane, IonTextarea, IonTitle, IonToast, IonToolbar } from '@ionic/react';
+import { IonAlert, IonButton, IonButtons, IonCard, IonCheckbox, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonItemOption, IonItemOptions, IonItemSliding, IonLabel, IonList, IonModal, IonPage, IonProgressBar, IonSpinner, IonSplitPane, IonTextarea, IonTitle, IonToast, IonToolbar } from '@ionic/react';
 import { useEffect, useRef, useState } from 'react';
 import AppHeader from '../../../components/header/Header';
 import Sidenav from '../../../components/sidenav/Sidenav';
-import { add, closeOutline, createOutline, information, listCircle, trashOutline } from 'ionicons/icons';
-import templateData from '../../../template.json';
+import { add, closeOutline, createOutline, trashOutline } from 'ionicons/icons';
 import { AccessToken, HTTPMethod, NetworkInfo } from '../../../routes/network';
-import { OverlayEventDetail } from '@ionic/core/components';
 import { useForm } from 'react-hook-form';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -107,6 +105,7 @@ const Formats: React.FC = () => {
     setValue("format_class_definition", _value.format_class_definition);
     setValue("format_written_description", _value.format_written_description);
     setValue("format_name", _value.format_name);
+    setValue("format_id", _value.format_id);
     setValue("format_class_name", _value.format_class_name);
     if (_value.b2b === 1) {
       setValue("b2b", true);
@@ -129,12 +128,6 @@ const Formats: React.FC = () => {
     setTargetIndex(_index);
   }
   /* handle edit end */
-  
-  /* check password hashed or not start */
-  const isBcryptHash = (password:any) => {
-    return typeof password === 'string' && password.length === 60 && (password.startsWith('$2a$') || password.startsWith('$2b$') || password.startsWith('$2y$'));
-  };
-  /* check password hashed or not end */
 
   /* -----------Handle form submit start----------- */
   const handleFormSubmit = async (data: any) => {
@@ -143,8 +136,13 @@ const Formats: React.FC = () => {
     payLoad.format_name = data.format_name;
     payLoad.format_class_definition = data.format_class_definition;
     payLoad.format_written_description = data.format_written_description;
-    payLoad.format_id = `${data.format_name.replace(/\s+/g, '')}${data.b2b === true ? 'B2B' : ''}${data.b2c === true ? 'B2C' : ''}`
     payLoad.format_class_name = data.format_class_name;
+
+    if (isEdit) {
+      payLoad.format_id = getValues("format_id");
+    }else {
+      payLoad.format_id = `${data.format_name.replace(/\s+/g, '')}${data.b2b === true ? 'B2B' : ''}${data.b2c === true ? 'B2C' : ''}`
+    }
     
     if (data.b2b === true) {
       payLoad.b2b = 1;
@@ -237,6 +235,7 @@ const Formats: React.FC = () => {
     handleSubmit: handleSubmit,
     reset,
     setValue,
+    getValues,
     watch,
     formState: { errors }
   } = useForm<FormatAddModel>({
@@ -342,19 +341,6 @@ const Formats: React.FC = () => {
                     validate: {},
                   })}
                 ></IonTextarea>
-
-                {/* <IonRadioGroup 
-                  {...register("usage", {
-                    validate: {},
-                  })}
-                  onIonChange={(event: any) => {
-                    console.log('event', event.target.value);
-                    setValue("usage", event.target.value);
-                  }}
-                  className='flex justify-between mb-4 text-sm'>
-                  <IonRadio value="b2b" labelPlacement="end">B2B</IonRadio>
-                  <IonRadio value="b2c" labelPlacement="end">B2C</IonRadio>
-                </IonRadioGroup> */}
 
                 <div className='flex justify-between mb-4 text-sm'>
                   <IonCheckbox 
