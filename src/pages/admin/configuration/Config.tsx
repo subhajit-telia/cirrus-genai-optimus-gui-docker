@@ -1,13 +1,9 @@
-import { IonAlert, IonButton, IonButtons, IonCard, IonCheckbox, IonCol, IonContent, IonFab, IonFabButton, IonGrid, IonHeader, IonIcon, IonInput, IonItem, IonItemOption, IonItemOptions, IonItemSliding, IonLabel, IonList, IonModal, IonPage, IonProgressBar, IonRadio, IonRadioGroup, IonRow, IonSegment, IonSegmentButton, IonSpinner, IonSplitPane, IonTextarea, IonTitle, IonToolbar } from '@ionic/react';
-import { useEffect, useRef, useState } from 'react';
+import { IonButton, IonCard, IonCheckbox, IonCol, IonContent, IonGrid, IonInput, IonPage, IonProgressBar, IonRow, IonSpinner, IonSplitPane } from '@ionic/react';
+import { useEffect, useState } from 'react';
 import AppHeader from '../../../components/header/Header';
 import Sidenav from '../../../components/sidenav/Sidenav';
-import { add, closeOutline, createOutline, listCircle, trashOutline } from 'ionicons/icons';
-import templateData from '../../../template.json';
 import { AccessToken, HTTPMethod, NetworkInfo } from '../../../routes/network';
-import { OverlayEventDetail } from '@ionic/core/components';
 import { useForm } from 'react-hook-form';
-import { integer } from 'aws-sdk/clients/cloudfront';
 
 interface ConfigAddModel {
     llm_name: string;

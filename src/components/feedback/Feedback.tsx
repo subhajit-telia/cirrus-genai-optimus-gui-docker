@@ -1,11 +1,13 @@
 import React, { useState, useImperativeHandle, forwardRef } from 'react';
-import { IonAlert } from '@ionic/react';
+import { IonAlert, IonToast } from '@ionic/react';
 import { AccessToken, HTTPMethod, NetworkInfo } from '../../routes/network';
 
 const FeedbackAlert = forwardRef((_, ref) => {
   const [showAlert, setShowAlert] = useState(false);
   const [questionId, setQuestionId] = useState('');
   const [feedbackType, setFeedbackType] = useState('');
+  const [isShowError, setIsShowError] = useState(false);
+  const [isErrorMsg, setIsErrorMsg] = useState('');
   const apiUrl = window.RUNTIME_ENV?.REACT_APP_API_URL || NetworkInfo.URL;
 
   useImperativeHandle(ref, () => ({
@@ -41,7 +43,12 @@ const FeedbackAlert = forwardRef((_, ref) => {
       console.log("Success:", responseData);
 
       if (response.ok && responseData === true) {
+        setIsShowError(true);
+        setIsErrorMsg('Feedback submitted.');
         setShowAlert(false);
+      }else {
+        setIsShowError(true);
+        setIsErrorMsg(responseData.detail || 'Something went wrong!');
       }
       
     } catch (error: any) {
@@ -51,29 +58,39 @@ const FeedbackAlert = forwardRef((_, ref) => {
   };
 
   return (
-    <IonAlert
-      isOpen={showAlert}
-      onDidDismiss={() => setShowAlert(false)}
-      header="Provide additional feedback"
-      className = 'feedback-alert'
-      inputs={[
-        {
-          name: 'comment',
-          type: 'textarea',
-          placeholder: 'Enter your feedback here...'
-        },
-      ]}
-      buttons={[
-        {
-          text: 'Cancel',
-          role: 'cancel',
-        },
-        {
-          text: 'Submit',
-          handler: handleFeedbackSubmit,
-        },
-      ]}
-    />
+    <>
+      <IonAlert
+        isOpen={showAlert}
+        onDidDismiss={() => setShowAlert(false)}
+        header="Provide additional feedback"
+        className = 'feedback-alert'
+        inputs={[
+          {
+            name: 'comment',
+            type: 'textarea',
+            placeholder: 'Enter your feedback here...'
+          },
+        ]}
+        buttons={[
+          {
+            text: 'Cancel',
+            role: 'cancel',
+          },
+          {
+            text: 'Submit',
+            handler: handleFeedbackSubmit,
+          },
+        ]}
+      />
+
+      <IonToast
+        className='custom-toast'
+        isOpen={isShowError}
+        message={isErrorMsg}
+        duration={3000}
+        onDidDismiss={() => setIsShowError(false)}
+      ></IonToast>
+    </>
   );
 });
 

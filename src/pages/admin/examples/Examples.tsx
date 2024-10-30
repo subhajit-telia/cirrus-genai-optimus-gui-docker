@@ -2,14 +2,9 @@ import { IonAlert, IonButton, IonButtons, IonCard, IonCheckbox, IonCol, IonConte
 import { useEffect, useRef, useState } from 'react';
 import AppHeader from '../../../components/header/Header';
 import Sidenav from '../../../components/sidenav/Sidenav';
-import { add, closeOutline, createOutline, listCircle, trashOutline } from 'ionicons/icons';
-import templateData from '../../../template.json';
+import { add, closeOutline, createOutline, trashOutline } from 'ionicons/icons';
 import { AccessToken, HTTPMethod, NetworkInfo } from '../../../routes/network';
-import { OverlayEventDetail } from '@ionic/core/components';
 import { useForm } from 'react-hook-form';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import rehypeRaw from 'rehype-raw';
 
 interface ExampleAddModel {
   example: string;
