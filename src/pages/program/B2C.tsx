@@ -74,10 +74,16 @@ const B2C: React.FC = () => {
   const [requestData, setRequestData] = useState('');
   const [selectedFormats, setSelectedFormats] = useState<typeof formats[0][]>([]);
   const [selectedPurpose, setSelectedPurpose] = useState<typeof purposes[0][]>([]);
+  const [userName, setUserName] = useState('');
   const apiUrl = window.RUNTIME_ENV?.REACT_APP_API_URL || NetworkInfo.URL;
 
 
   useEffect(() => {
+    let userLocalData:any = localStorage.getItem('user');
+    let user_name = JSON.parse(userLocalData);
+    setUserName(user_name.username);
+    console.log('userData', user_name);
+    
     getSegmentsData();
     getPurposesData();
     getFormatsData();
@@ -294,7 +300,7 @@ const B2C: React.FC = () => {
       console.log('>>>3');
       data.segment.forEach((segment: any) => {
         let eachItem = {
-          user: 'ibu4416',
+          user: userName,
           session_id: generateDateTimeString(),
           qid: generateDateTimeString(),
           use_case: 'content_creation_b2c',
@@ -314,7 +320,7 @@ const B2C: React.FC = () => {
         setIsErrorMsg('You have to choose any format or write any prompts.');
       } else {
         let eachItem = {
-          user: 'ibu4416',
+          user: userName,
           session_id: generateDateTimeString(),
           qid: generateDateTimeString(),
           use_case: 'content_creation_b2c',
@@ -343,7 +349,7 @@ const B2C: React.FC = () => {
       data.format.forEach((format: any) => {
         data.segment.forEach((segment: any) => {
           let eachItem = {
-            user: 'ibu4416',
+            user: userName,
             session_id: generateDateTimeString(),
             qid: generateDateTimeString(),
             use_case: 'content_creation_b2c',
@@ -361,7 +367,7 @@ const B2C: React.FC = () => {
       console.log('>>>2');
       data.format.forEach((format: any) => {
         let eachItem = {
-          user: 'ibu4416',
+          user: userName,
           session_id: generateDateTimeString(),
           qid: generateDateTimeString(),
           use_case: 'content_creation_b2c',
@@ -506,7 +512,7 @@ const B2C: React.FC = () => {
   const regenarateItem = (data: any): void => {
     console.log('tabArray', tabArray);
     
-    data.user = 'ibu4416';
+    data.user = userName;
     arrayNoSegment = tabs;
     arrayTab = tabArray;
     handleApiCall(data);
