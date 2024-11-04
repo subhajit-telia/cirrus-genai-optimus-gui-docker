@@ -35,6 +35,7 @@ interface Formats {
 const Examples: React.FC = () => {
   /* Variables start */
   const [exampleList, setExampleList] = useState<ExampleAddModel[]>([]);
+  const [filterExampleList, setFilterExampleList] = useState<ExampleAddModel[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const modal = useRef<HTMLIonModalElement>(null);
   const [isOpen, setIsOpen] = useState(false);
@@ -61,7 +62,9 @@ const Examples: React.FC = () => {
     setLoading(true);
     try {
       const urlData = apiUrl + '/resource/get?table=examples';
-
+      setValue("purpose_id", '');
+      setValue("segment_id", '');
+      setValue("format_id", '');
       const response = await fetch(urlData, {
         method: 'GET',
         headers: {
@@ -74,6 +77,7 @@ const Examples: React.FC = () => {
 
       if (response.ok) {
         setExampleList(responseData);
+        setFilterExampleList(responseData);
         setLoading(false);
       }
       
@@ -227,7 +231,7 @@ const Examples: React.FC = () => {
   const filterFormSubmit = async (data: any) => {
     console.log('data', data);
 
-    let filteredData = exampleList.filter(item => {
+    let filteredData = filterExampleList.filter(item => {
       const matchesFormat = data.format_id ? item.format_id === data.format_id : true;
       const matchesSegment = data.segment_id ? item.segment_id === data.segment_id : true;
       const matchesPurpose = data.purpose_id ? item.purpose_id === data.purpose_id : true;
@@ -394,7 +398,7 @@ const Examples: React.FC = () => {
                     <IonButton size='small' type='submit' className='btn-primary text-xs' shape="round">
                       Filter
                     </IonButton>
-                    <IonButton onClick={() => getExamplesData()} className='text-xs' size='small' type='reset' fill='outline' shape="round">
+                    <IonButton onClick={() =>{reset(); getExamplesData()}} className='text-xs' size='small' type='reset' fill='outline' shape="round">
                       Cancel
                     </IonButton>
                   </IonCol>
