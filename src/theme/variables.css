@@ -139,14 +139,15 @@ ion-toast.custom-toast {
 
 ion-modal#example-modal {
     --width: fit-content;
-  --min-width: 350px;
-  --max-width: 450px;
+  --min-width: 450px;
+  --max-width: 550px;
   --height: auto;
   --border-radius: 6px;
   --box-shadow: 0 28px 48px rgba(0, 0, 0, 0.4);
 }
 ion-textarea .textarea-wrapper-inner {
     max-height: 300px;
+    min-height: 100px !important;
 }
 ion-textarea .textarea-wrapper-inner .native-wrapper .native-textarea {
     max-height: 300px;
