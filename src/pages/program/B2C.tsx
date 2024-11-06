@@ -611,7 +611,7 @@ const B2C: React.FC = () => {
                 <IonCol size="12" size-lg="4" size-md="4" size-sm="12">
                   <div className='rounded-xl text-[#000] bg-white shadow-md'>
                     <div className='font-bold p-4 text-sm'>About...</div>
-                    <div className='px-4 pb-3.5 custom-search relative'>
+                    {/* <div className='px-4 pb-3.5 custom-search relative'>
                       <p>Which product/offer do you want to report on?</p>
                       <Multiselect
                         displayValue="product_name"
@@ -627,6 +627,23 @@ const B2C: React.FC = () => {
                         })}
                       />
                       { loadingProducts &&
+                        <IonProgressBar className='mt-0.5' type="indeterminate"></IonProgressBar>
+                      }
+                    </div> */}
+
+                    <div className='px-4 pb-3.5'>
+                      <SelectDropdown
+                        options={products}
+                        selectedOptions={selectedProducts}
+                        setSelectedOptions={setSelectedProducts}
+                        multiSelect={true} // Multi-select mode
+                        idKey="product_id"
+                        nameKey="product_name"
+                        tooltipKey="product_name"
+                        placeHolder='Select products'
+                        label='Which product/offer do you want to report on?'
+                      />
+                      { loadingPurposes &&
                         <IonProgressBar className='mt-0.5' type="indeterminate"></IonProgressBar>
                       }
                     </div>
