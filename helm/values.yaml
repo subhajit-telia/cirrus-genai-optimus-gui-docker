@@ -38,7 +38,7 @@ deployment:
         driver: secrets-store.csi.k8s.io
         readOnly: true
         volumeAttributes:
-          secretProviderClass: optimus-genai-gui-app
+          secretProviderClass: ai-optimus-gui-genai-app
       name: secrets-store
 
 service:
