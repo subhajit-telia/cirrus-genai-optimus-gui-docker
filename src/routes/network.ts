@@ -1,9 +1,9 @@
 class NetworkInfo {
-    static readonly URL: string = process.env.BACKEND_URL || '';
+    static readonly URL: string = process.env.REACT_APP_BACKEND_URL || '';
 }
 
 class AccessToken {
-    static readonly "removed": string = process.env.CLIENT_API_KEY || '';
+    static readonly "removed": string = process.env.REACT_APP_CLIENT_API_KEY || '';
 }
 
 class HTTPMethod {
