@@ -19,12 +19,12 @@ deployment:
       port: 80
   serviceAccountName: "deployment"
   env:
-  - name: CLIENT_API_KEY
+  - name: REACT_APP_CLIENT_API_KEY
     valueFrom:
       secretKeyRef:
         name: optimus-gui-config
         key: client-api-key
-  - name: BACKEND_URL
+  - name: REACT_APP_BACKEND_URL
     valueFrom:
       secretKeyRef:
         name: optimus-gui-config
