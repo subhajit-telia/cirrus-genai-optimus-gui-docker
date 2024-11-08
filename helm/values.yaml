@@ -18,6 +18,48 @@ deployment:
       path: /
       port: 80
   serviceAccountName: "deployment"
+  env:
+  - name: CLIENT_API_KEY
+    valueFrom:
+      secretKeyRef:
+        name: optimus-gui-config
+        key: client-api-key
+  - name: BACKEND_URL
+    valueFrom:
+      secretKeyRef:
+        name: optimus-gui-config
+        key: backend-url
+  volumeMounts:
+    - name: secrets-store
+      mountPath: "/mnt/secrets"
+      readOnly: true
+  volumes:
+    - csi:
+        driver: secrets-store.csi.k8s.io
+        readOnly: true
+        volumeAttributes:
+          secretProviderClass: optimus-genai-gui-app
+      name: secrets-store
 
 service:
   port: 80
+
+secretStore:
+  enabled: true
+  region: eu-north-1
+  objects:
+    - objectName: "stallions/optimus_prime_se/webapp"
+      objectType: "secretsmanager"
+      jmesPath:
+        - path: "clientapikey"
+          objectAlias: "clientapikey"
+        - path: "backendurl"
+          objectAlias: "backendurl"
+  secretObjects:
+    - secretName: optimus-gui-config
+      type: Opaque
+      data:
+        - objectName: "clientapikey"
+          key: "client-api-key"
+        - objectName: "backendurl"
+          key: "backend-url"

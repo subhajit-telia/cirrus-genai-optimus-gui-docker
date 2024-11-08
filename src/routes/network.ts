@@ -1,12 +1,9 @@
 class NetworkInfo {
-    static readonly URL: string =
-        import.meta.env.VITE_ENV === "DEV"
-            ?  import.meta.env.VITE_API_URL
-            : import.meta.env.VITE_API_URL;
+    static readonly URL: string = process.env.BACKEND_URL || '';
 }
 
 class AccessToken {
-    static readonly "removed": string = 'IgGuQSjs60HH0R6MTs6c9WiAZupfFYWc';
+    static readonly "removed": string = process.env.CLIENT_API_KEY || '';
 }
 
 class HTTPMethod {
