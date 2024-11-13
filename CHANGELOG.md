@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/telia-company/cirrus-genai-optimus-gui-docker/compare/v1.1.0...v1.2.0) (2024-11-13)
+
+
+### Features
+
+* using nginx ([#25](https://github.com/telia-company/cirrus-genai-optimus-gui-docker/issues/25)) ([fa42de0](https://github.com/telia-company/cirrus-genai-optimus-gui-docker/commit/fa42de0fae4b9b6c9aeb70ab120bd35492c1031a))
+
 ## [1.1.0](https://github.com/telia-company/cirrus-genai-optimus-gui-docker/compare/1.0.3...v1.1.0) (2024-11-08)
 
 
