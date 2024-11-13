@@ -1,6 +1,6 @@
 import React, { useState, useImperativeHandle, forwardRef } from 'react';
 import { IonAlert, IonToast } from '@ionic/react';
-import { AccessToken, HTTPMethod, NetworkInfo } from '../../routes/network';
+import { HTTPMethod, NetworkInfo } from '../../routes/network';
 
 const FeedbackAlert = forwardRef((_, ref) => {
   const [showAlert, setShowAlert] = useState(false);
@@ -8,7 +8,7 @@ const FeedbackAlert = forwardRef((_, ref) => {
   const [feedbackType, setFeedbackType] = useState('');
   const [isShowError, setIsShowError] = useState(false);
   const [isErrorMsg, setIsErrorMsg] = useState('');
-  const apiUrl = window.RUNTIME_ENV?.REACT_APP_API_URL || NetworkInfo.URL;
+  const apiUrl = `${NetworkInfo.URL}`;
 
   useImperativeHandle(ref, () => ({
     open: (qId: string, type: string) => {
@@ -24,17 +24,17 @@ const FeedbackAlert = forwardRef((_, ref) => {
     console.log('User comment:', data.comment);
 
     let payLoad = {
-        "qid": questionId,
-        "rate": feedbackType,
-        "comment": data.comment
-     }
+      "qid": questionId,
+      "rate": feedbackType,
+      "comment": data.comment
+    }
     let formUrl = apiUrl + '/feedback';
-    
+
     try {
       const response = await fetch(formUrl, {
         method: HTTPMethod.PUT,
         headers: {
-          '"removed"': AccessToken."removed",
+          '"removed"': `${NetworkInfo.ACCESSTOKEN}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(payLoad),
@@ -46,15 +46,15 @@ const FeedbackAlert = forwardRef((_, ref) => {
         setIsShowError(true);
         setIsErrorMsg('Feedback submitted.');
         setShowAlert(false);
-      }else {
+      } else {
         setIsShowError(true);
         setIsErrorMsg(responseData.detail || 'Something went wrong!');
       }
-      
+
     } catch (error: any) {
       console.error("Login failed:", error);
     }
-    
+
   };
 
   return (
@@ -63,7 +63,7 @@ const FeedbackAlert = forwardRef((_, ref) => {
         isOpen={showAlert}
         onDidDismiss={() => setShowAlert(false)}
         header="Provide additional feedback"
-        className = 'feedback-alert'
+        className='feedback-alert'
         inputs={[
           {
             name: 'comment',

@@ -19,16 +19,16 @@ deployment:
       port: 80
   serviceAccountName: "deployment"
   env:
-  - name: REACT_APP_CLIENT_API_KEY
+  - name: API_ENDPOINT
     valueFrom:
       secretKeyRef:
         name: optimus-gui-config
-        key: client-api-key
-  - name: REACT_APP_BACKEND_URL
+        key: api-endpoint
+  - name: API_KEY
     valueFrom:
       secretKeyRef:
         name: optimus-gui-config
-        key: backend-url
+        key: api-key
   volumeMounts:
     - name: secrets-store
       mountPath: "/mnt/secrets"
@@ -51,15 +51,15 @@ secretStore:
     - objectName: "stallions/optimus_prime_se/webapp"
       objectType: "secretsmanager"
       jmesPath:
-        - path: "clientapikey"
-          objectAlias: "clientapikey"
-        - path: "backendurl"
-          objectAlias: "backendurl"
+        - path: "apiendpoint"
+          objectAlias: "apiendpoint"
+        - path: "apikey"
+          objectAlias: "apikey"
   secretObjects:
     - secretName: optimus-gui-config
       type: Opaque
       data:
-        - objectName: "clientapikey"
-          key: "client-api-key"
-        - objectName: "backendurl"
-          key: "backend-url"
+        - objectName: "apikey"
+          key: "api-key"
+        - objectName: "apiendpoint"
+          key: "api-endpoint"

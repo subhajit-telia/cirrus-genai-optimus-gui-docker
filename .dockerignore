@@ -19,3 +19,4 @@ tmp
 Dockerfile
 .dockerignore
 .node_modules
+helm

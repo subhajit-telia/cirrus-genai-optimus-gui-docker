@@ -20,7 +20,7 @@ const Login: React.FC = () => {
   const [segmentValue, setSegmentValue] = useState('tcad');
   const history = useHistory();
   const { login } = useAuth();
-  const apiUrl = window.RUNTIME_ENV?.REACT_APP_API_URL || NetworkInfo.URL;
+  const apiUrl = `${NetworkInfo.URL}`;
 
   useEffect(() => {
     console.log(`Using API URL: ${apiUrl}`);
