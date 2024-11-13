@@ -1,9 +1,9 @@
-import { IonAlert, IonButton, IonButtons, IonCard, IonCheckbox, IonCol, IonContent, IonFab, IonFabButton, IonGrid, IonHeader, IonIcon, IonInput, IonItem, IonItemOption, IonItemOptions, IonItemSliding, IonLabel, IonList, IonModal, IonPage, IonProgressBar,    IonRow,    IonSelect,    IonSelectOption,    IonSpinner, IonSplitPane, IonText, IonTextarea, IonTitle, IonToast, IonToolbar } from '@ionic/react';
+import { IonAlert, IonButton, IonButtons, IonCard, IonCheckbox, IonCol, IonContent, IonFab, IonFabButton, IonGrid, IonHeader, IonIcon, IonInput, IonItem, IonItemOption, IonItemOptions, IonItemSliding, IonLabel, IonList, IonModal, IonPage, IonProgressBar, IonRow, IonSelect, IonSelectOption, IonSpinner, IonSplitPane, IonText, IonTextarea, IonTitle, IonToast, IonToolbar } from '@ionic/react';
 import { useEffect, useRef, useState } from 'react';
 import AppHeader from '../../../components/header/Header';
 import Sidenav from '../../../components/sidenav/Sidenav';
 import { add, closeOutline, createOutline, trashOutline } from 'ionicons/icons';
-import { AccessToken, HTTPMethod, NetworkInfo } from '../../../routes/network';
+import { HTTPMethod, NetworkInfo } from '../../../routes/network';
 import { useForm } from 'react-hook-form';
 
 interface ExampleAddModel {
@@ -47,7 +47,7 @@ const Examples: React.FC = () => {
   const [formats, setFormats] = useState<Formats[]>([]);
   const [isShowError, setIsShowError] = useState(false);
   const [isErrorMsg, setIsErrorMsg] = useState('');
-  const apiUrl = window.RUNTIME_ENV?.REACT_APP_API_URL || NetworkInfo.URL;
+  const apiUrl = `${NetworkInfo.URL}`;
 
   useEffect(() => {
 
@@ -68,7 +68,7 @@ const Examples: React.FC = () => {
       const response = await fetch(urlData, {
         method: 'GET',
         headers: {
-          '"removed"': AccessToken."removed",
+          '"removed"': `${NetworkInfo.ACCESSTOKEN}`,
           'Content-Type': 'application/json',
         },
       });
@@ -80,7 +80,7 @@ const Examples: React.FC = () => {
         setFilterExampleList(responseData);
         setLoading(false);
       }
-      
+
     } catch (error: any) {
       console.error("catch failed:", error);
       setLoading(false);
@@ -91,12 +91,12 @@ const Examples: React.FC = () => {
   /* -------------get segments data start------------- */
   const getSegmentsData = async () => {
     try {
-      const urlData =apiUrl + '/resource/get?table=segments&use_case=content_creation_b2c&columns=segment_id&columns=segment_name';
+      const urlData = apiUrl + '/resource/get?table=segments&use_case=content_creation_b2c&columns=segment_id&columns=segment_name';
 
       const response = await fetch(urlData, {
         method: 'GET',
         headers: {
-          '"removed"': AccessToken."removed",
+          '"removed"': `${NetworkInfo.ACCESSTOKEN}`,
           'Content-Type': 'application/json',
         },
       });
@@ -105,7 +105,7 @@ const Examples: React.FC = () => {
       if (response.ok) {
         setSegments(responseData);
       }
-      
+
     } catch (error: any) {
       console.error("catch failed:", error);
     }
@@ -115,12 +115,12 @@ const Examples: React.FC = () => {
   /* -------------get purposes data start------------- */
   const getPurposesData = async () => {
     try {
-      const urlData =apiUrl + '/resource/get?table=purposes&use_case=content_creation_b2c&columns=purpose_id&columns=purpose_name';
+      const urlData = apiUrl + '/resource/get?table=purposes&use_case=content_creation_b2c&columns=purpose_id&columns=purpose_name';
 
       const response = await fetch(urlData, {
         method: 'GET',
         headers: {
-          '"removed"': AccessToken."removed",
+          '"removed"': `${NetworkInfo.ACCESSTOKEN}`,
           'Content-Type': 'application/json',
         },
       });
@@ -139,18 +139,18 @@ const Examples: React.FC = () => {
   /* -------------get formats data start------------- */
   const getFormatsData = async () => {
     try {
-      const urlData =apiUrl + '/resource/get?table=formats&use_case=content_creation_b2c&columns=format_id&columns=format_name';
+      const urlData = apiUrl + '/resource/get?table=formats&use_case=content_creation_b2c&columns=format_id&columns=format_name';
 
       const response = await fetch(urlData, {
         method: 'GET',
         headers: {
-          '"removed"': AccessToken."removed",
+          '"removed"': `${NetworkInfo.ACCESSTOKEN}`,
           'Content-Type': 'application/json',
         },
       });
       const responseData = await response.json();
       console.log("Success:", responseData);
-      
+
       if (response.ok) {
         setFormats(responseData);
       }
@@ -175,14 +175,14 @@ const Examples: React.FC = () => {
     setValue("b2c", false);
   }
 
-  const handleDeleteAleart = (_indicator:boolean, _value:number) => {
+  const handleDeleteAleart = (_indicator: boolean, _value: number) => {
     if (_indicator === true) {
       setIsOpen(true);
       setTargetIndex(_value);
-    }else if (_indicator === false) {
+    } else if (_indicator === false) {
       let updatedExamples = exampleList;
 
-      let delIndex:any = targetIndex;
+      let delIndex: any = targetIndex;
       updatedExamples.splice(delIndex, 1);
 
       console.log('updatedExamples', updatedExamples);
@@ -191,11 +191,11 @@ const Examples: React.FC = () => {
     }
 
   }
-  
+
   /* modal functions end */
 
   /* handle edit start */
-  const handleEdit = (_value:any, _index:number) => {
+  const handleEdit = (_value: any, _index: number) => {
     console.log('_value', _value);
     setValue("example", _value.example);
     setValue("example_id", _value.example_id);
@@ -206,12 +206,12 @@ const Examples: React.FC = () => {
 
     if (_value.b2b === 1) {
       setValue("b2b", true);
-    }else {
+    } else {
       setValue("b2b", false);
     }
     if (_value.b2c === 1) {
       setValue("b2c", true);
-    }else {
+    } else {
       setValue("b2c", false);
     }
 
@@ -220,9 +220,9 @@ const Examples: React.FC = () => {
     setTargetIndex(_index);
   }
   /* handle edit end */
-  
+
   /* check password hashed or not start */
-  const isBcryptHash = (password:any) => {
+  const isBcryptHash = (password: any) => {
     return typeof password === 'string' && password.length === 60 && (password.startsWith('$2a$') || password.startsWith('$2b$') || password.startsWith('$2y$'));
   };
   /* check password hashed or not end */
@@ -246,7 +246,7 @@ const Examples: React.FC = () => {
   /* -----------Handle form submit start----------- */
   const handleFormSubmit = async (data: any) => {
     console.log('handleFormSubmit', data);
-    let payLoad:any = {};
+    let payLoad: any = {};
     payLoad.example = data.example;
     payLoad.format_id = data.format_id;
     payLoad.products = data.products;
@@ -257,30 +257,30 @@ const Examples: React.FC = () => {
 
     if (data.b2b === true) {
       payLoad.b2b = 1;
-    }else {
+    } else {
       payLoad.b2b = 0;
     }
 
     if (data.b2c === true) {
       payLoad.b2c = 1;
-    }else {
+    } else {
       payLoad.b2c = 0;
     }
 
-    
+
 
     let prevExampleList = exampleList;
-    let index:any = targetIndex;
+    let index: any = targetIndex;
 
     console.log('finalData', payLoad);
     if (isEdit === true) {
       prevExampleList.splice(index, 1, payLoad);
-    }else {
+    } else {
       payLoad.example_id = `ex${exampleList.length}`;
       prevExampleList = [...exampleList, payLoad];
     }
 
-    
+
     console.log('prevList', prevExampleList);
 
     handleExamplesUpdate(prevExampleList);
@@ -296,12 +296,12 @@ const Examples: React.FC = () => {
       table: "examples",
       json_obj: updatedExamples
     }
-    
+
     try {
       const response = await fetch(formUrl, {
         method: HTTPMethod.PUT,
         headers: {
-          '"removed"': AccessToken."removed",
+          '"removed"': `${NetworkInfo.ACCESSTOKEN}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(finalPayload),
@@ -316,8 +316,8 @@ const Examples: React.FC = () => {
           setIsShowError(true);
           setIsErrorMsg(responseData.ErrorMessage);
           setLoading(false);
-          
-        }else {
+
+        } else {
           setIsShowError(true);
           setIsErrorMsg(responseData);
           reset();
@@ -328,7 +328,7 @@ const Examples: React.FC = () => {
           onModalDismiss();
         }
       }
-      
+
     } catch (error: any) {
       console.error("Login failed:", error);
       setLoading(false);
@@ -336,8 +336,8 @@ const Examples: React.FC = () => {
   };
   /* Handle form submit end */
 
-   /* ------Handle form input field changes start------ */
-   const {
+  /* ------Handle form input field changes start------ */
+  const {
     register: register,
     handleSubmit: handleSubmit,
     reset,
@@ -356,247 +356,247 @@ const Examples: React.FC = () => {
 
   return (
     <>
-    <IonSplitPane contentId="main">
-    <Sidenav/>
-    <IonPage id="main">
-      
-      <AppHeader/>
-      
-      <IonContent className='page-body'>
-        {loading && 
-        <IonProgressBar type="indeterminate"></IonProgressBar>
-        }
-          <IonCard>
-            <form onSubmit={handleSubmit(filterFormSubmit)} className="w-full">
-              <IonGrid>
-                <IonRow className='items-center'>
-                  <IonCol size='1'>
-                    Filter By:
-                  </IonCol>
-                  <IonCol size='3'>
-                    <IonInput className='text-sm' label="Format Id" labelPlacement="floating" fill="outline" placeholder="Enter Product Name"
-                      {...register("format_id", {
-                        validate: {},
-                      })}
-                    ></IonInput>
-                  </IonCol>
-                  <IonCol size='3'>
-                    <IonInput className='text-sm' label="Segment Id" labelPlacement="floating" fill="outline" placeholder="Enter Product Name"
-                      {...register("segment_id", {
-                        validate: {},
-                      })}
-                    ></IonInput>
-                  </IonCol>
-                  <IonCol size='3'>
-                    <IonInput className='text-sm' label="Purpose Id" labelPlacement="floating" fill="outline" placeholder="Enter Product Name"
-                      {...register("purpose_id", {
-                        validate: {},
-                      })}
-                    ></IonInput>
-                  </IonCol>
-                  <IonCol size='2'>
-                    <IonButton size='small' type='submit' className='btn-primary text-xs' shape="round">
-                      Filter
+      <IonSplitPane contentId="main">
+        <Sidenav />
+        <IonPage id="main">
+
+          <AppHeader />
+
+          <IonContent className='page-body'>
+            {loading &&
+              <IonProgressBar type="indeterminate"></IonProgressBar>
+            }
+            <IonCard>
+              <form onSubmit={handleSubmit(filterFormSubmit)} className="w-full">
+                <IonGrid>
+                  <IonRow className='items-center'>
+                    <IonCol size='1'>
+                      Filter By:
+                    </IonCol>
+                    <IonCol size='3'>
+                      <IonInput className='text-sm' label="Format Id" labelPlacement="floating" fill="outline" placeholder="Enter Product Name"
+                        {...register("format_id", {
+                          validate: {},
+                        })}
+                      ></IonInput>
+                    </IonCol>
+                    <IonCol size='3'>
+                      <IonInput className='text-sm' label="Segment Id" labelPlacement="floating" fill="outline" placeholder="Enter Product Name"
+                        {...register("segment_id", {
+                          validate: {},
+                        })}
+                      ></IonInput>
+                    </IonCol>
+                    <IonCol size='3'>
+                      <IonInput className='text-sm' label="Purpose Id" labelPlacement="floating" fill="outline" placeholder="Enter Product Name"
+                        {...register("purpose_id", {
+                          validate: {},
+                        })}
+                      ></IonInput>
+                    </IonCol>
+                    <IonCol size='2'>
+                      <IonButton size='small' type='submit' className='btn-primary text-xs' shape="round">
+                        Filter
+                      </IonButton>
+                      <IonButton onClick={() => { reset(); getExamplesData() }} className='text-xs' size='small' type='reset' fill='outline' shape="round">
+                        Cancel
+                      </IonButton>
+                    </IonCol>
+                  </IonRow>
+                </IonGrid>
+              </form>
+            </IonCard>
+
+
+            <IonList className='bg-transparent'>
+              {exampleList.map((item, index) => (
+                <IonCard key={index}>
+                  <IonItemSliding>
+                    <IonItem button={true}>
+                      <IonLabel>
+                        <p><b>Segment Id:</b> {item.segment_id}</p>
+                        <p><b>Purpose Id:</b> {item.purpose_id}</p>
+                        <p><b>Format Id:</b> {item.format_id}</p>
+                        <p>
+                          <b>B2B:</b> {item.b2b === 1 ? 'Yes' : item.b2b === 0 ? 'No' : 'invalid value'} | <b>B2C:</b> {item.b2c === 1 ? 'Yes' : item.b2c === 0 ? 'No' : 'invalid value'}
+                        </p>
+                        <p><b>Products:</b> {item.products}</p>
+                        <p><b>User Prompt:</b> {item.user_prompt}</p>
+                        <p><b>Example:</b> {item.example}</p>
+                      </IonLabel>
+                      <IonButton id="open-modal" onClick={() => handleEdit(item, index)} slot="end" size="small" color="warning">
+                        <IonIcon icon={createOutline}></IonIcon>
+                      </IonButton>
+                      <IonButton onClick={() => handleDeleteAleart(true, index)} color="danger" slot="end" size="small">
+                        <IonIcon icon={trashOutline}></IonIcon>
+                      </IonButton>
+                    </IonItem>
+                    <IonItemOptions>
+                      <IonItemOption id="open-modal" onClick={() => handleEdit(item, index)} color="warning">Edit</IonItemOption>
+                      <IonItemOption onClick={() => handleDeleteAleart(true, index)} color="danger">Delete</IonItemOption>
+                    </IonItemOptions>
+                  </IonItemSliding>
+                </IonCard>
+              ))}
+            </IonList>
+
+            {exampleList.length === 0 &&
+              <IonText className='text-center block'>No data found!</IonText>
+            }
+
+            {/* modal start */}
+            <IonModal id="example-modal" isOpen={isOpenModal} onWillDismiss={() => onModalDismiss()}>
+              <IonHeader>
+                <IonToolbar>
+                  <IonTitle className='text-sm font-bold'>Examples Add & Edit</IonTitle>
+                  <IonButtons slot="end">
+                    <IonButton size="small" shape="round" onClick={() => onModalDismiss()}>
+                      <IonIcon slot="icon-only" icon={closeOutline}></IonIcon>
                     </IonButton>
-                    <IonButton onClick={() =>{reset(); getExamplesData()}} className='text-xs' size='small' type='reset' fill='outline' shape="round">
+                  </IonButtons>
+                </IonToolbar>
+              </IonHeader>
+              <div className="ion-padding">
+                <form onSubmit={handleSubmit(handleFormSubmit)} className="w-full">
+                  <IonSelect placeholder="Select formats" disabled={formats.length === 0} className='min-h-10 field-item mb-4 text-sm' label="Select desired format below" interface="popover" labelPlacement="stacked" fill="outline"
+                    {...register("format_id", {
+                      validate: {},
+                    })}>
+                    {formats.map((item, index) => (
+                      <IonSelectOption key={index} value={item.format_id}>{item.format_name}</IonSelectOption>
+                    ))}
+                  </IonSelect>
+
+                  <IonSelect placeholder="Select purpose" disabled={purposes.length === 0} className='min-h-10 field-item mb-4 text-sm' label="Which product/offer do you want to report on?" interface="popover" labelPlacement="stacked" fill="outline"
+                    {...register("purpose_id", {
+                      validate: {},
+                    })}>
+                    {purposes.map((item, index) => (
+                      <IonSelectOption key={index} value={item.purpose_id}>{item.purpose_name}</IonSelectOption>
+                    ))}
+                  </IonSelect>
+
+                  <IonSelect placeholder="Select Segment" disabled={segments.length === 0} className='min-h-10 field-item mb-4 text-sm' label="Which product/offer do you want to report on?" interface="popover" labelPlacement="stacked" fill="outline"
+                    {...register("segment_id", {
+                      validate: {},
+                    })}>
+                    {segments.map((item, index) => (
+                      <IonSelectOption key={index} value={item.segment_id}>{item.segment_name}</IonSelectOption>
+                    ))}
+                  </IonSelect>
+
+
+                  <IonInput className='mb-4 text-sm' label="Product Name" labelPlacement="floating" fill="outline" placeholder="Enter Product Name"
+                    {...register("products", {
+                      validate: {},
+                    })}
+                  ></IonInput>
+
+                  <IonTextarea
+                    className='mb-4 text-sm'
+                    label="User Prompt"
+                    labelPlacement="floating"
+                    fill="outline"
+                    placeholder="Enter User Prompt"
+                    autoGrow={true}
+                    {...register("user_prompt", {
+                      validate: {},
+                    })}
+                  ></IonTextarea>
+
+                  <IonTextarea
+                    className='mb-4 text-sm'
+                    label="Example"
+                    labelPlacement="floating"
+                    fill="outline"
+                    placeholder="Enter Example"
+                    autoGrow={true}
+                    {...register("example", {
+                      validate: {},
+                    })}
+                  ></IonTextarea>
+
+                  <div className='flex justify-between mb-4 text-sm'>
+                    <IonCheckbox
+                      {...register("b2b", {
+                        validate: {},
+                      })}
+                      checked={isB2b as boolean}
+                      onIonChange={(event: any) => {
+                        console.log('event', event.detail.checked);
+                        setValue("b2b", event.detail.checked);
+                      }}
+                      labelPlacement="start">B2B</IonCheckbox>
+
+                    <IonCheckbox
+                      {...register("b2c", {
+                        validate: {},
+                      })}
+                      checked={isB2c as boolean}
+                      onIonChange={(event: any) => {
+                        console.log('event', event.detail.checked);
+                        setValue("b2c", event.detail.checked);
+                      }}
+                      labelPlacement="start">B2C</IonCheckbox>
+                  </div>
+
+                  <div className='text-center'>
+                    <IonButton size='small' type='submit' className='btn-primary' shape="round">
+                      {loading && <IonSpinner className='mr-2' name="bubbles"></IonSpinner>}
+                      Save
+                    </IonButton>
+                    <IonButton onClick={() => onModalDismiss()} size='small' type='reset' fill='outline' shape="round">
                       Cancel
                     </IonButton>
-                  </IonCol>
-                </IonRow>
-              </IonGrid>
-            </form>
-          </IonCard>
-          
-        
-          <IonList className='bg-transparent'>
-            {exampleList.map((item, index) => (
-              <IonCard key={index}>
-                <IonItemSliding>
-                  <IonItem button={true}>
-                    <IonLabel>
-                      <p><b>Segment Id:</b> {item.segment_id}</p>
-                      <p><b>Purpose Id:</b> {item.purpose_id}</p>
-                      <p><b>Format Id:</b> {item.format_id}</p>
-                      <p>
-                        <b>B2B:</b> {item.b2b === 1 ? 'Yes' : item.b2b === 0 ? 'No' : 'invalid value'} | <b>B2C:</b> {item.b2c === 1 ? 'Yes' : item.b2c === 0 ? 'No' : 'invalid value'}
-                      </p>
-                      <p><b>Products:</b> {item.products}</p>
-                      <p><b>User Prompt:</b> {item.user_prompt}</p>
-                      <p><b>Example:</b> {item.example}</p>
-                    </IonLabel>
-                    <IonButton id="open-modal" onClick={() => handleEdit(item, index)} slot="end" size="small" color="warning">
-                      <IonIcon icon={createOutline}></IonIcon>
-                    </IonButton>
-                    <IonButton onClick={() => handleDeleteAleart(true, index)} color="danger" slot="end" size="small">
-                      <IonIcon icon={trashOutline}></IonIcon>
-                    </IonButton>
-                  </IonItem>
-                  <IonItemOptions>
-                    <IonItemOption id="open-modal" onClick={() => handleEdit(item, index)} color="warning">Edit</IonItemOption>
-                    <IonItemOption onClick={() => handleDeleteAleart(true, index)} color="danger">Delete</IonItemOption>
-                  </IonItemOptions>
-                </IonItemSliding>
-              </IonCard>
-            ))}
-          </IonList>
+                  </div>
+                </form>
+              </div>
+            </IonModal>
+            {/* modal end */}
 
-          {exampleList.length === 0 &&
-            <IonText className='text-center block'>No data found!</IonText>
-          }
-
-          {/* modal start */}
-          <IonModal id="example-modal" isOpen={isOpenModal} onWillDismiss={() => onModalDismiss()}>
-            <IonHeader>
-              <IonToolbar>
-                <IonTitle className='text-sm font-bold'>Examples Add & Edit</IonTitle>
-                <IonButtons slot="end">
-                  <IonButton size="small" shape="round" onClick={() => onModalDismiss()}>
-                    <IonIcon slot="icon-only" icon={closeOutline}></IonIcon>
-                  </IonButton>
-                </IonButtons>
-              </IonToolbar>
-            </IonHeader>
-            <div className="ion-padding">
-              <form onSubmit={handleSubmit(handleFormSubmit)} className="w-full">
-                <IonSelect placeholder="Select formats" disabled={formats.length === 0} className='min-h-10 field-item mb-4 text-sm' label="Select desired format below" interface="popover" labelPlacement="stacked" fill="outline"
-                  {...register("format_id", {
-                    validate: {},
-                  })}>
-                  {formats.map((item, index) => (
-                    <IonSelectOption key={index} value={item.format_id}>{item.format_name}</IonSelectOption>
-                  ))}
-                </IonSelect>
-
-                <IonSelect placeholder="Select purpose" disabled={purposes.length === 0} className='min-h-10 field-item mb-4 text-sm' label="Which product/offer do you want to report on?" interface="popover" labelPlacement="stacked" fill="outline"
-                  {...register("purpose_id", {
-                    validate: {},
-                  })}>
-                  {purposes.map((item, index) => (
-                    <IonSelectOption key={index} value={item.purpose_id}>{item.purpose_name}</IonSelectOption>
-                  ))}
-                </IonSelect>
-
-                <IonSelect placeholder="Select Segment" disabled={segments.length === 0} className='min-h-10 field-item mb-4 text-sm' label="Which product/offer do you want to report on?" interface="popover" labelPlacement="stacked" fill="outline"
-                  {...register("segment_id", {
-                    validate: {},
-                  })}>
-                  {segments.map((item, index) => (
-                    <IonSelectOption key={index} value={item.segment_id}>{item.segment_name}</IonSelectOption>
-                  ))}
-                </IonSelect>
-
-
-                <IonInput className='mb-4 text-sm' label="Product Name" labelPlacement="floating" fill="outline" placeholder="Enter Product Name"
-                  {...register("products", {
-                    validate: {},
-                  })}
-                ></IonInput>
-
-                <IonTextarea
-                  className='mb-4 text-sm'
-                  label="User Prompt"
-                  labelPlacement="floating"
-                  fill="outline"
-                  placeholder="Enter User Prompt"
-                  autoGrow={true}
-                  {...register("user_prompt", {
-                    validate: {},
-                  })}
-                ></IonTextarea>
-
-                <IonTextarea
-                  className='mb-4 text-sm'
-                  label="Example"
-                  labelPlacement="floating"
-                  fill="outline"
-                  placeholder="Enter Example"
-                  autoGrow={true}
-                  {...register("example", {
-                    validate: {},
-                  })}
-                ></IonTextarea>
-
-                <div className='flex justify-between mb-4 text-sm'>
-                  <IonCheckbox 
-                    {...register("b2b", {
-                      validate: {},
-                    })}
-                    checked={isB2b as boolean}
-                    onIonChange={(event: any) => {
-                      console.log('event', event.detail.checked);
-                      setValue("b2b", event.detail.checked);
-                    }}
-                    labelPlacement="start">B2B</IonCheckbox>
-
-                  <IonCheckbox 
-                    {...register("b2c", {
-                      validate: {},
-                    })}
-                    checked={isB2c as boolean}
-                    onIonChange={(event: any) => {
-                      console.log('event', event.detail.checked);
-                      setValue("b2c", event.detail.checked);
-                    }}
-                    labelPlacement="start">B2C</IonCheckbox>
-                </div>
-                
-                <div className='text-center'>
-                  <IonButton size='small' type='submit' className='btn-primary' shape="round">
-                    {loading && <IonSpinner className='mr-2' name="bubbles"></IonSpinner>}
-                    Save
-                  </IonButton>
-                  <IonButton onClick={() => onModalDismiss()} size='small' type='reset' fill='outline' shape="round">
-                    Cancel
-                  </IonButton>
-                </div>
-              </form>
-            </div>
-          </IonModal>
-          {/* modal end */}
-
-          {/* aleart start */}
-          <IonAlert
-            isOpen={isOpen}
-            header="Delete example!"
-            subHeader="Are you want to delete this example?"
-            trigger="present-alert"
-            buttons={[
-              {
-                text: 'Cancel',
-                role: 'cancel',
-                handler: () => {
-                  setIsOpen(false)
-                  console.log('Alert canceled');
+            {/* aleart start */}
+            <IonAlert
+              isOpen={isOpen}
+              header="Delete example!"
+              subHeader="Are you want to delete this example?"
+              trigger="present-alert"
+              buttons={[
+                {
+                  text: 'Cancel',
+                  role: 'cancel',
+                  handler: () => {
+                    setIsOpen(false)
+                    console.log('Alert canceled');
+                  },
                 },
-              },
-              {
-                text: 'Delete',
-                role: 'confirm',
-                handler: () => {
-                  handleDeleteAleart(false, 0);
-                  console.log('Alert confirmed');
+                {
+                  text: 'Delete',
+                  role: 'confirm',
+                  handler: () => {
+                    handleDeleteAleart(false, 0);
+                    console.log('Alert confirmed');
+                  },
                 },
-              },
-            ]}
-            onDidDismiss={({ detail }) => console.log(`Dismissed with role: ${detail.role}`)}
-          ></IonAlert>
-          {/* aleart end */}
+              ]}
+              onDidDismiss={({ detail }) => console.log(`Dismissed with role: ${detail.role}`)}
+            ></IonAlert>
+            {/* aleart end */}
 
-          <IonFab slot="fixed" vertical="bottom" horizontal="end">
-            <IonFabButton size="small" onClick={() => setIsOpenModal(true)}>
-              <IonIcon icon={add}></IonIcon>
-            </IonFabButton>
-          </IonFab>
-          <IonToast
-            className='custom-toast'
-            isOpen={isShowError}
-            message={isErrorMsg}
-            duration={3000}
-            onDidDismiss={() => setIsShowError(false)}
-          ></IonToast>
-      </IonContent>
-    </IonPage>
-    </IonSplitPane>
+            <IonFab slot="fixed" vertical="bottom" horizontal="end">
+              <IonFabButton size="small" onClick={() => setIsOpenModal(true)}>
+                <IonIcon icon={add}></IonIcon>
+              </IonFabButton>
+            </IonFab>
+            <IonToast
+              className='custom-toast'
+              isOpen={isShowError}
+              message={isErrorMsg}
+              duration={3000}
+              onDidDismiss={() => setIsShowError(false)}
+            ></IonToast>
+          </IonContent>
+        </IonPage>
+      </IonSplitPane>
     </>
   );
 };
