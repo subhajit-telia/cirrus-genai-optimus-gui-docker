@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import AppHeader from '../../../components/header/Header';
 import Sidenav from '../../../components/sidenav/Sidenav';
 import { add, closeOutline, createOutline, trashOutline } from 'ionicons/icons';
-import { AccessToken, HTTPMethod, NetworkInfo } from '../../../routes/network';
+import { HTTPMethod, NetworkInfo } from '../../../routes/network';
 import { useForm } from 'react-hook-form';
 
 interface UserAddModel {
@@ -25,7 +25,7 @@ const Users: React.FC = () => {
   const [targetIndex, setTargetIndex] = useState<number>();
   const [isShowError, setIsShowError] = useState(false);
   const [isErrorMsg, setIsErrorMsg] = useState('');
-  const apiUrl = window.RUNTIME_ENV?.REACT_APP_API_URL || NetworkInfo.URL;
+  const apiUrl = `${NetworkInfo.URL}`;
 
   useEffect(() => {
 
@@ -41,7 +41,7 @@ const Users: React.FC = () => {
       const response = await fetch(urlData, {
         method: 'GET',
         headers: {
-          '"removed"': AccessToken."removed",
+          '"removed"': `${NetworkInfo.ACCESSTOKEN}`,
           'Content-Type': 'application/json',
         },
       });

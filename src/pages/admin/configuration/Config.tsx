@@ -2,7 +2,7 @@ import { IonButton, IonCard, IonCheckbox, IonCol, IonContent, IonGrid, IonInput,
 import { useEffect, useState } from 'react';
 import AppHeader from '../../../components/header/Header';
 import Sidenav from '../../../components/sidenav/Sidenav';
-import { AccessToken, HTTPMethod, NetworkInfo } from '../../../routes/network';
+import { HTTPMethod, NetworkInfo } from '../../../routes/network';
 import { useForm } from 'react-hook-form';
 
 interface ConfigAddModel {
@@ -25,7 +25,7 @@ const Config: React.FC = () => {
   const [configList, setConfigList] = useState<ConfigAddModel[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [loadingForm, setLoadingForm] = useState<boolean>(false);
-  const apiUrl = window.RUNTIME_ENV?.REACT_APP_API_URL || NetworkInfo.URL;
+  const apiUrl = `${NetworkInfo.URL}`;
 
   useEffect(() => {
 
@@ -41,7 +41,7 @@ const Config: React.FC = () => {
       const response = await fetch(urlData, {
         method: 'GET',
         headers: {
-          '"removed"': AccessToken."removed",
+          '"removed"': `${NetworkInfo.ACCESSTOKEN}`,
           'Content-Type': 'application/json',
         },
       });
@@ -106,7 +106,7 @@ const Config: React.FC = () => {
       const response = await fetch(formUrl, {
         method: HTTPMethod.PUT,
         headers: {
-          '"removed"': AccessToken."removed",
+          '"removed"': `${NetworkInfo.ACCESSTOKEN}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(allConfig),
