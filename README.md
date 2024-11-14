@@ -46,12 +46,12 @@ This will start a local development server that will open the application in you
 
 Serving this application in production is based on building it as docker container. In this docker container it uses `envsubst` nginx module to handle multiple environment deploymend via environment variables. `API_ENDPOINT` and `API_KEY` when provided, will be replaced on running the container. 
 ### Local test container
+The `API_KEY` value is stored in AWS Secrets Manager in the stallions/optimus_prime_se/webapp secret. Replace it in the command below:
 ```bash
 docker build -t optimus:local .
-docker run -ti -p 8000:80 -e API_ENDPOINT="new-genai-optimus.cirrus-dev.teliacompany.net/api/v1" -e API_KEY="IgGuQSjs60HH0R6MTs6c9WiAZupfFYWc" optimus:local
+docker run -ti -p 8000:80 -e API_ENDPOINT="genai-optimus-api.cirrus-dev.teliacompany.net/api/v1" -e API_KEY="XXXX" optimus:local
 ```
 
 
-
-
+## Further Documentation
 For more details check this https://itwiki.atlassian.teliacompany.net/display/AI/GUI
