@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.1](https://github.com/telia-company/cirrus-genai-optimus-gui-docker/compare/v1.2.0...v1.2.1) (2024-11-14)
+
+
+### Bug Fixes
+
+* Update README.md ([f401617](https://github.com/telia-company/cirrus-genai-optimus-gui-docker/commit/f401617648d3f04e82008c4a2cfeebe53f34cf5a))
+
 ## [1.2.0](https://github.com/telia-company/cirrus-genai-optimus-gui-docker/compare/v1.1.0...v1.2.0) (2024-11-13)
 
 
