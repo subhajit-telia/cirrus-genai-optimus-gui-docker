@@ -1,4 +1,4 @@
-import { IonButton, IonChip, IonCol, IonContent, IonFab, IonFabButton, IonFabList, IonGrid, IonIcon, IonPage, IonProgressBar, IonRow, IonSkeletonText, IonSpinner, IonTextarea, IonToast } from '@ionic/react';
+import { IonButton, IonButtons, IonChip, IonCol, IonContent, IonFab, IonFabButton, IonFabList, IonFooter, IonGrid, IonHeader, IonIcon, IonModal, IonPage, IonProgressBar, IonRow, IonSkeletonText, IonSpinner, IonTextarea, IonTitle, IonToast, IonToolbar } from '@ionic/react';
 import AppHeader from '../../components/header/Header';
 import { globe, information, link } from 'ionicons/icons';
 import { useEffect, useState } from 'react';
@@ -11,12 +11,15 @@ import Multiselect from 'multiselect-react-dropdown';
 import optimusLogo from '../../theme/assets/optimus-logo.png'
 import { saveAs } from 'file-saver';
 import SelectDropdown from '../../components/dropdown/Dropdown';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
 
 type Tab = {
   answer: string;
   segment_id: string;
   segment_name: string;
-  outputs:[]
+  outputs:[innerOutput]
   data: [innerTab]
 }
 interface innerTab {
@@ -24,7 +27,13 @@ interface innerTab {
   format_name: string,
   answer: string,
   input_params: string,
-  outputs: []
+  outputs: [innerOutput]
+}
+
+interface innerOutput {
+  answer: string,
+  input_params: any
+  rating: number | null
 }
 
 interface UserAddModel {
@@ -76,7 +85,9 @@ const B2C: React.FC = () => {
   const [selectedPurpose, setSelectedPurpose] = useState<typeof purposes[0][]>([]);
   const [userName, setUserName] = useState('');
   const apiUrl = window.RUNTIME_ENV?.REACT_APP_API_URL || NetworkInfo.URL;
-
+  const [isOpenModal, setIsOpenModal] = useState(false);
+  const [selectedDiv, setSelectedDiv] = useState<number | null>(null);
+  const [feedbackCopy, setFeedbackCopy] = useState([]);
 
   useEffect(() => {
     let userLocalData:any = localStorage.getItem('user');
@@ -302,7 +313,7 @@ const B2C: React.FC = () => {
         let eachItem = {
           user: userName,
           session_id: generateDateTimeString(),
-          qid: generateDateTimeString(),
+          session_family_id: generateDateTimeString(),
           use_case: 'content_creation_b2c',
           product_ids: productIds,
           question: data.question,
@@ -322,7 +333,7 @@ const B2C: React.FC = () => {
         let eachItem = {
           user: userName,
           session_id: generateDateTimeString(),
-          qid: generateDateTimeString(),
+          session_family_id: generateDateTimeString(),
           use_case: 'content_creation_b2c',
           product_ids: productIds,
           question: data.question,
@@ -351,7 +362,7 @@ const B2C: React.FC = () => {
           let eachItem = {
             user: userName,
             session_id: generateDateTimeString(),
-            qid: generateDateTimeString(),
+            session_family_id: generateDateTimeString(),
             use_case: 'content_creation_b2c',
             product_ids: productIds,
             question: data.question,
@@ -369,7 +380,7 @@ const B2C: React.FC = () => {
         let eachItem = {
           user: userName,
           session_id: generateDateTimeString(),
-          qid: generateDateTimeString(),
+          session_family_id: generateDateTimeString(),
           use_case: 'content_creation_b2c',
           product_ids: productIds,
           question: data.question,
@@ -390,7 +401,7 @@ const B2C: React.FC = () => {
   const handleApiCall = async (data: any) => {
     console.log('data>>', data);
     setLoading(true);
-    let formUrl = apiUrl + '/process_json';
+    let formUrl = apiUrl + '/chat/request';
     console.log('payload', data);
     console.log('arrayTab>>>', arrayTab);
     console.log('arrayNoSegment', arrayNoSegment);
@@ -409,52 +420,65 @@ const B2C: React.FC = () => {
       console.log('Success:', responseData);
   
       if (response.ok && !responseData.ErrorMessage) {
+        
         setNoSegmentArray(arrayNoSegment);
         setTabArray(arrayTab);
         console.log('tabs>>>', tabs);
-  
-        if (arrayTab !== undefined) {
-          arrayTab = arrayTab.map((segment: { segment_id: any; segment_name: any; data: any[] }) => {
-            if (segment.segment_id === responseData.input_params.segment_id) {
-              segment.data = segment.data.map((format: any) => {
-                if (format.format_id === responseData.input_params.format_id) {
-                  return {
-                    ...format,
-                    answer: DOMPurify.sanitize(responseData.answer),
-                    input_params: responseData.input_params,
-                    outputs: [
-                      ...(format.outputs || []),
-                      { answer: DOMPurify.sanitize(responseData.answer), input_params: responseData.input_params }
-                    ]
-                  };
-                }
-                return format;
-              });
-            }
-            return segment;
-          });
-          setTabs(arrayTab);
-        } else {
-          arrayNoSegment = arrayNoSegment.map((format: { format_id: any; outputs?: any[] }) => {
-            if (format.format_id === responseData.input_params.format_id || format.format_id === 'customPrompts') {
-              const currentOutputs = format.outputs || [];
-              return {
-                ...format,
-                answer: DOMPurify.sanitize(responseData.answer),
-                input_params: responseData.input_params,
-                outputs: [
-                  ...currentOutputs,
-                  { answer: DOMPurify.sanitize(responseData.answer), input_params: responseData.input_params }
-                ]
-              };
-            }
-            return format;
-          });
-          setTabs(arrayNoSegment);
+        if (responseData.responses.length === 1) {
+          if (arrayTab !== undefined) {
+            arrayTab = arrayTab.map((segment: { segment_id: any; segment_name: any; data: any[] }) => {
+              if (segment.segment_id === responseData.responses[0].input_params.segment_id) {
+                segment.data = segment.data.map((format: any) => {
+                  if (format.format_id === responseData.responses[0].input_params.format_id) {
+                    return {
+                      ...format,
+                      answer: DOMPurify.sanitize(responseData.responses[0].answer),
+                      input_params: responseData.responses[0].input_params,
+                      outputs: [
+                        ...(format.outputs || []),
+                        { 
+                          answer: DOMPurify.sanitize(responseData.responses[0].answer), 
+                          input_params: responseData.responses[0].input_params ,
+                          rating: null
+                        }
+                      ]
+                    };
+                  }
+                  return format;
+                });
+              }
+              return segment;
+            });
+            setTabs(arrayTab);
+          } else {
+            arrayNoSegment = arrayNoSegment.map((format: { format_id: any; outputs?: any[] }) => {
+              if (format.format_id === responseData.responses[0].input_params.format_id || format.format_id === 'customPrompts') {
+                const currentOutputs = format.outputs || [];
+                return {
+                  ...format,
+                  answer: DOMPurify.sanitize(responseData.responses[0].answer),
+                  input_params: responseData.responses[0].input_params,
+                  outputs: [
+                    ...currentOutputs,
+                    { 
+                      answer: DOMPurify.sanitize(responseData.responses[0].answer), 
+                      input_params: responseData.responses[0].input_params ,
+                      rating: null
+                    }
+                  ]
+                };
+              }
+              return format;
+            });
+            setTabs(arrayNoSegment);
+          }
+          setLoading(false);
+          showLoadingIndicator(false);
+        }else {
+          setIsOpenModal(true);
+          setFeedbackCopy(responseData.responses);
+          return;
         }
-  
-        setLoading(false);
-        showLoadingIndicator(false);
       } else {
         setIsShowError(true);
         setIsErrorMsg(responseData.ErrorMessage || 'Something went wrong!');
@@ -467,8 +491,6 @@ const B2C: React.FC = () => {
       showLoadingIndicator(false);
     }
   };
-  
-  
   
   /* Handle form submit end */
 
@@ -519,6 +541,172 @@ const B2C: React.FC = () => {
   };
   /* Regenarate item end */
 
+  /* ----------Save edit answer copy start---------- */
+  const saveEditedAnswer = async (data: any): Promise<void> => {
+    console.log('saveEditedAnswer', data);
+    arrayNoSegment = tabs;
+    arrayTab = tabArray;
+    console.log('arrayTab>>', arrayTab);
+    let formUrl = apiUrl + '/chat/save';
+    try {
+      const response = await fetch(formUrl, {
+        method: HTTPMethod.POST,
+        headers: {
+          '"removed"': AccessToken."removed",
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data),
+      });
+  
+      const responseData = await response.json();
+      console.log('Success:', responseData);
+  
+      if (response.ok && !responseData.ErrorMessage) {
+        setNoSegmentArray(arrayNoSegment);
+        setTabArray(arrayTab);
+        console.log('tabs>>>', tabs);
+        console.log('arrayTab>>>', arrayTab);
+        console.log('arrayNoSegment>>>', arrayNoSegment);
+  
+        if (arrayTab !== undefined) {
+          arrayTab = arrayTab.map((segment: { segment_id: any; segment_name: any; data: any[] }) => {
+            if (segment.segment_id === responseData.responses[0].input_params.segment_id) {
+              segment.data = segment.data.map((format: any) => {
+                if (format.format_id === responseData.responses[0].input_params.format_id) {
+                  let outputs:any = format.outputs;
+                  let qidToMatch = responseData.responses[0].input_params.qid;
+                  let currentOutputs = outputs.map((item:any) =>
+                    item.input_params.qid === qidToMatch ? responseData.responses[0] : item
+                  )
+                  return {
+                    ...format,
+                    answer: DOMPurify.sanitize(responseData.responses[0].answer),
+                    input_params: responseData.responses[0].input_params,
+                    outputs: [
+                      ...currentOutputs,
+                    ]
+                  };
+                }
+                return format;
+              });
+            }
+            return segment;
+          });
+          setTabs(arrayTab);
+        } else {
+          arrayNoSegment = arrayNoSegment.map((format: { format_id: any; outputs?: any[] }) => {
+            if (format.format_id === responseData.responses[0].input_params.format_id || format.format_id === 'customPrompts') {
+              let outputs:any = format.outputs;
+              let qidToMatch = responseData.responses[0].input_params.qid;
+              let currentOutputs = outputs.map((item:any) =>
+                item.input_params.qid === qidToMatch ? responseData.responses[0] : item
+              )
+              return {
+                ...format,
+                answer: DOMPurify.sanitize(responseData.responses[0].answer),
+                input_params: responseData.responses[0].input_params,
+                outputs: [
+                  ...currentOutputs,
+                ]
+              };
+            }
+            return format;
+          });
+          setTabs(arrayNoSegment);
+        }
+  
+        setLoading(false);
+        showLoadingIndicator(false);
+      } else {
+        setIsShowError(true);
+        setIsErrorMsg(responseData.ErrorMessage || 'Something went wrong!');
+      }
+      
+    } catch (error: any) {
+      console.error('Login failed:', error);
+    }
+
+  };
+  /* Save edit answer copy end */
+
+  /* ----------genarate Refine Copy start---------- */
+  const genarateRefineCopy = async (data: any): Promise<void> => {
+    console.log('genarateRefineCopy', data);
+    arrayNoSegment = tabs;
+    arrayTab = tabArray;
+    console.log('arrayTab>>', arrayTab);
+    let formUrl = apiUrl + '/chat/edit';
+    try {
+      const response = await fetch(formUrl, {
+        method: HTTPMethod.POST,
+        headers: {
+          '"removed"': AccessToken."removed",
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data),
+      });
+  
+      const responseData = await response.json();
+      console.log('Success:', responseData);
+  
+      if (response.ok && !responseData.ErrorMessage) {
+        setNoSegmentArray(arrayNoSegment);
+        setTabArray(arrayTab);
+        console.log('tabs>>>', tabs);
+  
+        if (arrayTab !== undefined) {
+          arrayTab = arrayTab.map((segment: { segment_id: any; segment_name: any; data: any[] }) => {
+            if (segment.segment_id === responseData.responses[0].input_params.segment_id) {
+              segment.data = segment.data.map((format: any) => {
+                if (format.format_id === responseData.responses[0].input_params.format_id) {
+                  return {
+                    ...format,
+                    answer: DOMPurify.sanitize(responseData.responses[0].answer),
+                    input_params: responseData.responses[0].input_params,
+                    outputs: [
+                      ...(format.outputs || []),
+                      { answer: DOMPurify.sanitize(responseData.responses[0].answer), input_params: responseData.responses[0].input_params }
+                    ]
+                  };
+                }
+                return format;
+              });
+            }
+            return segment;
+          });
+          setTabs(arrayTab);
+        } else {
+          arrayNoSegment = arrayNoSegment.map((format: { format_id: any; outputs?: any[] }) => {
+            if (format.format_id === responseData.responses[0].input_params.format_id || format.format_id === 'customPrompts') {
+              const currentOutputs = format.outputs || [];
+              return {
+                ...format,
+                answer: DOMPurify.sanitize(responseData.responses[0].answer),
+                input_params: responseData.responses[0].input_params,
+                outputs: [
+                  ...currentOutputs,
+                  { answer: DOMPurify.sanitize(responseData.responses[0].answer), input_params: responseData.responses[0].input_params }
+                ]
+              };
+            }
+            return format;
+          });
+          setTabs(arrayNoSegment);
+        }
+  
+        setLoading(false);
+        showLoadingIndicator(false);
+      } else {
+        setIsShowError(true);
+        setIsErrorMsg(responseData.ErrorMessage || 'Something went wrong!');
+      }
+    } catch (error: any) {
+      console.error('Login failed:', error);
+    }
+
+  };
+  /* genarate Refine Copy end */
+
   /* ---------------Export to doc start--------------- */
   const exportToDoc = (data:any) => {
     console.log('data', data);
@@ -547,6 +735,84 @@ const B2C: React.FC = () => {
     saveAs(blob, fileName);
   };
   /* Export to doc end */
+
+  /* ---------------Self learning start--------------- */
+  const handleDivClick = async (selectItem:any, tabIndex:number) => {
+    console.log('selectItem', selectItem);
+    setSelectedDiv(tabIndex); // Set the clicked div's ID as selected
+    setIsOpenModal(false);
+    console.log('arrayNoSegment', noSegmentArray);
+    console.log('arrayTab', tabArray);
+
+    let currentArrayTab:any = tabArray;
+    let currentNoSegmentArray:any = noSegmentArray;
+    if (currentArrayTab !== undefined) {
+      currentArrayTab = currentArrayTab.map((segment: { segment_id: any; segment_name: any; data: any[] }) => {
+        if (segment.segment_id === selectItem.input_params.segment_id) {
+          segment.data = segment.data.map((format: any) => {
+            if (format.format_id === selectItem.input_params.format_id) {
+              return {
+                ...format,
+                answer: DOMPurify.sanitize(selectItem.answer),
+                input_params: selectItem.input_params,
+                outputs: [
+                  ...(format.outputs || []),
+                  { 
+                    answer: DOMPurify.sanitize(selectItem.answer), 
+                    input_params: selectItem.input_params ,
+                    rating: null
+                  }
+                ]
+              };
+            }
+            return format;
+          });
+        }
+        return segment;
+      });
+      setTabs(currentArrayTab);
+    } else {
+      currentNoSegmentArray = currentNoSegmentArray.map((format: { format_id: any; outputs?: any[] }) => {
+        if (format.format_id === selectItem.input_params.format_id || format.format_id === 'customPrompts') {
+          const currentOutputs = format.outputs || [];
+          return {
+            ...format,
+            answer: DOMPurify.sanitize(selectItem.answer),
+            input_params: selectItem.input_params,
+            outputs: [
+              ...currentOutputs,
+              { 
+                answer: DOMPurify.sanitize(selectItem.answer), 
+                input_params: selectItem.input_params ,
+                rating: null
+              }
+            ]
+          };
+        }
+        return format;
+      });
+      setTabs(currentNoSegmentArray);
+    }
+    setLoading(false);
+    showLoadingIndicator(false);
+
+    let formUrl = apiUrl + '/self_learning/select_answer?qid='+selectItem.input_params.qid;
+    try {
+      const response = await fetch(formUrl, {
+        method: HTTPMethod.PUT,
+        headers: {
+          '"removed"': AccessToken."removed",
+          'Content-Type': 'application/json'
+        },
+      });
+  
+      const responseData = await response.json();
+      console.log('Success:', responseData);
+    } catch (error: any) {
+      console.error('Login failed:', error);
+    }
+  };
+  /* Self learning end */
 
   return (
     <IonPage>
@@ -715,13 +981,14 @@ const B2C: React.FC = () => {
               <IonRow>
                 <IonCol>
                   <div className="mx-2.5 mt-7">
-                    <Tabs tabs={tabs} regenarateItem={regenarateItem}/>
+                    <Tabs tabs={tabs} regenarateItem={regenarateItem} saveEditedAnswer={saveEditedAnswer} genarateRefineCopy={genarateRefineCopy}/>
                     <div className="text-right mt-3">
                       <IonChip onClick={() => handleFormSubmit(requestData)} className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Rewrite all suggestions</IonChip>
                       <IonChip disabled className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Send to contentful</IonChip>
                       <IonChip onClick={() => exportToDoc(tabs)} className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Save all suggestions to word.doc</IonChip>
                       {/* <IonChip onClick={handleReset} className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Create new task</IonChip> */}
                     </div>
+                    <p className='italic text-xs font-bold mt-2.5'>Disclaimer: There may be risks associated with using AI-generated content. All content produced by this tool, i.e. Optimus, is for use at the user's discretion, and the user is solely responsible for reviewing and approving any text before sharing it externally.</p>
                   </div>
                 </IonCol>
               </IonRow>
@@ -759,6 +1026,35 @@ const B2C: React.FC = () => {
           duration={3000}
           onDidDismiss={() => setIsShowError(false)}
         ></IonToast>
+
+        {/* self learning modal start */}
+        <IonModal className='self-learning-modal' isOpen={isOpenModal}  backdropDismiss={false}>
+          <IonHeader>
+            <IonToolbar>
+              <IonTitle className='text-center'>Which copy is better?</IonTitle>
+            </IonToolbar>
+          </IonHeader>
+          <IonContent className="ion-padding">
+            <div>
+              <IonGrid className='cursor-pointer'>
+                <IonRow>
+                  {feedbackCopy.map((feedbackItem:any, tabIndex) => (
+                    <IonCol size="6">
+                      <div onClick={() => handleDivClick(feedbackItem, tabIndex)} className={`${selectedDiv === tabIndex ? 'border-2 border-primary' : ''}  bg-white mb-5 tab-body border p-4 rounded-md relative`}>
+                        <h3 className='capitalize'>{feedbackItem.input_params.format_name}</h3>
+                        <div className='shadow-md rounded-md p-2 mb-1.5 relative'>
+                          <h1>copy_block:</h1>
+                          <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} children={feedbackItem.answer}/>
+                        </div>
+                      </div>
+                    </IonCol>
+                  ))}
+                </IonRow>
+              </IonGrid>
+            </div>
+          </IonContent>
+        </IonModal>
+        {/* self learning modal end */}
       </IonContent>
     </IonPage>
   );
