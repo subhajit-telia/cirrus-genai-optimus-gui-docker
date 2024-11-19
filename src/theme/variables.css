@@ -136,7 +136,10 @@ ion-toast.custom-toast {
     font-size: 10px;
     background: var(--color-primary);
 }
-
+ion-modal.self-learning-modal {
+    --width: 80%;
+    --height: 85%;
+}
 ion-modal#example-modal {
     --width: fit-content;
   --min-width: 450px;
@@ -186,6 +189,9 @@ ion-textarea .textarea-wrapper-inner .native-wrapper .native-textarea {
 .feedback-alert .alert-input-group {
     padding-top: 0px;
     padding-bottom: 0px;
+}
+.feedback-alert {
+    --max-width: min(100vw - 96px, 360px);
 }
 @media (prefers-color-scheme: dark) {
     :root.md {
