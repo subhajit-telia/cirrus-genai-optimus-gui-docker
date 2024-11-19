@@ -1,0 +1,5 @@
+ion-modal.feedback-box {
+    --width: 30%;
+    --height: 70%;
+    font-size: 14px;
+}

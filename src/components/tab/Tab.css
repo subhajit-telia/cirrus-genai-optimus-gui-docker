@@ -12,3 +12,16 @@ h1, h2, h3, h4, h5, h6 {
     /* font-size: revert; */
     font-weight: revert;
 }
+
+.selected-popover .popover-buttons {
+    z-index: 999;
+}
+.showSelectedText {
+    display: flex;
+    justify-content: space-between;
+    padding-top: 14px;
+}
+.showSelectedText .text {
+    flex: auto;
+    margin-left: 10px;
+}
