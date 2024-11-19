@@ -5,39 +5,29 @@ import { HTTPMethod, NetworkInfo } from '../../routes/network';
 const FeedbackAlert = forwardRef((_, ref) => {
   const [showAlert, setShowAlert] = useState(false);
   const [questionId, setQuestionId] = useState('');
-  const [feedbackType, setFeedbackType] = useState('');
   const [isShowError, setIsShowError] = useState(false);
   const [isErrorMsg, setIsErrorMsg] = useState('');
   const apiUrl = `${NetworkInfo.URL}`;
 
   useImperativeHandle(ref, () => ({
-    open: (qId: string, type: string) => {
+    open: (qId: string) => {
       console.log('qId', qId);
-      console.log('type', type);
       setQuestionId(qId);
-      setFeedbackType(type);
       setShowAlert(true);
     },
   }));
 
-  const handleFeedbackSubmit = async (data: { comment: string }) => {
-    console.log('User comment:', data.comment);
+  const handleFeedbackSubmit = async () => {
 
-    let payLoad = {
-      "qid": questionId,
-      "rate": feedbackType,
-      "comment": data.comment
-    }
-    let formUrl = apiUrl + '/feedback';
-
+    let formUrl = apiUrl + '/self_learning/submit_answer?qid='+ questionId;
+    
     try {
       const response = await fetch(formUrl, {
-        method: HTTPMethod.PUT,
+        method: HTTPMethod.POST,
         headers: {
           '"removed"': `${NetworkInfo.ACCESSTOKEN}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(payLoad),
       });
       const responseData = await response.json();
       console.log("Success:", responseData);
@@ -62,22 +52,16 @@ const FeedbackAlert = forwardRef((_, ref) => {
       <IonAlert
         isOpen={showAlert}
         onDidDismiss={() => setShowAlert(false)}
-        header="Provide additional feedback"
-        className='feedback-alert'
-        inputs={[
-          {
-            name: 'comment',
-            type: 'textarea',
-            placeholder: 'Enter your feedback here...'
-          },
-        ]}
+        header="Submit Copy As Example?"
+        message="If you edited or refined this copy, make sure it is still specific for it's original purpose and segment and can be used for different campaigns (general use)."
+        className = 'feedback-alert'
         buttons={[
           {
-            text: 'Cancel',
+            text: 'No',
             role: 'cancel',
           },
           {
-            text: 'Submit',
+            text: 'Yes',
             handler: handleFeedbackSubmit,
           },
         ]}

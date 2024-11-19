@@ -1,6 +1,6 @@
-import { IonButton, IonIcon, IonSpinner, IonTextarea } from '@ionic/react';
+import { IonButton, IonCol, IonGrid, IonIcon, IonItem, IonLabel, IonList, IonRow, IonSpinner, IonTextarea } from '@ionic/react';
 import React, { useEffect, useRef, useState } from 'react';
-import { chatbubblesOutline, closeOutline, copyOutline, createOutline, documentTextOutline, refreshOutline, send, thumbsDownOutline, thumbsUpOutline } from 'ionicons/icons';
+import { chatbubblesOutline, closeOutline, copyOutline, createOutline, documentTextOutline, refreshOutline, returnDownForwardOutline, saveOutline, send, star, starOutline, thumbsDownOutline, thumbsUpOutline } from 'ionicons/icons';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
@@ -8,12 +8,14 @@ import './Tab.css';
 import { saveAs } from 'file-saver';
 import FeedbackAlert from '../feedback/Feedback';
 import { Tooltip } from 'react-tooltip';
+import { AccessToken, HTTPMethod, NetworkInfo } from '../../routes/network';
+import FeedbackModal from '../feedbackBox/FeedbackBox';
 
 interface Tab {
   answer: string;
   segment_id: string;
   segment_name: string;
-  outputs:[]
+  outputs:[innerOutput]
   data: [innerTab]
 }
 interface innerTab {
@@ -21,16 +23,54 @@ interface innerTab {
   format_name: string,
   answer: string,
   input_params: any
-  outputs:[]
+  outputs:[innerOutput]
+}
+interface innerOutput {
+  answer: string,
+  input_params: any
+  rating: number | null
 }
 
 interface TabsProps {
   tabs: Tab[];
   regenarateItem: (data: string) => void;
+  saveEditedAnswer: (data: string) => void;
+  genarateRefineCopy: (data: string) => void;
 }
 
-const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem }) => {
+interface Position {
+  top: number;
+  left: number;
+}
+
+interface RefineAnswer {
+  itemIndex: number;
+  tabIndex: number;
+  outputItem: {}
+}
+
+interface FeedbackBox {
+  qid: string,
+  rating: number,
+  format_rate: number,
+  integrity_rate: number,
+  communication_rate: number,
+  comment: string
+}
+
+const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, genarateRefineCopy }) => {
   const [activeTab, setActiveTab] = useState(tabs[0].segment_id); // Set the first tab as active initially
+  const [selectedText, setSelectedText] = useState<string>("");
+  const [position, setPosition] = useState<Position | null>(null);
+  const [activeBox, setActiveBox] = useState<number | null>(null);
+  const [isSaveChanges, setIsSaveChanges] = useState(false);
+  const [isEditQid, setIsEditQid] = useState('');
+  const [isRefineText, setIsRefineText] = useState(false);
+  const [isRefineDetails, setIsRefineDetails] = useState<any>("");
+  
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<FeedbackBox | null>(null);
+  const apiUrl = window.RUNTIME_ENV?.REACT_APP_API_URL || NetworkInfo.URL;
 
   const changeTab = (segment_id: string) => {
     setActiveTab(segment_id);
@@ -118,6 +158,20 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem }) => {
   };
   /* Edit answer end */
 
+  /* ----------Save edit answer copy start---------- */
+  const saveAnswerChange = async (value:any, qid:any) => {
+    console.log('saveAnswerChange', value);
+    console.log('qid', qid);
+    setIsEditQid(qid);
+    setIsSaveChanges(true);
+    let data:any = {
+      qid: qid,
+      text: value
+    }
+    saveEditedAnswer(data);
+  }
+  /* Save edit answer copy end */
+
   useEffect(() => {
     if (tabs[0].data && tabs.length === 1) {
       setActiveTab(tabs[0].segment_id)
@@ -134,12 +188,107 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem }) => {
     setEditInputValues(copyAnswer);
     console.log('editInputValues', editInputValues);
     console.log('tabs>><<', tabs);
+    setIsSaveChanges(false);
+    setIsEditQid('');
 
-  }, [tabs]);
+    console.log('selectedText', selectedText)
+  }, [tabs, setSelectedText]);
 
+  const handleMouseUp = (
+    event: React.MouseEvent,
+    containerRef: HTMLDivElement,
+    boxIndex: number
+  ) => {
+    const selection = window.getSelection();
   
+    // Ensure selection exists and contains text
+    if (selection && selection.toString().trim()) {
+      const range = selection.getRangeAt(0);
+      const rect = range.getBoundingClientRect();
+      const containerRect = containerRef.getBoundingClientRect();
+
+      setSelectedText(selection.toString().trim()); // Set popover content to the selected text
+      setPosition({
+        top: rect.top - containerRect.top + containerRef.scrollTop,
+        left: rect.left - containerRect.left + containerRef.scrollLeft,
+      });
+      setActiveBox(boxIndex);
+    }
+  };
+
+  const handleMouseClick = (
+    event: React.MouseEvent,
+    containerRef: HTMLDivElement,
+    boxIndex: number
+  ) => {
+    // Check if any text is selected; if so, do nothing
+    const selection = window.getSelection();
+    if (selection && selection.toString().trim()) {
+      return; // Skip click logic if text is selected
+    }
+
+    const containerRect = containerRef.getBoundingClientRect();
+
+    setSelectedText(''); // Set popover content to predefined text
+    setPosition({
+      top: event.clientY - containerRect.top + containerRef.scrollTop,
+      left: event.clientX - containerRect.left + containerRef.scrollLeft,
+    });
+    setActiveBox(boxIndex);
+  };
   
-  
+  /* ----------select Copy Qid start---------- */
+  const selectCopyQid = async (tabIndex:any, itemIndex:any, outputItem:any) => {
+    console.log(tabIndex +'/'+ itemIndex +'/'+ outputItem);
+    let selectedItem:RefineAnswer = {
+      tabIndex: tabIndex,
+      itemIndex: itemIndex,
+      outputItem: outputItem
+    }
+    console.log('selectedItem', selectedItem);
+    setIsRefineDetails(selectedItem);
+  }
+  /* select Copy Qid end */
+
+  /* --------refine Selected Text start-------- */
+  const refineSelectedText = (_identifier:any) => {
+    setPosition(null);
+    setActiveBox(null);
+    if (_identifier === 'refine') {
+      setIsRefineText(true);
+    }else if (_identifier === 'regenarate'){
+      submitRefineQuestion('','regenerate')
+    }else {
+      submitRefineQuestion('','insert')
+    }
+    console.log('_identifier', _identifier);
+  }
+  /* refine Selected Text end */
+
+  /* --------refine Selected copy start-------- */
+  const submitRefineQuestion = (data:any, identifier:any) => {
+    console.log('submitRefineQuestion', data);
+    console.log('isRefineDetails', isRefineDetails);
+    let refineData:any = {
+      qid: isRefineDetails.outputItem.input_params.qid,
+      action: identifier,
+      text: selectedText,
+      question: data
+    }
+    console.log('refineData', refineData);
+    genarateRefineCopy(refineData);
+    setIsRefineText(false);
+    setPosition(null);
+    setActiveBox(null);
+    setSelectedText('');
+    if (isRefineDetails.itemIndex !== '' && isRefineDetails.itemIndex !== null) {
+      tabs[isRefineDetails.tabIndex].data[isRefineDetails.itemIndex].answer = '';
+      console.log('tabs@@@@', tabs)
+    }else {
+      tabs[isRefineDetails.tabIndex].answer = '';
+    }
+  }
+  /* refine Selected copy end */
 
   /* -------Show hide question input start------- */
   const [inputVisibility, setInputVisibility] = useState(
@@ -239,11 +388,83 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem }) => {
 
   const feedbackAlertRef = useRef<any>(null);
 
-  const openFeedbackAlert = (qId: string, type:string) => {
+  const openFeedbackAlert = (qId: string) => {
     if (feedbackAlertRef.current) {
-      feedbackAlertRef.current.open(qId, type);
+      feedbackAlertRef.current.open(qId);
     }
   };
+
+  /* ----------------star rating start---------------- */
+  const handleTotalRatingClick = async (tabIndex:number, itemIndex:any, outputIndex:number, qid:string, rating: number) => {
+
+    console.log('item', qid);
+    console.log('rating', rating);
+
+    console.log(tabIndex +'/'+ itemIndex +'/'+ outputIndex)
+    let starItem:any = {
+      qid: qid,
+      rating: rating,
+      format_rate: rating,
+      integrity_rate: rating,
+      communication_rate: rating,
+      comment: ''
+    };
+    if (itemIndex !== '' && itemIndex !== null) {
+      tabs[tabIndex].data[itemIndex].outputs[outputIndex].rating = rating;
+      console.log('tabs@@@@', tabs)
+    }else {
+      tabs[tabIndex].outputs[outputIndex].rating = rating;
+    }
+    console.log('tabs', tabs);
+    // Open the modal with the updated item
+    setSelectedItem(starItem);
+    setIsModalOpen(true);
+
+    console.log('selectedItem', selectedItem);
+
+    let formUrl = apiUrl + '/feedback/put';
+    try {
+      const response = await fetch(formUrl, {
+        method: HTTPMethod.PUT,
+        headers: {
+          '"removed"': AccessToken."removed",
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(starItem),
+      });
+  
+      const responseData = await response.json();
+      console.log('Success:', responseData);
+    } catch (error: any) {
+      console.error('Login failed:', error);
+    }
+  };
+
+  const handleFeedbackSave = async (updatedItem: FeedbackBox) => {
+    console.log('updatedItem', updatedItem);
+    setIsModalOpen(false);
+    if (updatedItem.rating === 5) {
+      openFeedbackAlert(updatedItem.qid);
+    }
+    
+    let formUrl = apiUrl + '/feedback/put';
+    try {
+      const response = await fetch(formUrl, {
+        method: HTTPMethod.PUT,
+        headers: {
+          '"removed"': AccessToken."removed",
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(updatedItem),
+      });
+  
+      const responseData = await response.json();
+      console.log('Success:', responseData);
+    } catch (error: any) {
+      console.error('Login failed:', error);
+    }
+  };
+  /* star rating end */
 
   return (
     <div className="">
@@ -280,53 +501,108 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem }) => {
                       <h3 className='capitalize'>{tabItem.format_name}</h3>
                     }
 
-                    {tabItem.outputs.length !== 0 ?
+                    {tabItem.outputs.length > 0 ?
                       <>
-                        {tabItem.outputs.map((outputItem:any, outputIndex) => (
-                          <div className='shadow-md rounded-md p-2 mb-1.5'>
-                            <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} children={outputItem.answer}/>
-
-                            {/* Edit answer for each output */}
-                            {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === itemIndex && editVisibility.outputIndex === outputIndex && 
-                              <IonTextarea
-                                className='z-0 bottom-textarea rounded-xl mt-5 mb-2.5 text-black'
-                                aria-label="Custom textarea"
-                                placeholder="Write your question."
-                                autoGrow={true}
-                                counter={true}
-                                maxlength={2000}
-                                value={editInputValues[tabIndex][itemIndex][outputIndex]}
-                                onIonInput={(event) => handleEditChange(tabIndex, itemIndex, outputIndex, event)}
-                              >
-                                <IonButton data-tooltip-id='tooltip' data-tooltip-content='Copy text' onClick={() => copyToClipboard('single', editInputValues[tabIndex][itemIndex][outputIndex])} size="small" fill="clear" slot="end" >
-                                  <IonIcon className='text-primary' slot="icon-only" icon={copyOutline}></IonIcon>
-                                </IonButton>
-                              </IonTextarea>
-                            }
-                            {/* Action buttons for each output */}
-                            <div className='flex items-center justify-between'>
-                              <div>
-                                <IonIcon data-tooltip-id='tooltip' data-tooltip-content='Positive' onClick={() => openFeedbackAlert(outputItem.input_params.session_id, 'positive')} className='mr-2.5 cursor-pointer hover:text-primary' slot="icon-only" icon={thumbsUpOutline}></IonIcon>
-                                <IonIcon data-tooltip-id='tooltip' data-tooltip-content='Negative' onClick={() => openFeedbackAlert(outputItem.input_params.session_id, 'negative')} className='mr-2.5 cursor-pointer hover:text-primary' slot="icon-only" icon={thumbsDownOutline}></IonIcon>
-                              </div>
-                              <div>
-                                <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Copy text' className='text-xs' onClick={() => copyToClipboard('single', outputItem.answer)} shape="round">
-                                  <IonIcon className='' slot="icon-only" icon={copyOutline}></IonIcon>
-                                </IonButton>
-                                <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Edit answer' className='text-xs' onClick={() => editAnswerVisibility(tabIndex, itemIndex, outputIndex)} shape="round">
-                                  {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === itemIndex && editVisibility.outputIndex === outputIndex ? 
-                                    <IonIcon className='' slot="icon-only" icon={closeOutline}></IonIcon>
+                        {tabItem.outputs.map((outputItem:any, outputIndex) => {
+                          const containerRef = React.createRef<HTMLDivElement>();
+                          const boxIndex = itemIndex * 10 + outputIndex;
+                          return (
+                            <div key={boxIndex} className='shadow-md rounded-md p-2 mb-1.5 relative'>
+                              <div ref={containerRef} onClick={(e) => handleMouseClick(e, containerRef.current!, boxIndex)} onMouseUp={(e) => handleMouseUp(e, containerRef.current!, boxIndex)}>
+                                {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === itemIndex && editVisibility.outputIndex === outputIndex ?
+                                  <></>
                                   :
-                                    <IonIcon className='' slot="icon-only" icon={createOutline}></IonIcon>
+                                  <div onClick={() => selectCopyQid(tabIndex, itemIndex, outputItem)}>
+                                    <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} children={outputItem.answer}/>
+                                  </div>
+                                }
+
+                                {/* Popover only for the active box */}
+                                {position && activeBox === boxIndex && (
+                                  <div
+                                    style={{
+                                      position: "absolute",
+                                      top: position.top + 20,
+                                      left: position.left,
+                                      zIndex: 1000,
+                                    }}
+                                  >
+                                    <div className='popover-buttons'>
+                                      {selectedText === ''?
+                                        <IonButton onClick={() => refineSelectedText('insert')} data-tooltip-id='tooltip' data-tooltip-content='Generate More' className='text-xs' shape="round">
+                                          <IonIcon slot="icon-only" icon={refreshOutline}></IonIcon>
+                                        </IonButton>
+                                      :
+                                      <>
+                                        <IonButton onClick={() => refineSelectedText('refine')} data-tooltip-id='tooltip' data-tooltip-content='Refine Answer' className='text-xs' shape="round">
+                                          <IonIcon slot="icon-only" icon={chatbubblesOutline}></IonIcon>
+                                        </IonButton>
+                                        <IonButton onClick={() => refineSelectedText('regenarate')} data-tooltip-id='tooltip' data-tooltip-content='Regenerate' className='text-xs' shape="round">
+                                          <IonIcon slot="icon-only" icon={refreshOutline}></IonIcon>
+                                        </IonButton>
+                                      </>
+                                      }
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Edit answer for each output */}
+                              {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === itemIndex && editVisibility.outputIndex === outputIndex &&
+                                <IonTextarea
+                                  className='z-0 bottom-textarea rounded-xl mb-2.5 text-black'
+                                  aria-label="Custom textarea"
+                                  placeholder="Write your question."
+                                  autoGrow={true}
+                                  value={editInputValues[tabIndex][itemIndex][outputIndex]}
+                                  onIonInput={(event) => handleEditChange(tabIndex, itemIndex, outputIndex, event)}
+                                >        
+                                </IonTextarea>
+                              }
+
+                              {/* Action buttons for each output */}
+                              <div className='flex items-center justify-between'>
+                                <div>
+                                  {/* <IonIcon data-tooltip-id='tooltip' data-tooltip-content='Positive' onClick={() => openFeedbackAlert(outputItem.input_params.session_id, 'positive')} className='mr-2.5 cursor-pointer hover:text-primary' slot="icon-only" icon={thumbsUpOutline}></IonIcon>
+                                  <IonIcon data-tooltip-id='tooltip' data-tooltip-content='Negative' onClick={() => openFeedbackAlert(outputItem.input_params.session_id, 'negative')} className='mr-2.5 cursor-pointer hover:text-primary' slot="icon-only" icon={thumbsDownOutline}></IonIcon> */}
+                                  <div style={{ display: "flex", gap: "5px" }}>
+                                    {[1, 2, 3, 4, 5].map((starValue) => (
+                                      <IonIcon
+                                        key={starValue}
+                                        icon={starValue <= (outputItem.rating || 0) ? star : starOutline}
+                                        color="primary"
+                                        onClick={() => handleTotalRatingClick(tabIndex, itemIndex, outputIndex, outputItem.input_params.qid, starValue)}
+                                        style={{ cursor: "pointer", fontSize: "24px" }}
+                                      />
+                                    ))}
+                                  </div>
+                                </div>
+                                <div>
+                                  <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Copy text' className='text-xs' onClick={() => copyToClipboard('single', outputItem.answer)} shape="round">
+                                    <IonIcon className='' slot="icon-only" icon={copyOutline}></IonIcon>
+                                  </IonButton>
+                                  {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === itemIndex && editVisibility.outputIndex === outputIndex ? 
+                                    <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Save answer' className='text-xs' onClick={() => {saveAnswerChange(editInputValues[tabIndex][itemIndex][outputIndex], outputItem.input_params.qid); editAnswerVisibility(tabIndex, itemIndex, outputIndex)}} shape="round">
+                                      <IonIcon className='' slot="icon-only" icon={saveOutline}></IonIcon>
+                                    </IonButton>
+                                  :
+                                    <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Edit answer' className='text-xs' onClick={() => editAnswerVisibility(tabIndex, itemIndex, outputIndex)} shape="round">
+                                      {isSaveChanges && outputItem.input_params.qid === isEditQid ?
+                                        <IonIcon className='animate-spin' slot="icon-only" icon={refreshOutline}></IonIcon>
+                                      :
+                                        <IonIcon className='' slot="icon-only" icon={createOutline}></IonIcon>
+                                      }
+                                    </IonButton>
                                   }
-                                </IonButton>
-                                <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Download as .doc' className='text-xs' onClick={() => exportToDoc('single', outputItem.answer)} shape="round">
-                                  <IonIcon className='' slot="icon-only" icon={documentTextOutline}></IonIcon>
-                                </IonButton>
+                                  
+                                  <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Download as .doc' className='text-xs' onClick={() => exportToDoc('single', outputItem.answer)} shape="round">
+                                    <IonIcon className='' slot="icon-only" icon={documentTextOutline}></IonIcon>
+                                  </IonButton>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                         {!tabItem.answer &&
                           <IonSpinner name="dots"></IonSpinner>
                         }
@@ -347,6 +623,33 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem }) => {
                             </IonButton>
                           </IonTextarea>
                         )}
+
+                        {(isRefineText && isRefineDetails.tabIndex === tabIndex && isRefineDetails.itemIndex === itemIndex && selectedText) &&
+                          <div className='mt-5 bottom-textarea rounded-xl'>
+                            <div className='showSelectedText'>
+                              <div>
+                                <IonIcon icon={returnDownForwardOutline}></IonIcon>
+                              </div>
+                              <div className='text'>
+                                {selectedText}
+                              </div>
+                            </div>
+                            <IonTextarea
+                              className='z-0  mb-2.5 text-black'
+                              aria-label="Custom textarea"
+                              placeholder="Write your question."
+                              autoGrow={true}
+                              counter={true}
+                              maxlength={2000}
+                              value={(inputValues[tabIndex] as string[])[itemIndex]}
+                              onIonInput={(event) =>  handleInputChange(tabIndex, event, itemIndex)}
+                            >
+                              <IonButton  data-tooltip-id='tooltip' data-tooltip-content='Genarate' onClick={() => submitRefineQuestion((inputValues[tabIndex] as string[])[itemIndex], 'refine')} size="small" fill="clear" slot="end" >
+                                <IonIcon className='text-primary' slot="icon-only" icon={send}></IonIcon>
+                              </IonButton>
+                            </IonTextarea>
+                          </div>
+                        }
                         <div className='text-right'>
                           <div>
                             <IonButton data-tooltip-id='tooltip' data-tooltip-content='Refine Answer' onClick={() => toggleInputVisibility(tabIndex, itemIndex)} className='text-xs' shape="round">
@@ -379,7 +682,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem }) => {
           </div>
         </>
         :
-        <div className="bg-white p-4 rounded-md">
+        <div className="bg-white p-4 rounded-md relative">
           {tabs.map((tabItem:any, tabIndex) => (
             <div className='mb-5 tab-body border p-4 rounded-md relative' key={tabItem.format_id}>
               {tabItem.format_name &&
@@ -388,51 +691,109 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem }) => {
 
               {tabItem.outputs.length !== 0 ?
                 <>
-                  {tabItem.outputs.map((outputItem:any, outputIndex:number) => (
-                    <div key={outputIndex} className='shadow-md rounded-md p-2 mb-1.5'>
-                      <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} children={outputItem.answer}/>
-                      
-                      {/* Edit answer for each output */}
-                      {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === null && editVisibility.outputIndex === outputIndex && (
-                        <IonTextarea
-                          className='z-0 bottom-textarea rounded-xl text-black'
-                          aria-label="Custom textarea"
-                          placeholder="Write your question."
-                          autoGrow={true}
-                          counter={true}
-                          maxlength={2000}
-                          value={editInputValues[tabIndex][outputIndex] as string}
-                          onIonInput={(event) => handleEditChange(tabIndex,null,outputIndex, event)}
-                        >
-                          <IonButton  data-tooltip-id='tooltip' data-tooltip-content='Copy text' onClick={() => copyToClipboard('single', editInputValues[tabIndex][outputIndex] as string)} size="small" fill="clear" slot="end" >
-                            <IonIcon className='text-primary' slot="icon-only" icon={copyOutline}></IonIcon>
-                          </IonButton>
-                        </IonTextarea>
-                      )}
-                      {/* Action buttons for each output */}
-                      <div className='flex items-center justify-between'>
-                        <div>
-                          <IonIcon data-tooltip-id='tooltip' data-tooltip-content='Positive' onClick={() => openFeedbackAlert(outputItem.input_params.session_id, 'positive')} className='mr-2.5 cursor-pointer hover:text-primary' slot="icon-only" icon={thumbsUpOutline}></IonIcon>
-                          <IonIcon data-tooltip-id='tooltip' data-tooltip-content='Negative' onClick={() => openFeedbackAlert(outputItem.input_params.session_id, 'negative')} className='mr-2.5 cursor-pointer hover:text-primary' slot="icon-only" icon={thumbsDownOutline}></IonIcon>
-                        </div>
-                        <div >
-                          <IonButton data-tooltip-id='tooltip' data-tooltip-content='Copy text' fill="clear" className='text-xs' onClick={() => copyToClipboard('single', editInputValues[tabIndex][outputIndex] as string)} shape="round">
-                            <IonIcon className='' slot="icon-only" icon={copyOutline}></IonIcon>
-                          </IonButton>
-                          <IonButton data-tooltip-id='tooltip' data-tooltip-content='Edit answer' fill="clear" className='text-xs' onClick={() => editAnswerVisibility(tabIndex, null, outputIndex)} shape="round">
-                            {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === null && editVisibility.outputIndex === outputIndex ?
-                              <IonIcon className='' slot="icon-only" icon={closeOutline}></IonIcon>
+                  {tabItem.outputs.map((outputItem:any, outputIndex:number) => {
+                    const containerRef = React.createRef<HTMLDivElement>();
+                    const boxIndex = tabIndex * 10 + outputIndex;
+                    return (
+                      <div key={boxIndex} className='shadow-md rounded-md p-2 mb-1.5 relative'>
+                        
+                        <div ref={containerRef} onClick={(e) => handleMouseClick(e, containerRef.current!, boxIndex)} onMouseUp={(e) => handleMouseUp(e, containerRef.current!, boxIndex)}>
+                          
+                          {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === null && editVisibility.outputIndex === outputIndex ?
+                            <></>
                             :
-                              <IonIcon className='' slot="icon-only" icon={createOutline}></IonIcon>
-                            }
-                          </IonButton>
-                          <IonButton data-tooltip-id='tooltip' data-tooltip-content='Download as .doc' fill="clear" className='text-xs' onClick={() => exportToDoc('single', outputItem.answer)} shape="round">
-                            <IonIcon className='' slot="icon-only" icon={documentTextOutline}></IonIcon>
-                          </IonButton>
+                            <div onClick={() => selectCopyQid(tabIndex, null, outputItem)}>
+                              <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} children={outputItem.answer}/>
+                            </div>
+                          }
+
+                          {/* Popover only for the active box */}
+                          {position && activeBox === boxIndex && (
+                            <div
+                              style={{
+                                position: "absolute",
+                                top: position.top + 20,
+                                left: position.left,
+                                zIndex: 1000,
+                              }}
+                            >
+                              <div className='popover-buttons'>
+                                {selectedText === ''?
+                                  <IonButton onClick={() => refineSelectedText('insert')} data-tooltip-id='tooltip' data-tooltip-content='Generate More' className='text-xs' shape="round">
+                                    <IonIcon slot="icon-only" icon={refreshOutline}></IonIcon>
+                                  </IonButton>
+                                :
+                                <>
+                                  <IonButton onClick={() => refineSelectedText('refine')} data-tooltip-id='tooltip' data-tooltip-content='Refine Answer' className='text-xs' shape="round">
+                                    <IonIcon slot="icon-only" icon={chatbubblesOutline}></IonIcon>
+                                  </IonButton>
+                                  <IonButton onClick={() => refineSelectedText('regenarate')} data-tooltip-id='tooltip' data-tooltip-content='Regenerate' className='text-xs' shape="round">
+                                    <IonIcon slot="icon-only" icon={refreshOutline}></IonIcon>
+                                  </IonButton>
+                                </>
+                                }
+                                
+                              </div>
+                            </div>
+                          )}
                         </div>
-                      </div>
+
+                        {/* Edit answer for each output */}
+                        {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === null && editVisibility.outputIndex === outputIndex &&
+                          <IonTextarea
+                            className='z-0 bottom-textarea rounded-xl text-black'
+                            aria-label="Custom textarea"
+                            placeholder="Write your question."
+                            autoGrow={true}
+                            value={editInputValues[tabIndex][outputIndex] as string}
+                            onIonInput={(event) => handleEditChange(tabIndex,null,outputIndex, event)}
+                          >
+                          </IonTextarea>
+                        }
+                        {/* Action buttons for each output */}
+                        <div className='flex items-center justify-between'>
+                          <div>
+                            {/* <IonIcon data-tooltip-id='tooltip' data-tooltip-content='Positive' onClick={() => openFeedbackAlert(outputItem.input_params.session_id, 'positive')} className='mr-2.5 cursor-pointer hover:text-primary' slot="icon-only" icon={thumbsUpOutline}></IonIcon>
+                            <IonIcon data-tooltip-id='tooltip' data-tooltip-content='Negative' onClick={() => openFeedbackAlert(outputItem.input_params.session_id, 'negative')} className='mr-2.5 cursor-pointer hover:text-primary' slot="icon-only" icon={thumbsDownOutline}></IonIcon> */}
+                            <div style={{ display: "flex", gap: "5px" }}>
+                              {[1, 2, 3, 4, 5].map((starValue) => (
+                                <IonIcon
+                                  key={starValue}
+                                  icon={starValue <= (outputItem.rating || 0) ? star : starOutline}
+                                  color="primary"
+                                  onClick={() => handleTotalRatingClick(tabIndex, null, outputIndex, outputItem.input_params.qid, starValue)}
+                                  style={{ cursor: "pointer", fontSize: "24px" }}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                          <div >
+                            <IonButton data-tooltip-id='tooltip' data-tooltip-content='Copy text' fill="clear" className='text-xs' onClick={() => copyToClipboard('single', editInputValues[tabIndex][outputIndex] as string)} shape="round">
+                              <IonIcon className='' slot="icon-only" icon={copyOutline}></IonIcon>
+                            </IonButton>
+
+                            {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === null && editVisibility.outputIndex === outputIndex ? 
+                              <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Save answer' className='text-xs' onClick={() => {saveAnswerChange(editInputValues[tabIndex][outputIndex] as string, outputItem.input_params.qid); editAnswerVisibility(tabIndex, null, outputIndex)}} shape="round">
+                                <IonIcon className='' slot="icon-only" icon={saveOutline}></IonIcon>
+                              </IonButton>
+                            :
+                              <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Edit answer' className='text-xs' onClick={() => editAnswerVisibility(tabIndex, null, outputIndex)} shape="round">
+                                {isSaveChanges && outputItem.input_params.qid === isEditQid ?
+                                  <IonIcon className='animate-spin' slot="icon-only" icon={refreshOutline}></IonIcon>
+                                :
+                                  <IonIcon className='' slot="icon-only" icon={createOutline}></IonIcon>
+                                }
+                              </IonButton>
+                            }
+                            <IonButton data-tooltip-id='tooltip' data-tooltip-content='Download as .doc' fill="clear" className='text-xs' onClick={() => exportToDoc('single', outputItem.answer)} shape="round">
+                              <IonIcon className='' slot="icon-only" icon={documentTextOutline}></IonIcon>
+                            </IonButton>
+                          </div>
+                        </div>
                     </div>
-                  ))}
+                    );
+                  })}
+                  
                   {!tabItem.answer &&
                     <IonSpinner name="dots"></IonSpinner>
                   }
@@ -453,6 +814,34 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem }) => {
                       </IonButton>
                     </IonTextarea>
                   )}
+
+                  {(isRefineText && isRefineDetails.tabIndex === tabIndex && selectedText) &&
+                    <div className='mt-5 bottom-textarea rounded-xl'>
+                      <div className='showSelectedText'>
+                        <div>
+                          <IonIcon icon={returnDownForwardOutline}></IonIcon>
+                        </div>
+                        <div className='text'>
+                          {selectedText}
+                        </div>
+                      </div>
+                      <IonTextarea
+                        className='z-0  mb-2.5 text-black'
+                        aria-label="Custom textarea"
+                        placeholder="Write your question."
+                        autoGrow={true}
+                        counter={true}
+                        maxlength={2000}
+                        value={inputValues[tabIndex] as string}
+                        onIonInput={(event) => handleInputChange(tabIndex, event, '')}
+                      >
+                        <IonButton  data-tooltip-id='tooltip' data-tooltip-content='Genarate' onClick={() => submitRefineQuestion(inputValues[tabIndex] as string, 'refine')} size="small" fill="clear" slot="end" >
+                          <IonIcon className='text-primary' slot="icon-only" icon={send}></IonIcon>
+                        </IonButton>
+                      </IonTextarea>
+                    </div>
+                  }
+                  
                   <div className='text-right'>
                       <IonButton data-tooltip-id='tooltip' data-tooltip-content='Refine Answer' onClick={() => toggleInputVisibility(tabIndex, null)} className='text-xs' shape="round">
                         {typeof inputVisibility[tabIndex] === 'boolean' && inputVisibility[tabIndex] ? 
@@ -479,11 +868,19 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem }) => {
               
             </div>
           ))}
-          
         </div>
       }
       <FeedbackAlert ref={feedbackAlertRef} />
       <Tooltip id='tooltip' />
+       {/* Feedback Modal */}
+       {selectedItem && (
+          <FeedbackModal
+            isOpen={isModalOpen}
+            selectedItem={selectedItem}
+            onClose={() => setIsModalOpen(false)}
+            onSave={handleFeedbackSave}
+          />
+        )}
     </div>
   );
 };
