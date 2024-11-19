@@ -4,7 +4,7 @@ import { globe, information, link } from 'ionicons/icons';
 import { useEffect, useState } from 'react';
 import Tabs from '../../components/tab/Tab';
 import { useForm } from "react-hook-form";
-import { AccessToken, HTTPMethod, NetworkInfo } from '../../routes/network';
+import { HTTPMethod, NetworkInfo } from '../../routes/network';
 import DOMPurify from 'dompurify';
 import packageJson from '../../../package.json';
 import Multiselect from 'multiselect-react-dropdown';
@@ -75,7 +75,7 @@ const B2B: React.FC = () => {
   const [selectedFormats, setSelectedFormats] = useState<typeof formats[0][]>([]);
   const [selectedPurpose, setSelectedPurpose] = useState<typeof purposes[0][]>([]);
   const [userName, setUserName] = useState('');
-  const apiUrl = window.RUNTIME_ENV?.REACT_APP_API_URL || NetworkInfo.URL;
+  const apiUrl = `${NetworkInfo.URL}`;
 
 
   useEffect(() => {
@@ -113,7 +113,7 @@ const B2B: React.FC = () => {
       const response = await fetch(urlData, {
         method: 'GET',
         headers: {
-          '"removed"': AccessToken."removed",
+          '"removed"': `${NetworkInfo.ACCESSTOKEN}`,
           'Content-Type': 'application/json',
         },
       });
@@ -140,7 +140,7 @@ const B2B: React.FC = () => {
       const response = await fetch(urlData, {
         method: 'GET',
         headers: {
-          '"removed"': AccessToken."removed",
+          '"removed"': `${NetworkInfo.ACCESSTOKEN}`,
           'Content-Type': 'application/json',
         },
       });
@@ -167,7 +167,7 @@ const B2B: React.FC = () => {
       const response = await fetch(urlData, {
         method: 'GET',
         headers: {
-          '"removed"': AccessToken."removed",
+          '"removed"': `${NetworkInfo.ACCESSTOKEN}`,
           'Content-Type': 'application/json',
         },
       });
@@ -194,7 +194,7 @@ const B2B: React.FC = () => {
       const response = await fetch(urlData, {
         method: 'GET',
         headers: {
-          '"removed"': AccessToken."removed",
+          '"removed"': `${NetworkInfo.ACCESSTOKEN}`,
           'Content-Type': 'application/json',
         },
       });
@@ -399,7 +399,7 @@ const B2B: React.FC = () => {
       const response = await fetch(formUrl, {
         method: HTTPMethod.POST,
         headers: {
-          '"removed"': AccessToken."removed",
+          '"removed"': `${NetworkInfo.ACCESSTOKEN}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(data),

@@ -1,13 +1,13 @@
 import React, { useState, useImperativeHandle, forwardRef } from 'react';
 import { IonAlert, IonToast } from '@ionic/react';
-import { AccessToken, HTTPMethod, NetworkInfo } from '../../routes/network';
+import { HTTPMethod, NetworkInfo } from '../../routes/network';
 
 const FeedbackAlert = forwardRef((_, ref) => {
   const [showAlert, setShowAlert] = useState(false);
   const [questionId, setQuestionId] = useState('');
   const [isShowError, setIsShowError] = useState(false);
   const [isErrorMsg, setIsErrorMsg] = useState('');
-  const apiUrl = window.RUNTIME_ENV?.REACT_APP_API_URL || NetworkInfo.URL;
+  const apiUrl = `${NetworkInfo.URL}`;
 
   useImperativeHandle(ref, () => ({
     open: (qId: string) => {
@@ -25,7 +25,7 @@ const FeedbackAlert = forwardRef((_, ref) => {
       const response = await fetch(formUrl, {
         method: HTTPMethod.POST,
         headers: {
-          '"removed"': AccessToken."removed",
+          '"removed"': `${NetworkInfo.ACCESSTOKEN}`,
           'Content-Type': 'application/json'
         },
       });
@@ -36,15 +36,15 @@ const FeedbackAlert = forwardRef((_, ref) => {
         setIsShowError(true);
         setIsErrorMsg('Feedback submitted.');
         setShowAlert(false);
-      }else {
+      } else {
         setIsShowError(true);
         setIsErrorMsg(responseData.detail || 'Something went wrong!');
       }
-      
+
     } catch (error: any) {
       console.error("Login failed:", error);
     }
-    
+
   };
 
   return (
