@@ -75,6 +75,7 @@ jobs:
               IMG_TAG="${GITHUB_REF_NAME:1}"
             else
               IMG_TAG="${GITHUB_REF_NAME}"
+              IMG_TAG="${IMG_TAG//\//-}"
             fi
 
             IMAGE_TAG_OPTIONS="--set image.tag=$IMG_TAG"

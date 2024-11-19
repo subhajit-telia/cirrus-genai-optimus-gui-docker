@@ -4,7 +4,7 @@ import { globe, information, link } from 'ionicons/icons';
 import { useEffect, useState } from 'react';
 import Tabs from '../../components/tab/Tab';
 import { useForm } from "react-hook-form";
-import { AccessToken, HTTPMethod, NetworkInfo } from '../../routes/network';
+import { HTTPMethod, NetworkInfo } from '../../routes/network';
 import DOMPurify from 'dompurify';
 import packageJson from '../../../package.json';
 import Multiselect from 'multiselect-react-dropdown';
@@ -124,7 +124,7 @@ const B2C: React.FC = () => {
       const response = await fetch(urlData, {
         method: 'GET',
         headers: {
-          '"removed"': AccessToken."removed",
+          '"removed"': `${NetworkInfo.ACCESSTOKEN}`,
           'Content-Type': 'application/json',
         },
       });
@@ -151,7 +151,7 @@ const B2C: React.FC = () => {
       const response = await fetch(urlData, {
         method: 'GET',
         headers: {
-          '"removed"': AccessToken."removed",
+          '"removed"': `${NetworkInfo.ACCESSTOKEN}`,
           'Content-Type': 'application/json',
         },
       });
@@ -178,7 +178,7 @@ const B2C: React.FC = () => {
       const response = await fetch(urlData, {
         method: 'GET',
         headers: {
-          '"removed"': AccessToken."removed",
+          '"removed"': `${NetworkInfo.ACCESSTOKEN}`,
           'Content-Type': 'application/json',
         },
       });
@@ -205,7 +205,7 @@ const B2C: React.FC = () => {
       const response = await fetch(urlData, {
         method: 'GET',
         headers: {
-          '"removed"': AccessToken."removed",
+          '"removed"': `${NetworkInfo.ACCESSTOKEN}`,
           'Content-Type': 'application/json',
         },
       });
@@ -410,7 +410,7 @@ const B2C: React.FC = () => {
       const response = await fetch(formUrl, {
         method: HTTPMethod.POST,
         headers: {
-          '"removed"': AccessToken."removed",
+          '"removed"': `${NetworkInfo.ACCESSTOKEN}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(data),
