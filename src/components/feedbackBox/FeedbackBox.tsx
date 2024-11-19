@@ -16,7 +16,6 @@ import {
 } from "@ionic/react";
 import { informationCircleOutline, refreshOutline, star, starOutline } from "ionicons/icons";
 import './FeedbackBox.css';
-import { Tooltip } from "react-tooltip";
 
 interface FeedbackModalProps {
   isOpen: boolean;
