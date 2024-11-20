@@ -552,7 +552,7 @@ const B2C: React.FC = () => {
       const response = await fetch(formUrl, {
         method: HTTPMethod.POST,
         headers: {
-          '"removed"': AccessToken."removed",
+          '"removed"': `${NetworkInfo.ACCESSTOKEN}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(data),
@@ -573,18 +573,14 @@ const B2C: React.FC = () => {
             if (segment.segment_id === responseData.responses[0].input_params.segment_id) {
               segment.data = segment.data.map((format: any) => {
                 if (format.format_id === responseData.responses[0].input_params.format_id) {
-                  let outputs:any = format.outputs;
-                  let qidToMatch = responseData.responses[0].input_params.qid;
-                  let currentOutputs = outputs.map((item:any) =>
-                    item.input_params.qid === qidToMatch ? responseData.responses[0] : item
-                  )
+                  let replaceOutput = format.outputs.map((output:innerOutput) => 
+                    output.input_params.qid === data.qid ? responseData.responses[0] : output
+                  );
                   return {
                     ...format,
                     answer: DOMPurify.sanitize(responseData.responses[0].answer),
                     input_params: responseData.responses[0].input_params,
-                    outputs: [
-                      ...currentOutputs,
-                    ]
+                    outputs: replaceOutput
                   };
                 }
                 return format;
@@ -594,20 +590,16 @@ const B2C: React.FC = () => {
           });
           setTabs(arrayTab);
         } else {
-          arrayNoSegment = arrayNoSegment.map((format: { format_id: any; outputs?: any[] }) => {
+          arrayNoSegment = arrayNoSegment.map((format: { format_id: any; outputs: innerOutput[] }) => {
             if (format.format_id === responseData.responses[0].input_params.format_id || format.format_id === 'customPrompts') {
-              let outputs:any = format.outputs;
-              let qidToMatch = responseData.responses[0].input_params.qid;
-              let currentOutputs = outputs.map((item:any) =>
-                item.input_params.qid === qidToMatch ? responseData.responses[0] : item
-              )
+              let replaceOutput = format.outputs.map((output:innerOutput) => 
+                output.input_params.qid === data.qid ? responseData.responses[0] : output
+              );
               return {
                 ...format,
                 answer: DOMPurify.sanitize(responseData.responses[0].answer),
                 input_params: responseData.responses[0].input_params,
-                outputs: [
-                  ...currentOutputs,
-                ]
+                outputs: replaceOutput
               };
             }
             return format;
@@ -624,6 +616,13 @@ const B2C: React.FC = () => {
       
     } catch (error: any) {
       console.error('Login failed:', error);
+      if (error.response) {
+        setIsShowError(true);
+        setIsErrorMsg(error.response || 'Something went wrong!');
+      }else {
+        setIsShowError(true);
+        setIsErrorMsg(error.response || 'Internal Server Error!');
+      }
     }
 
   };
@@ -640,7 +639,7 @@ const B2C: React.FC = () => {
       const response = await fetch(formUrl, {
         method: HTTPMethod.POST,
         headers: {
-          '"removed"': AccessToken."removed",
+          '"removed"': `${NetworkInfo.ACCESSTOKEN}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(data),
@@ -659,14 +658,14 @@ const B2C: React.FC = () => {
             if (segment.segment_id === responseData.responses[0].input_params.segment_id) {
               segment.data = segment.data.map((format: any) => {
                 if (format.format_id === responseData.responses[0].input_params.format_id) {
+                  let replaceOutput = format.outputs.map((output:innerOutput) => 
+                    output.input_params.qid === data.qid ? responseData.responses[0] : output
+                  );
                   return {
                     ...format,
                     answer: DOMPurify.sanitize(responseData.responses[0].answer),
                     input_params: responseData.responses[0].input_params,
-                    outputs: [
-                      ...(format.outputs || []),
-                      { answer: DOMPurify.sanitize(responseData.responses[0].answer), input_params: responseData.responses[0].input_params }
-                    ]
+                    outputs: replaceOutput
                   };
                 }
                 return format;
@@ -676,17 +675,16 @@ const B2C: React.FC = () => {
           });
           setTabs(arrayTab);
         } else {
-          arrayNoSegment = arrayNoSegment.map((format: { format_id: any; outputs?: any[] }) => {
+          arrayNoSegment = arrayNoSegment.map((format: { format_id: any; outputs: innerOutput[] }) => {
             if (format.format_id === responseData.responses[0].input_params.format_id || format.format_id === 'customPrompts') {
-              const currentOutputs = format.outputs || [];
+              let replaceOutput = format.outputs.map((output:innerOutput) => 
+                output.input_params.qid === data.qid ? responseData.responses[0] : output
+              );
               return {
                 ...format,
                 answer: DOMPurify.sanitize(responseData.responses[0].answer),
                 input_params: responseData.responses[0].input_params,
-                outputs: [
-                  ...currentOutputs,
-                  { answer: DOMPurify.sanitize(responseData.responses[0].answer), input_params: responseData.responses[0].input_params }
-                ]
+                outputs: replaceOutput
               };
             }
             return format;
@@ -702,6 +700,14 @@ const B2C: React.FC = () => {
       }
     } catch (error: any) {
       console.error('Login failed:', error);
+
+      if (error.response) {
+        setIsShowError(true);
+        setIsErrorMsg(error.response || 'Something went wrong!');
+      }else {
+        setIsShowError(true);
+        setIsErrorMsg(error.response || 'Internal Server Error!');
+      }
     }
 
   };
@@ -801,7 +807,7 @@ const B2C: React.FC = () => {
       const response = await fetch(formUrl, {
         method: HTTPMethod.PUT,
         headers: {
-          '"removed"': AccessToken."removed",
+          '"removed"': `${NetworkInfo.ACCESSTOKEN}`,
           'Content-Type': 'application/json'
         },
       });
@@ -1043,7 +1049,6 @@ const B2C: React.FC = () => {
                       <div onClick={() => handleDivClick(feedbackItem, tabIndex)} className={`${selectedDiv === tabIndex ? 'border-2 border-primary' : ''}  bg-white mb-5 tab-body border p-4 rounded-md relative`}>
                         <h3 className='capitalize'>{feedbackItem.input_params.format_name}</h3>
                         <div className='shadow-md rounded-md p-2 mb-1.5 relative'>
-                          <h1>copy_block:</h1>
                           <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} children={feedbackItem.answer}/>
                         </div>
                       </div>
