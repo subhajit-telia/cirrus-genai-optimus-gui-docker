@@ -67,6 +67,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
   const [isRefineBox, setIsRefineBox] = useState(false);
   const [isRefineText, setIsRefineText] = useState('');
   const [isRefineType, setIsRefineType] = useState('');
+  const [isTextIndex, setIsTextIndex] = useState<number | null>(null);
 
 
   const [isRefineDetails, setIsRefineDetails] = useState<any>("");
@@ -78,6 +79,8 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
   const [selectedText, setSelectedText] = useState("");
   const [clickedText, setClickedText] = useState("");
   const [popoverPosition, setPopoverPosition] = useState<{ x: number; y: number } | null>(null);
+
+  const [hoveredRating, setHoveredRating] = useState<{ qid: string; rating: number | null } | null>(null);
 
   const textareaRef = useRef<HTMLIonTextareaElement>(null);
 
@@ -102,8 +105,9 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
   const handleButtonClick = (identifier:any, tabIndex:any, itemIndex:any, data:any) => {
     console.log(tabIndex+'/'+itemIndex+'/'+data);
     if (identifier === 'regenarate') {
-      data.session_id = generateDateTimeString();
-      data.qid = generateDateTimeString();
+      // data.session_id = generateDateTimeString();
+      // data.session_family_id = generateDateTimeString();
+      // data.qid = generateDateTimeString();
       if (itemIndex !== '') {
         tabs[tabIndex].data[itemIndex].answer = '';
         regenarateItem(data); 
@@ -226,7 +230,8 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
       if (element) {
         const caretPosition = element.selectionStart; // Get caret position
         const word = getWordAtCaretPosition(element.value, caretPosition);
-
+        console.log('caretPosition', caretPosition);
+        setIsTextIndex(caretPosition);
         if (word) {
           navigator.clipboard.writeText(word).then(() => {
             console.log(`Copied: ${word}`);
@@ -300,6 +305,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
       qid: isRefineDetails.outputItem.input_params.qid,
       action: identifier,
       text: isRefineText,
+      text_index: isTextIndex,
       question: data
     }
     console.log('refineData', refineData);
@@ -596,7 +602,18 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                                   {[1, 2, 3, 4, 5].map((starValue) => (
                                     <IonIcon
                                       key={starValue}
-                                      icon={starValue <= (outputItem.rating || 0) ? star : starOutline}
+                                      icon={
+                                        starValue <=
+                                        (hoveredRating && hoveredRating.qid === outputItem.input_params.qid
+                                          ? hoveredRating.rating ?? 0
+                                          : outputItem.rating ?? 0)
+                                          ? star
+                                          : starOutline
+                                      }
+                                      onMouseEnter={() =>
+                                        setHoveredRating({ qid: outputItem.input_params.qid, rating: starValue })
+                                      }
+                                      onMouseLeave={() => setHoveredRating(null)}
                                       color="primary"
                                       onClick={() => handleTotalRatingClick(tabIndex, itemIndex, outputIndex, outputItem.input_params.qid, starValue)}
                                       style={{ cursor: "pointer", fontSize: "24px" }}
@@ -667,7 +684,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                               autoGrow={true}
                               counter={true}
                               maxlength={2000}
-                              value={(inputValues[tabIndex] as string[])[itemIndex]}
+                              // value={(inputValues[tabIndex] as string[])[itemIndex]}
                               onIonInput={(event) =>  handleInputChange(tabIndex, event, itemIndex)}
                             >
                               <IonButton  data-tooltip-id='tooltip' data-tooltip-content='Genarate' onClick={() => submitRefineQuestion((inputValues[tabIndex] as string[])[itemIndex], isRefineType)} size="small" fill="clear" slot="end" >
@@ -770,18 +787,29 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                           </IonPopover>
                         </div>
                       }
+                      {outputItem.input_params.qid}
                       {/* Action buttons for each output */}
                       <div className='flex items-center justify-between'>
                         <div>
-                          {/* <IonIcon data-tooltip-id='tooltip' data-tooltip-content='Positive' onClick={() => openFeedbackAlert(outputItem.input_params.session_id, 'positive')} className='mr-2.5 cursor-pointer hover:text-primary' slot="icon-only" icon={thumbsUpOutline}></IonIcon>
-                          <IonIcon data-tooltip-id='tooltip' data-tooltip-content='Negative' onClick={() => openFeedbackAlert(outputItem.input_params.session_id, 'negative')} className='mr-2.5 cursor-pointer hover:text-primary' slot="icon-only" icon={thumbsDownOutline}></IonIcon> */}
                           <div style={{ display: "flex", gap: "5px" }}>
                             {[1, 2, 3, 4, 5].map((starValue) => (
                               <IonIcon
                                 key={starValue}
-                                icon={starValue <= (outputItem.rating || 0) ? star : starOutline}
+                                icon={
+                                  starValue <=
+                                  (hoveredRating && hoveredRating.qid === outputItem.input_params.qid
+                                    ? hoveredRating.rating ?? 0
+                                    : outputItem.rating ?? 0)
+                                    ? star
+                                    : starOutline
+                                }
+                                onMouseEnter={() =>
+                                  setHoveredRating({ qid: outputItem.input_params.qid, rating: starValue })
+                                }
+                                onMouseLeave={() => setHoveredRating(null)}
                                 color="primary"
                                 onClick={() => handleTotalRatingClick(tabIndex, null, outputIndex, outputItem.input_params.qid, starValue)}
+                                
                                 style={{ cursor: "pointer", fontSize: "24px" }}
                               />
                             ))}
@@ -851,7 +879,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                         autoGrow={true}
                         counter={true}
                         maxlength={2000}
-                        value={inputValues[tabIndex] as string}
+                        // value={inputValues[tabIndex] as string}
                         onIonInput={(event) => handleInputChange(tabIndex, event, '')}
                       >
                         <IonButton  data-tooltip-id='tooltip' data-tooltip-content='Genarate' onClick={() => submitRefineQuestion(inputValues[tabIndex] as string, isRefineType)} size="small" fill="clear" slot="end" >
