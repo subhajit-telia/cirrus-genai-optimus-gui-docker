@@ -70,7 +70,12 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({
   };
 
   const handleFeedbackSave = () => {
-    onSave(feedbackData);
+    console.log('feedbackData', feedbackData)
+
+    const averageRating =
+    ((feedbackData.format_rate ?? 0) + (feedbackData.integrity_rate ?? 0) + (feedbackData.communication_rate ?? 0)) / 3;
+    
+    onSave({ ...feedbackData, rating: Math.round(averageRating)});
     onClose();
   };
 
