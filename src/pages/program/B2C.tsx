@@ -965,7 +965,7 @@ const B2C: React.FC = () => {
               </IonRow>
             </IonGrid>
             
-            
+            <p className='p-4 italic mt-2.5'>Disclaimer: There may be risks associated with using AI-generated content. All content produced by this tool, i.e. Optimus, is for use at the user's discretion, and <u>the user is solely responsible for reviewing and approving any text before sharing it externally.</u></p>
             
               <div className='text-center mt-6'>
                 <IonButton type='submit' className='btn-primary' shape="round">
@@ -979,7 +979,7 @@ const B2C: React.FC = () => {
                 }
                 </IonButton>
               </div>
-            
+                
           </form>
 
           {tabs.length > 0 &&
@@ -994,7 +994,6 @@ const B2C: React.FC = () => {
                       <IonChip onClick={() => exportToDoc(tabs)} className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Save all suggestions to word.doc</IonChip>
                       {/* <IonChip onClick={handleReset} className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Create new task</IonChip> */}
                     </div>
-                    <p className='italic text-xs font-bold mt-2.5'>Disclaimer: There may be risks associated with using AI-generated content. All content produced by this tool, i.e. Optimus, is for use at the user's discretion, and the user is solely responsible for reviewing and approving any text before sharing it externally.</p>
                   </div>
                 </IonCol>
               </IonRow>
