@@ -1,4 +1,4 @@
-import { IonButton, IonCol, IonGrid, IonIcon, IonItem, IonLabel, IonList, IonPopover, IonRow, IonSpinner, IonTextarea } from '@ionic/react';
+import { IonButton, IonCol, IonGrid, IonIcon, IonItem, IonLabel, IonList, IonPopover, IonRow, IonSpinner, IonTextarea, IonToast } from '@ionic/react';
 import React, { useEffect, useRef, useState } from 'react';
 import { chatbubblesOutline, closeOutline, copyOutline, createOutline, documentTextOutline, refreshOutline, reloadOutline, returnDownForwardOutline, saveOutline, send, star, starOutline, thumbsDownOutline, thumbsUpOutline } from 'ionicons/icons';
 import ReactMarkdown from 'react-markdown';
@@ -83,6 +83,9 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
   const [hoveredRating, setHoveredRating] = useState<{ qid: string; rating: number | null } | null>(null);
 
   const textareaRef = useRef<HTMLIonTextareaElement>(null);
+
+  const [isShowError, setIsShowError] = useState(false);
+  const [isErrorMsg, setIsErrorMsg] = useState('');
 
   const changeTab = (segment_id: string) => {
     setActiveTab(segment_id);
@@ -443,7 +446,15 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
       format_rate: rating,
       integrity_rate: rating,
       communication_rate: rating,
-      comment: ''
+      comment: '',
+      tabIndex: tabIndex,
+      itemIndex: itemIndex,
+      outputIndex: outputIndex
+    };
+
+    let data:any = {
+      qid: qid,
+      rating: rating,
     };
     if (itemIndex !== '' && itemIndex !== null) {
       tabs[tabIndex].data[itemIndex].outputs[outputIndex].rating = rating;
@@ -466,22 +477,43 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
           '"removed"': AccessToken."removed",
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(starItem),
+        body: JSON.stringify(data),
       });
   
       const responseData = await response.json();
       console.log('Success:', responseData);
+
+      if (response.ok && !responseData.ErrorMessage) {
+        setIsShowError(true);
+        setIsErrorMsg('Rating submitted!');
+      }
     } catch (error: any) {
       console.error('Login failed:', error);
     }
   };
 
-  const handleFeedbackSave = async (updatedItem: FeedbackBox) => {
+  const handleFeedbackSave = async (updatedItem: any) => {
     console.log('updatedItem', updatedItem);
     setIsModalOpen(false);
     if (updatedItem.rating === 5) {
       openFeedbackAlert(updatedItem.qid);
     }
+
+    if (updatedItem.itemIndex !== '' && updatedItem.itemIndex !== null) {
+      tabs[updatedItem.tabIndex].data[updatedItem.itemIndex].outputs[updatedItem.outputIndex].rating = updatedItem.rating;
+      console.log('tabs@@@@', tabs)
+    }else {
+      tabs[updatedItem.tabIndex].outputs[updatedItem.outputIndex].rating = updatedItem.rating;
+    }
+
+    let data:any = {
+      qid: updatedItem.qid,
+      rating: updatedItem.rating,
+      format_rate: updatedItem.rating,
+      integrity_rate: updatedItem.rating,
+      communication_rate: updatedItem.rating,
+      comment: updatedItem.comment,
+    };
     
     let formUrl = apiUrl + '/feedback/put';
     try {
@@ -491,11 +523,16 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
           '"removed"': AccessToken."removed",
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(updatedItem),
+        body: JSON.stringify(data),
       });
   
       const responseData = await response.json();
       console.log('Success:', responseData);
+
+      if (response.ok && !responseData.ErrorMessage) {
+        setIsShowError(true);
+        setIsErrorMsg('Thanks for the feedback.');
+      }
     } catch (error: any) {
       console.error('Login failed:', error);
     }
@@ -787,7 +824,6 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                           </IonPopover>
                         </div>
                       }
-                      {outputItem.input_params.qid}
                       {/* Action buttons for each output */}
                       <div className='flex items-center justify-between'>
                         <div>
@@ -919,6 +955,15 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
       }
       <FeedbackAlert ref={feedbackAlertRef} />
       <Tooltip id='tooltip' />
+
+      {/* toster start */}
+      <IonToast
+        className='custom-toast'
+        isOpen={isShowError}
+        message={isErrorMsg}
+        duration={3000}
+        onDidDismiss={() => setIsShowError(false)}
+      ></IonToast>
        {/* Feedback Modal */}
        {selectedItem && (
           <FeedbackModal
