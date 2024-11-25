@@ -86,7 +86,7 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({
           <IonTitle className="text-center font-bold text-lg">Copy Feedback</IonTitle>
         </IonToolbar>
       </IonHeader>
-      <IonContent>
+      <div>
         <h2 className="my-2.5 px-4 text-center">How well does this copy align with the requirements?</h2>
         <IonItem lines="none">
           <IonLabel className="!flex items-center flex-row-reverse justify-end">Format <IonIcon id="format-trigger" className="block ml-1.5 cursor-pointer" slot="icon-only" icon={informationCircleOutline}></IonIcon></IonLabel>
@@ -203,7 +203,7 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({
                 }
             ></IonTextarea>
         </IonItem>
-      </IonContent>
+      </div>
       <IonFooter>
         <IonToolbar className="text-right px-4">
           <IonButton shape="round" onClick={handleFeedbackSave}>

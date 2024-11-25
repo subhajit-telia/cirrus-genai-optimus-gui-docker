@@ -138,7 +138,7 @@ ion-toast.custom-toast {
 }
 ion-modal.self-learning-modal {
     --width: 80%;
-    --height: 85%;
+    --height: auto;
 }
 ion-modal#example-modal {
     --width: fit-content;
@@ -148,6 +148,19 @@ ion-modal#example-modal {
   --border-radius: 6px;
   --box-shadow: 0 28px 48px rgba(0, 0, 0, 0.4);
 }
+ion-modal#example-modal::part(content) {
+    position: relative;
+    display: block;
+    contain: content;
+}
+ion-modal#example-modal .inner-content, ion-modal.self-learning-modal .inner-content{
+    max-height: 80vh;
+    overflow: auto;
+}
+
+
+
+
 ion-textarea .textarea-wrapper-inner {
     max-height: 300px;
     min-height: 100px !important;
@@ -192,6 +205,14 @@ ion-textarea .textarea-wrapper-inner .native-wrapper .native-textarea {
 }
 .feedback-alert {
     --max-width: min(100vw - 96px, 360px);
+}
+.rotate {
+    transition: transform 0.3s ease;
+    transform: rotate(0deg);
+}
+.rotate-reverse {
+    transition: transform 0.3s ease;
+    transform: rotate(180deg);
 }
 @media (prefers-color-scheme: dark) {
     :root.md {
