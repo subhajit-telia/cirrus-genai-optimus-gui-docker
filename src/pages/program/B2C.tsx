@@ -475,6 +475,7 @@ const B2C: React.FC = () => {
           setLoading(false);
           showLoadingIndicator(false);
         }else {
+          setSelectedDiv(null)
           setIsOpenModal(true);
           setFeedbackCopy(responseData.responses);
           return;
@@ -1039,24 +1040,34 @@ const B2C: React.FC = () => {
               <IonTitle className='text-center'>Which copy is better?</IonTitle>
             </IonToolbar>
           </IonHeader>
-          <IonContent className="ion-padding">
-            <div>
-              <IonGrid className='cursor-pointer'>
-                <IonRow>
-                  {feedbackCopy.map((feedbackItem:any, tabIndex) => (
-                    <IonCol size="6">
-                      <div onClick={() => handleDivClick(feedbackItem, tabIndex)} className={`${selectedDiv === tabIndex ? 'border-2 border-primary' : ''}  bg-white mb-5 tab-body border p-4 rounded-md relative`}>
-                        <h3 className='capitalize'>{feedbackItem.input_params.format_name}</h3>
-                        <div className='shadow-md rounded-md p-2 mb-1.5 relative'>
-                          <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} children={feedbackItem.answer}/>
-                        </div>
+          <div className="ion-padding inner-content">
+            <IonGrid className='cursor-pointer'>
+              <IonRow>
+                {feedbackCopy.map((feedbackItem:any, tabIndex) => (
+                  <IonCol size="6">
+                    <div onClick={() => handleDivClick(feedbackItem, tabIndex)} className={`${selectedDiv === tabIndex ? 'border-2 border-primary' : ''}  bg-white mb-5 tab-body border p-2 rounded-md relative`}>
+                      {/* <h3 className='capitalize'>{feedbackItem.input_params.format_name}</h3> */}
+                      {feedbackItem.input_params.format_name &&
+                        <IonChip color="primary">Format: {feedbackItem.input_params.format_name}</IonChip>
+                      }
+                      {feedbackItem.input_params.purpose_name &&
+                        <IonChip color="success">Purpose: {feedbackItem.input_params.purpose_name}</IonChip>
+                      }
+                      {feedbackItem.input_params.segment_name &&
+                        <IonChip color="warning">Segment: {feedbackItem.input_params.segment_name}</IonChip>
+                      }
+                      {feedbackItem.input_params.product_names.map((item:string, index:number) => (
+                        <IonChip color="secondary">Product {index + 1}: {item}</IonChip>
+                      ))}
+                      <div className='shadow-md rounded-md p-2 mb-1.5 relative'>
+                        <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} children={feedbackItem.answer}/>
                       </div>
-                    </IonCol>
-                  ))}
-                </IonRow>
-              </IonGrid>
-            </div>
-          </IonContent>
+                    </div>
+                  </IonCol>
+                ))}
+              </IonRow>
+            </IonGrid>
+          </div>
         </IonModal>
         {/* self learning modal end */}
       </IonContent>
