@@ -178,6 +178,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
   const saveAnswerChange = async (value:any, qid:any) => {
     console.log('saveAnswerChange', value);
     console.log('qid', qid);
+    setIsRefineBox(false);
     setIsEditQid(qid);
     setIsSaveChanges(true);
     let data:any = {
@@ -282,6 +283,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
 
   /* --------refine Selected Text start-------- */
   const refineSelectedText = (_identifier:any, _text:any) => {
+    console.log('_text', _text);
     setPopoverOpen(false);
     setIsRefineText(_text)
     setIsRefineType(_identifier);
@@ -291,7 +293,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
     if (_identifier === 'refine') {
       setIsRefineBox(true);
     }else if (_identifier === 'regenarate'){
-      submitRefineQuestion('','regenerate')
+      submitRefineQuestion('','regenerate', _text)
     }else {
       // submitRefineQuestion('','insert')
       setIsRefineBox(true);
@@ -301,24 +303,26 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
   /* refine Selected Text end */
 
   /* --------refine Selected copy start-------- */
-  const submitRefineQuestion = (data:any, identifier:any) => {
+  const submitRefineQuestion = (data:any, identifier:any, text:any) => {
     console.log('submitRefineQuestion', data);
     console.log('isRefineDetails', isRefineDetails);
+    console.log('isRefineText',isRefineText);
+    console.log('text>>>>>',text);
     let refineData:any = {
       qid: isRefineDetails.outputItem.input_params.qid,
       action: identifier,
-      text: isRefineText,
+      text: text,
       text_index: isTextIndex,
       question: data
     }
     console.log('refineData', refineData);
     genarateRefineCopy(refineData);
-    setIsRefineBox(false);
+    // setIsRefineBox(false);
     // setPosition(null);
     // setPopoverContent('');
 
     console.log('isRefineDetails', isRefineDetails);
-    editAnswerVisibility(isRefineDetails.tabIndex, isRefineDetails.itemIndex, isRefineDetails.outputIndex);
+    // editAnswerVisibility(isRefineDetails.tabIndex, isRefineDetails.itemIndex, isRefineDetails.outputIndex);
 
     if (isRefineDetails.itemIndex !== '' && isRefineDetails.itemIndex !== null) {
       tabs[isRefineDetails.tabIndex].data[isRefineDetails.itemIndex].answer = '';
@@ -456,12 +460,12 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
       qid: qid,
       rating: rating,
     };
-    if (itemIndex !== '' && itemIndex !== null) {
-      tabs[tabIndex].data[itemIndex].outputs[outputIndex].rating = rating;
-      console.log('tabs@@@@', tabs)
-    }else {
-      tabs[tabIndex].outputs[outputIndex].rating = rating;
-    }
+    // if (itemIndex !== '' && itemIndex !== null) {
+    //   tabs[tabIndex].data[itemIndex].outputs[outputIndex].rating = rating;
+    //   console.log('tabs@@@@', tabs)
+    // }else {
+    //   tabs[tabIndex].outputs[outputIndex].rating = rating;
+    // }
     console.log('tabs', tabs);
     // Open the modal with the updated item
     setSelectedItem(starItem);
@@ -706,14 +710,16 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
 
                         {(isRefineBox && isRefineDetails.tabIndex === tabIndex && isRefineDetails.itemIndex === itemIndex) &&
                           <div className='mt-5 bottom-textarea rounded-xl'>
-                            <div className='showSelectedText'>
-                              <div>
-                                <IonIcon icon={returnDownForwardOutline}></IonIcon>
+                            {isRefineType === 'refine' &&
+                              <div className='showSelectedText'>
+                                <div>
+                                  <IonIcon icon={returnDownForwardOutline}></IonIcon>
+                                </div>
+                                <div className='text'>
+                                  {isRefineText}
+                                </div>
                               </div>
-                              <div className='text'>
-                                {isRefineText}
-                              </div>
-                            </div>
+                            }
                             <IonTextarea
                               className='z-0  mb-2.5 text-black'
                               aria-label="Custom textarea"
@@ -724,7 +730,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                               // value={(inputValues[tabIndex] as string[])[itemIndex]}
                               onIonInput={(event) =>  handleInputChange(tabIndex, event, itemIndex)}
                             >
-                              <IonButton  data-tooltip-id='tooltip' data-tooltip-content='Genarate' onClick={() => submitRefineQuestion((inputValues[tabIndex] as string[])[itemIndex], isRefineType)} size="small" fill="clear" slot="end" >
+                              <IonButton  data-tooltip-id='tooltip' data-tooltip-content='Genarate' onClick={() => submitRefineQuestion((inputValues[tabIndex] as string[])[itemIndex], isRefineType, isRefineText)} size="small" fill="clear" slot="end" >
                                 <IonIcon className='text-primary' slot="icon-only" icon={send}></IonIcon>
                               </IonButton>
                             </IonTextarea>
@@ -900,14 +906,16 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
 
                   {(isRefineBox && isRefineDetails.tabIndex === tabIndex) && 
                     <div className='mt-5 bottom-textarea rounded-xl'>
-                      <div className='showSelectedText'>
-                        <div>
-                          <IonIcon icon={returnDownForwardOutline}></IonIcon>
+                      {isRefineType === 'refine' &&
+                        <div className='showSelectedText'>
+                          <div>
+                            <IonIcon icon={returnDownForwardOutline}></IonIcon>
+                          </div>
+                          <div className='text'>
+                            {isRefineText}
+                          </div>
                         </div>
-                        <div className='text'>
-                          {isRefineText}
-                        </div>
-                      </div>
+                      }
                       <IonTextarea
                         className='z-0  mb-2.5 text-black'
                         aria-label="Custom textarea"
@@ -918,7 +926,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                         // value={inputValues[tabIndex] as string}
                         onIonInput={(event) => handleInputChange(tabIndex, event, '')}
                       >
-                        <IonButton  data-tooltip-id='tooltip' data-tooltip-content='Genarate' onClick={() => submitRefineQuestion(inputValues[tabIndex] as string, isRefineType)} size="small" fill="clear" slot="end" >
+                        <IonButton  data-tooltip-id='tooltip' data-tooltip-content='Genarate' onClick={() => submitRefineQuestion(inputValues[tabIndex] as string, isRefineType, isRefineText)} size="small" fill="clear" slot="end" >
                           <IonIcon className='text-primary' slot="icon-only" icon={send}></IonIcon>
                         </IonButton>
                       </IonTextarea>
