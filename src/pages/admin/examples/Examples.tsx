@@ -118,7 +118,7 @@ const Examples: React.FC = () => {
 
       let updatedExamples = exampleList.map((item) =>
         selectedIds.includes(item.example_id)
-          ? { ...item, status: "active" }
+          ? { ...item, status: "active", updated_at: getCurrentTimestamp()  }
           : item
       );
 
@@ -130,7 +130,7 @@ const Examples: React.FC = () => {
 
       let updatedExamples = exampleList.map((item) =>
         selectedIds.includes(item.example_id)
-          ? { ...item, status: "rejected" }
+          ? { ...item, status: "rejected", updated_at: getCurrentTimestamp() }
           : item
       );
 
@@ -308,6 +308,10 @@ const Examples: React.FC = () => {
     setValue("purpose_id", _value.purpose_id);
     setValue("format_id", _value.format_id);
     setValue("user_prompt", _value.user_prompt);
+    setValue("status", _value.status);
+    setValue("test_results", _value.test_results);
+    setValue("products", _value.products);
+    setValue("created_at", _value.created_at);
 
     if (_value.b2b === 1) {
       setValue("b2b", true);
@@ -358,9 +362,29 @@ const Examples: React.FC = () => {
   }
   /* Filter form submit end */
 
+  /* ---------------Time stamp start--------------- */
+  const getCurrentTimestamp = (): string => {
+    const now = new Date();
+
+    const padZero = (num: number) => num.toString().padStart(2, "0");
+
+    const day = padZero(now.getDate());
+    const month = padZero(now.getMonth() + 1); // Months are 0-based
+    const year = now.getFullYear();
+
+    const hours = padZero(now.getHours());
+    const minutes = padZero(now.getMinutes());
+    const seconds = padZero(now.getSeconds());
+
+    return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
+};
+  /* Time stamp end */
+
   /* -----------Handle form submit start----------- */
   const handleFormSubmit = async (data: any) => {
     console.log('handleFormSubmit', data);
+
+
     let payLoad: any = {};
     payLoad.example = data.example;
     payLoad.format_id = data.format_id;
@@ -369,6 +393,10 @@ const Examples: React.FC = () => {
     payLoad.segment_id = data.segment_id;
     payLoad.user_prompt = data.user_prompt;
     payLoad.example_id = data.example_id;
+    payLoad.test_results = data.test_results;
+    payLoad.status = data.status;
+    payLoad.created_at = data.created_at ? data.created_at : getCurrentTimestamp();
+    payLoad.updated_at = getCurrentTimestamp();
 
     if (data.b2b === true) {
       payLoad.b2b = 1;
@@ -708,7 +736,7 @@ const Examples: React.FC = () => {
                     ))}
                   </IonSelect>
 
-                  <IonSelect placeholder="Select purpose" disabled={purposes.length === 0} className='min-h-10 field-item mb-4 text-sm' label="Which product/offer do you want to report on?" interface="popover" labelPlacement="stacked" fill="outline"
+                  <IonSelect placeholder="Select purpose" disabled={purposes.length === 0} className='min-h-10 field-item mb-4 text-sm' label="Select desired purpose below" interface="popover" labelPlacement="stacked" fill="outline"
                     {...register("purpose_id", {
                       validate: {},
                     })}>
@@ -717,7 +745,7 @@ const Examples: React.FC = () => {
                     ))}
                   </IonSelect>
 
-                  <IonSelect placeholder="Select Segment" disabled={segments.length === 0} className='min-h-10 field-item mb-4 text-sm' label="Which product/offer do you want to report on?" interface="popover" labelPlacement="stacked" fill="outline"
+                  <IonSelect placeholder="Select Segment" disabled={segments.length === 0} className='min-h-10 field-item mb-4 text-sm' label="Select desired segment below" interface="popover" labelPlacement="stacked" fill="outline"
                     {...register("segment_id", {
                       validate: {},
                     })}>
