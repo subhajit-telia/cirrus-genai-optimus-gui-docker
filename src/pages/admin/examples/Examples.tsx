@@ -1,10 +1,11 @@
-import { IonAlert, IonButton, IonButtons, IonCard, IonCheckbox, IonCol, IonContent, IonFab, IonFabButton, IonGrid, IonHeader, IonIcon, IonInput, IonItem, IonItemOption, IonItemOptions, IonItemSliding, IonLabel, IonList, IonModal, IonPage, IonProgressBar, IonRow, IonSelect, IonSelectOption, IonSpinner, IonSplitPane, IonText, IonTextarea, IonTitle, IonToast, IonToolbar } from '@ionic/react';
+import { IonAccordion, IonAccordionGroup, IonAlert, IonButton, IonButtons, IonCard, IonCheckbox, IonCol, IonContent, IonFab, IonFabButton, IonGrid, IonHeader, IonIcon, IonInput, IonItem, IonItemOption, IonItemOptions, IonItemSliding, IonLabel, IonList, IonModal, IonPage, IonProgressBar, IonRow, IonSelect, IonSelectOption, IonSpinner, IonSplitPane, IonText, IonTextarea, IonTitle, IonToast, IonToolbar } from '@ionic/react';
 import { useEffect, useRef, useState } from 'react';
 import AppHeader from '../../../components/header/Header';
 import Sidenav from '../../../components/sidenav/Sidenav';
-import { add, closeOutline, createOutline, trashOutline } from 'ionicons/icons';
+import { add, checkmarkDoneOutline, closeOutline, createOutline, swapVerticalOutline, trashOutline } from 'ionicons/icons';
 import { HTTPMethod, NetworkInfo } from '../../../routes/network';
 import { useForm } from 'react-hook-form';
+import SelectDropdown from '../../../components/dropdown/Dropdown';
 
 interface ExampleAddModel {
   example: string;
@@ -14,8 +15,21 @@ interface ExampleAddModel {
   format_id: string;
   user_prompt: string;
   products: string;
+  status: string;
+  test_results: string;
+  created_at: string;
+  updated_at: string;
   b2b: number | boolean;
   b2c: number | boolean;
+}
+
+interface FilterModel {
+  segment_id: string | null;
+  purpose_id: string | null;
+  format_id: string | null;
+  status: string | null;
+  b2b: number | null;
+  b2c: number | null;
 }
 
 interface Segment {
@@ -26,10 +40,12 @@ interface Segment {
 interface Purposes {
   purpose_name: string;
   purpose_id: string;
+  purpose_written_description: string;
 }
 interface Formats {
   format_name: string;
   format_id: string;
+  format_written_description: string;
 }
 
 const Examples: React.FC = () => {
@@ -41,13 +57,33 @@ const Examples: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isOpenModal, setIsOpenModal] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
-  const [targetIndex, setTargetIndex] = useState<number>();
+  const [targetIndex, setTargetIndex] = useState<any>();
   const [segments, setSegments] = useState<Segment[]>([]);
   const [purposes, setPurposes] = useState<Purposes[]>([]);
   const [formats, setFormats] = useState<Formats[]>([]);
   const [isShowError, setIsShowError] = useState(false);
   const [isErrorMsg, setIsErrorMsg] = useState('');
   const apiUrl = `${NetworkInfo.URL}`;
+  const [selectedFormats, setSelectedFormats] = useState<typeof formats[0][]>([]);
+  const [loadingFormats, setLoadingFormats] = useState<boolean>(false);
+  const [selectedSegments, setSelectedSegments] = useState<typeof segments[0][]>([]);
+  const [loadingSegments, setLoadingSegments] = useState<boolean>(false);
+  const [selectedPurpose, setSelectedPurpose] = useState<typeof purposes[0][]>([]);
+  const [loadingPurposes, setLoadingPurposes] = useState<boolean>(false);
+
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
+  const isAllSelected = selectedIds.length === exampleList.length;
+  const [isAlertHeader, setIsAlertHeader] = useState('');
+  const [isAlertSubHeader, setIsAlertSubHeader] = useState('');
+  const [isAscending, setIsAscending] = useState(true);
+
+  const statusNames = [
+    { id: 'testing', name: 'Testing' },
+    { id: 'active', name: 'Active' },
+    { id: 'validated', name: 'Validated' },
+    { id: 'rejected', name: 'Rejected' },
+  ]
 
   useEffect(() => {
 
@@ -57,6 +93,76 @@ const Examples: React.FC = () => {
     getFormatsData();
   }, []);
 
+  /* ----------Single and multi select start---------- */
+  const handleSelectAll = () => {
+    if (isAllSelected) {
+      setSelectedIds([]); // Unselect all
+    } else {
+      setSelectedIds(exampleList.map((item) => item.example_id)); // Select all
+    }
+  };
+
+  const handleSelectionChange = (id: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+  /* Single and multi select end */
+
+  /* ---------change data by select checkbox start--------- */
+  const handleChangeData = (_identifier:string) => {
+    console.log('_identifier', _identifier);
+    if (_identifier === 'approve') {
+      setIsAlertHeader('Approve example!');
+      setIsAlertSubHeader('Are you want to approve this examples?');
+
+      let updatedExamples = exampleList.map((item) =>
+        selectedIds.includes(item.example_id)
+          ? { ...item, status: "active" }
+          : item
+      );
+
+      console.log('updatedExamples', updatedExamples);
+      handleAleart(true, updatedExamples);
+    }else if (_identifier === 'reject') {
+      setIsAlertHeader('Reject example!');
+      setIsAlertSubHeader('Are you want to reject this examples?');
+
+      let updatedExamples = exampleList.map((item) =>
+        selectedIds.includes(item.example_id)
+          ? { ...item, status: "rejected" }
+          : item
+      );
+
+      console.log('updatedExamples', updatedExamples);
+      handleAleart(true, updatedExamples);
+    }else if (_identifier === 'delete') {
+      setIsAlertHeader('Delete example!');
+      setIsAlertSubHeader('Are you want to delete this examples?');
+
+      let updatedExamples = exampleList.filter(
+        (item) => !selectedIds.includes(item.example_id)
+      );
+  
+      console.log("Updated Examples:", updatedExamples);
+      handleAleart(true, updatedExamples);
+    }
+  }
+  /* change data by select checkbox end */
+
+  /* -------------------Sorting start------------------- */
+  const toggleSort = () => {
+    const sorted = [...exampleList].sort((a, b) => {
+      const dateA = new Date(a.created_at).getTime();
+      const dateB = new Date(b.created_at).getTime();
+      return isAscending ? dateA - dateB : dateB - dateA;
+    });
+    console.log('sorted', sorted);
+    setExampleList(sorted);
+    setIsAscending(!isAscending); // Toggle the sorting direction
+  };
+  /* Sorting end */
+
   /* -------------get Examples data start------------- */
   const getExamplesData = async () => {
     setLoading(true);
@@ -65,6 +171,9 @@ const Examples: React.FC = () => {
       setValue("purpose_id", '');
       setValue("segment_id", '');
       setValue("format_id", '');
+      setSelectedFormats([])
+      setSelectedSegments([])
+      setSelectedPurpose([])
       const response = await fetch(urlData, {
         method: 'GET',
         headers: {
@@ -175,19 +284,15 @@ const Examples: React.FC = () => {
     setValue("b2c", false);
   }
 
-  const handleDeleteAleart = (_indicator: boolean, _value: number) => {
+  const handleAleart = (_indicator: boolean, _value: any) => {
     if (_indicator === true) {
       setIsOpen(true);
       setTargetIndex(_value);
     } else if (_indicator === false) {
-      let updatedExamples = exampleList;
 
-      let delIndex: any = targetIndex;
-      updatedExamples.splice(delIndex, 1);
-
-      console.log('updatedExamples', updatedExamples);
+      console.log('targetIndex', targetIndex);
       setIsOpen(false);
-      handleExamplesUpdate(updatedExamples);
+      handleExamplesUpdate(targetIndex);
     }
 
   }
@@ -229,16 +334,26 @@ const Examples: React.FC = () => {
 
   /* -----------Filter form submit start----------- */
   const filterFormSubmit = async (data: any) => {
+    data.format_id = selectedFormats.length > 0 ? selectedFormats[0].format_id : null;
+    data.purpose_id = selectedPurpose.length > 0 ? selectedPurpose[0].purpose_id : null;
+    data.segment_id = selectedSegments.length > 0 ? selectedSegments[0].segment_id : null;
     console.log('data', data);
+    console.log('selectedFormats', selectedFormats);
+    console.log('selectedSegments', selectedSegments);
+    console.log('selectedPurpose', selectedPurpose);
 
-    let filteredData = filterExampleList.filter(item => {
-      const matchesFormat = data.format_id ? item.format_id === data.format_id : true;
-      const matchesSegment = data.segment_id ? item.segment_id === data.segment_id : true;
-      const matchesPurpose = data.purpose_id ? item.purpose_id === data.purpose_id : true;
-      return matchesFormat && matchesSegment && matchesPurpose;
+    const filteredData = exampleList.filter((item) => {
+      return (
+        (data.b2b === null || item.b2b === data.b2b) &&
+        (data.b2c === null || item.b2c === data.b2c) &&
+        (data.status === null || item.status === data.status) &&
+        (data.format_id === null || item.format_id === data.format_id) &&
+        (data.segment_id === null || item.segment_id === data.segment_id) &&
+        (data.purpose_id === null || item.purpose_id === data.purpose_id)
+      );
     });
 
-    console.log('filteredData', filteredData);
+    console.log("Filtered Data:", filteredData);
     setExampleList(filteredData);
   }
   /* Filter form submit end */
@@ -340,7 +455,6 @@ const Examples: React.FC = () => {
   const {
     register: register,
     handleSubmit: handleSubmit,
-    reset,
     setValue,
     watch,
     formState: { errors }
@@ -348,6 +462,20 @@ const Examples: React.FC = () => {
     defaultValues: {
       b2b: false,
       b2c: false,
+    },
+  });
+  const {
+    register: filter,
+    handleSubmit: handleFilterSubmit,
+    reset,
+  } = useForm<FilterModel>({
+    defaultValues: {
+      b2b: null,
+      b2c: null,
+      status: null,
+      format_id: null,
+      segment_id: null,
+      purpose_id: null,
     },
   });
   const isB2b = watch('b2b');
@@ -366,36 +494,121 @@ const Examples: React.FC = () => {
             {loading &&
               <IonProgressBar type="indeterminate"></IonProgressBar>
             }
-            <IonCard>
-              <form onSubmit={handleSubmit(filterFormSubmit)} className="w-full">
+            <div className='rounded bg-white shadow-md m-3'>
+              <form onSubmit={handleFilterSubmit(filterFormSubmit)} className="w-full">
                 <IonGrid>
                   <IonRow className='items-center'>
-                    <IonCol size='1'>
-                      Filter By:
+                    <IonCol size='4'>
+                      <div>
+                        <SelectDropdown
+                          options={formats}
+                          selectedOptions={selectedFormats}
+                          setSelectedOptions={setSelectedFormats}
+                          multiSelect={false} // Multi-select mode
+                          idKey="format_id"
+                          nameKey="format_name"
+                          tooltipKey="format_written_description"
+                          placeHolder='Select formats'
+                          label='Select format below'
+                        />
+                        { loadingFormats &&
+                          <IonProgressBar className='mt-0.5' type="indeterminate"></IonProgressBar>
+                        }
+                      </div>
+                    </IonCol>
+                    <IonCol size='4'>
+                      <div>
+                        <SelectDropdown
+                          options={segments}
+                          selectedOptions={selectedSegments}
+                          setSelectedOptions={setSelectedSegments}
+                          multiSelect={false} // Multi-select mode
+                          idKey="segment_id"
+                          nameKey="segment_name"
+                          tooltipKey="segment_name"
+                          placeHolder='Select Segments'
+                          label='Select segments below'
+                        />
+                        { loadingSegments &&
+                          <IonProgressBar className='mt-0.5' type="indeterminate"></IonProgressBar>
+                        }
+                      </div>
+                    </IonCol>
+                    <IonCol size='4'>
+                      <div>
+                        <SelectDropdown
+                          options={purposes}
+                          selectedOptions={selectedPurpose}
+                          setSelectedOptions={setSelectedPurpose}
+                          multiSelect={false} // Multi-select mode
+                          idKey="purpose_id"
+                          nameKey="purpose_name"
+                          tooltipKey="purpose_written_description"
+                          placeHolder='Select purpose'
+                          label='Select purpose below'
+                        />
+                        { loadingPurposes &&
+                          <IonProgressBar className='mt-0.5' type="indeterminate"></IonProgressBar>
+                        }
+                      </div>
                     </IonCol>
                     <IonCol size='3'>
-                      <IonInput className='text-sm' label="Format Id" labelPlacement="floating" fill="outline" placeholder="Enter Product Name"
-                        {...register("format_id", {
+                      <IonSelect placeholder="Select Status" className='min-h-10 field-item text-sm' label="Select status below" interface="popover" labelPlacement="stacked" fill="outline"
+                        {...filter("status", {
                           validate: {},
-                        })}
-                      ></IonInput>
+                        })}>
+                        {statusNames.map((item, index) => (
+                          <IonSelectOption key={index} value={item.id}>{item.name}</IonSelectOption>
+                        ))}
+                      </IonSelect>
+                    </IonCol>
+                    {/* <IonCol size='4'>
+                      <div className='flex justify-between text-sm'>
+                        <IonCheckbox
+                          {...register("b2b", {
+                            validate: {},
+                          })}
+                          checked={isB2b as boolean}
+                          onIonChange={(event: any) => {
+                            console.log('event', event.detail.checked);
+                            setValue("b2b", event.detail.checked);
+                          }}
+                          labelPlacement="start">B2B</IonCheckbox>
+
+                        <IonCheckbox
+                          {...register("b2c", {
+                            validate: {},
+                          })}
+                          checked={isB2c as boolean}
+                          onIonChange={(event: any) => {
+                            console.log('event', event.detail.checked);
+                            setValue("b2c", event.detail.checked);
+                          }}
+                          labelPlacement="start">B2C</IonCheckbox>
+                      </div>
+                    </IonCol> */}
+                    <IonCol size='3'>
+                      <IonSelect
+                        placeholder="Select B2B" className='min-h-10 field-item text-sm' label="Select B2B below" interface="popover" labelPlacement="stacked" fill="outline"
+                        {...filter("b2b", {
+                          validate: {},
+                        })}>
+                        <IonSelectOption value={1}>Yes</IonSelectOption>
+                        <IonSelectOption value={0}>No</IonSelectOption>
+                      </IonSelect>
                     </IonCol>
                     <IonCol size='3'>
-                      <IonInput className='text-sm' label="Segment Id" labelPlacement="floating" fill="outline" placeholder="Enter Product Name"
-                        {...register("segment_id", {
+                      <IonSelect
+                        placeholder="Select B2C" className='min-h-10 field-item text-sm' label="Select B2C below" interface="popover" labelPlacement="stacked" fill="outline"
+                        {...filter("b2c", {
                           validate: {},
-                        })}
-                      ></IonInput>
+                        })}>
+                        <IonSelectOption value={1}>Yes</IonSelectOption>
+                        <IonSelectOption value={0}>No</IonSelectOption>
+                      </IonSelect>
                     </IonCol>
-                    <IonCol size='3'>
-                      <IonInput className='text-sm' label="Purpose Id" labelPlacement="floating" fill="outline" placeholder="Enter Product Name"
-                        {...register("purpose_id", {
-                          validate: {},
-                        })}
-                      ></IonInput>
-                    </IonCol>
-                    <IonCol size='2'>
-                      <IonButton size='small' type='submit' className='btn-primary text-xs' shape="round">
+                    <IonCol size='3' className='text-right'>
+                      <IonButton type='submit' size='small' className='btn-primary text-xs' shape="round">
                         Filter
                       </IonButton>
                       <IonButton onClick={() => { reset(); getExamplesData() }} className='text-xs' size='small' type='reset' fill='outline' shape="round">
@@ -405,37 +618,65 @@ const Examples: React.FC = () => {
                   </IonRow>
                 </IonGrid>
               </form>
-            </IonCard>
+            </div>
 
-
+            <div className='rounded bg-white shadow-md mx-3 p-3 flex items-center justify-between'>
+              <div>
+                <IonCheckbox 
+                  checked={isAllSelected}
+                  onIonChange={handleSelectAll} 
+                  labelPlacement="end">
+                    Select All
+                </IonCheckbox>
+              </div>
+              <div>
+                <IonButton onClick={() => toggleSort()} size='small' shape="round">
+                  <IonIcon  className={isAscending ? "rotate" : "rotate-reverse"} slot="icon-only" icon={swapVerticalOutline}></IonIcon>
+                </IonButton>
+                <IonButton disabled={selectedIds.length === 0} onClick={() => handleChangeData('approve')} size='small' color="success" className='btn-primary text-xs' shape="round">
+                  <IonIcon slot="start" icon={checkmarkDoneOutline}></IonIcon>
+                  Approve
+                </IonButton>
+                <IonButton disabled={selectedIds.length === 0} onClick={() => handleChangeData('reject')} size='small' color="warning" className='btn-primary text-xs' shape="round">
+                  <IonIcon slot="start" icon={closeOutline}></IonIcon>
+                  Reject
+                </IonButton>
+                <IonButton disabled={selectedIds.length === 0} onClick={() => handleChangeData('delete')} size='small' color="danger" className='btn-primary text-xs' shape="round">
+                  <IonIcon slot="start" icon={trashOutline}></IonIcon>
+                  Delete
+                </IonButton>
+              </div>
+            </div>
             <IonList className='bg-transparent'>
               {exampleList.map((item, index) => (
                 <IonCard key={index}>
-                  <IonItemSliding>
-                    <IonItem button={true}>
-                      <IonLabel>
-                        <p><b>Segment Id:</b> {item.segment_id}</p>
-                        <p><b>Purpose Id:</b> {item.purpose_id}</p>
-                        <p><b>Format Id:</b> {item.format_id}</p>
-                        <p>
-                          <b>B2B:</b> {item.b2b === 1 ? 'Yes' : item.b2b === 0 ? 'No' : 'invalid value'} | <b>B2C:</b> {item.b2c === 1 ? 'Yes' : item.b2c === 0 ? 'No' : 'invalid value'}
-                        </p>
-                        <p><b>Products:</b> {item.products}</p>
-                        <p><b>User Prompt:</b> {item.user_prompt}</p>
-                        <p><b>Example:</b> {item.example}</p>
-                      </IonLabel>
-                      <IonButton id="open-modal" onClick={() => handleEdit(item, index)} slot="end" size="small" color="warning">
-                        <IonIcon icon={createOutline}></IonIcon>
-                      </IonButton>
-                      <IonButton onClick={() => handleDeleteAleart(true, index)} color="danger" slot="end" size="small">
-                        <IonIcon icon={trashOutline}></IonIcon>
-                      </IonButton>
-                    </IonItem>
-                    <IonItemOptions>
-                      <IonItemOption id="open-modal" onClick={() => handleEdit(item, index)} color="warning">Edit</IonItemOption>
-                      <IonItemOption onClick={() => handleDeleteAleart(true, index)} color="danger">Delete</IonItemOption>
-                    </IonItemOptions>
-                  </IonItemSliding>
+                  <IonItem>
+                    <IonLabel>
+                      <p><b>Example Id:</b> {item.example_id}</p>
+                      <p><b>Segment Id:</b> {item.segment_id}</p>
+                      <p><b>Purpose Id:</b> {item.purpose_id}</p>
+                      <p><b>Format Id:</b> {item.format_id}</p>
+                      <p>
+                        <b>B2B:</b> {item.b2b === 1 ? 'Yes' : item.b2b === 0 ? 'No' : 'invalid value'} | <b>B2C:</b> {item.b2c === 1 ? 'Yes' : item.b2c === 0 ? 'No' : 'invalid value'}
+                      </p>
+                      <p className='capitalize'><b>Status:</b> {item.status}</p>
+                      <p><b>Products:</b> {item.products}</p>
+                      <p><b>Test Result:</b> {item.test_results}</p>
+                      <p><b>User Prompt:</b> {item.user_prompt}</p>
+                      <p><b>Example:</b> {item.example}</p>
+                    </IonLabel>
+                    <IonButton id="open-modal" onClick={() => handleEdit(item, index)} slot="end" size="small" color="warning">
+                      <IonIcon icon={createOutline}></IonIcon>
+                    </IonButton>
+                    {/* <IonButton onClick={() => handleDeleteAleart(true, index)} color="danger" slot="end" size="small">
+                      <IonIcon icon={trashOutline}></IonIcon>
+                    </IonButton> */}
+                    <IonCheckbox
+                      slot="start"
+                      checked={selectedIds.includes(item.example_id)}
+                      onIonChange={() => handleSelectionChange(item.example_id)}>
+                    </IonCheckbox>
+                  </IonItem>
                 </IonCard>
               ))}
             </IonList>
@@ -456,7 +697,7 @@ const Examples: React.FC = () => {
                   </IonButtons>
                 </IonToolbar>
               </IonHeader>
-              <div className="ion-padding">
+              <div className="ion-padding inner-content">
                 <form onSubmit={handleSubmit(handleFormSubmit)} className="w-full">
                   <IonSelect placeholder="Select formats" disabled={formats.length === 0} className='min-h-10 field-item mb-4 text-sm' label="Select desired format below" interface="popover" labelPlacement="stacked" fill="outline"
                     {...register("format_id", {
@@ -557,12 +798,12 @@ const Examples: React.FC = () => {
             {/* aleart start */}
             <IonAlert
               isOpen={isOpen}
-              header="Delete example!"
-              subHeader="Are you want to delete this example?"
+              header={isAlertHeader}
+              subHeader={isAlertSubHeader}
               trigger="present-alert"
               buttons={[
                 {
-                  text: 'Cancel',
+                  text: 'No',
                   role: 'cancel',
                   handler: () => {
                     setIsOpen(false)
@@ -570,10 +811,10 @@ const Examples: React.FC = () => {
                   },
                 },
                 {
-                  text: 'Delete',
+                  text: 'Yes',
                   role: 'confirm',
                   handler: () => {
-                    handleDeleteAleart(false, 0);
+                    handleAleart(false, 0);
                     console.log('Alert confirmed');
                   },
                 },

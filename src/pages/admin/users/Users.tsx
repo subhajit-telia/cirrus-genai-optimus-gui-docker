@@ -253,7 +253,7 @@ const Users: React.FC = () => {
                 </IonButtons>
               </IonToolbar>
             </IonHeader>
-            <div className="ion-padding">
+            <div className="ion-padding inner-content">
               <form onSubmit={handleSubmit(handleFormSubmit)} className="w-full">
                 <IonSegment className='m-auto mb-4 border w-36 h-7 bg-white rounded-[50px]' 
                   {...register("role", {
