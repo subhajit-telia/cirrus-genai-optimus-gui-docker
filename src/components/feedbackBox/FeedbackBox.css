@@ -3,3 +3,7 @@ ion-modal.feedback-box {
     --height: auto;
     font-size: 14px;
 }
+ion-popover.rating-popover {
+    font-size: 12px;
+    --width: 300px;
+}
