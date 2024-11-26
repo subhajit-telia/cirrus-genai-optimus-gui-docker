@@ -1,11 +1,12 @@
-import { IonAccordion, IonAccordionGroup, IonAlert, IonButton, IonButtons, IonCard, IonCheckbox, IonCol, IonContent, IonFab, IonFabButton, IonGrid, IonHeader, IonIcon, IonInput, IonItem, IonItemOption, IonItemOptions, IonItemSliding, IonLabel, IonList, IonModal, IonPage, IonProgressBar, IonRow, IonSelect, IonSelectOption, IonSpinner, IonSplitPane, IonText, IonTextarea, IonTitle, IonToast, IonToolbar } from '@ionic/react';
+import { IonAccordion, IonAccordionGroup, IonAlert, IonButton, IonButtons, IonCard, IonCheckbox, IonChip, IonCol, IonContent, IonFab, IonFabButton, IonGrid, IonHeader, IonIcon, IonInput, IonItem, IonItemOption, IonItemOptions, IonItemSliding, IonLabel, IonList, IonModal, IonPage, IonProgressBar, IonRow, IonSelect, IonSelectOption, IonSpinner, IonSplitPane, IonText, IonTextarea, IonTitle, IonToast, IonToolbar } from '@ionic/react';
 import { useEffect, useRef, useState } from 'react';
 import AppHeader from '../../../components/header/Header';
 import Sidenav from '../../../components/sidenav/Sidenav';
-import { add, checkmarkDoneOutline, closeOutline, createOutline, swapVerticalOutline, trashOutline } from 'ionicons/icons';
+import { add, checkmarkDoneOutline, closeOutline, createOutline, speedometerOutline, swapVerticalOutline, trashOutline } from 'ionicons/icons';
 import { HTTPMethod, NetworkInfo } from '../../../routes/network';
 import { useForm } from 'react-hook-form';
 import SelectDropdown from '../../../components/dropdown/Dropdown';
+import { Tooltip } from 'react-tooltip';
 
 interface ExampleAddModel {
   example: string;
@@ -16,7 +17,7 @@ interface ExampleAddModel {
   user_prompt: string;
   products: string;
   status: string;
-  test_results: string;
+  test_results: number[] | null;
   created_at: string;
   updated_at: string;
   b2b: number | boolean;
@@ -28,8 +29,7 @@ interface FilterModel {
   purpose_id: string | null;
   format_id: string | null;
   status: string | null;
-  b2b: number | null;
-  b2c: number | null;
+  businessType: number | null;
 }
 
 interface Segment {
@@ -80,10 +80,21 @@ const Examples: React.FC = () => {
 
   const statusNames = [
     { id: 'testing', name: 'Testing' },
-    { id: 'active', name: 'Active' },
     { id: 'validated', name: 'Validated' },
-    { id: 'rejected', name: 'Rejected' },
+    { id: 'active', name: 'Active' },
+    { id: 'discarded', name: 'Discarded' },
   ]
+  const businessType = [
+    { id: 1, name: 'B2B' },
+    { id: 2, name: 'B2C' },
+    { id: 3, name: 'B2X' },
+  ]
+  const statusColors: Record<string, string> = {
+    testing: "primary",
+    validated: "warning",
+    active: "success",
+    discarded: "danger",
+  };
 
   useEffect(() => {
 
@@ -112,7 +123,7 @@ const Examples: React.FC = () => {
   /* ---------change data by select checkbox start--------- */
   const handleChangeData = (_identifier:string) => {
     console.log('_identifier', _identifier);
-    if (_identifier === 'approve') {
+    if (_identifier === 'active') {
       setIsAlertHeader('Approve example!');
       setIsAlertSubHeader('Are you want to approve this examples?');
 
@@ -124,13 +135,13 @@ const Examples: React.FC = () => {
 
       console.log('updatedExamples', updatedExamples);
       handleAleart(true, updatedExamples);
-    }else if (_identifier === 'reject') {
+    }else if (_identifier === 'discarded') {
       setIsAlertHeader('Reject example!');
       setIsAlertSubHeader('Are you want to reject this examples?');
 
       let updatedExamples = exampleList.map((item) =>
         selectedIds.includes(item.example_id)
-          ? { ...item, status: "rejected", updated_at: getCurrentTimestamp() }
+          ? { ...item, status: "discarded", updated_at: getCurrentTimestamp() }
           : item
       );
 
@@ -151,10 +162,14 @@ const Examples: React.FC = () => {
   /* change data by select checkbox end */
 
   /* -------------------Sorting start------------------- */
+  const parseDate = (dateString: string): Date => {
+    const [day, month, year, time] = dateString.split(/[/ ]/);
+    return new Date(`${year}-${month}-${day}T${time}`);
+  };
   const toggleSort = () => {
     const sorted = [...exampleList].sort((a, b) => {
-      const dateA = new Date(a.created_at).getTime();
-      const dateB = new Date(b.created_at).getTime();
+      const dateA = parseDate(a.created_at).getTime();
+      const dateB = parseDate(b.created_at).getTime();
       return isAscending ? dateA - dateB : dateB - dateA;
     });
     console.log('sorted', sorted);
@@ -341,12 +356,26 @@ const Examples: React.FC = () => {
     data.format_id = selectedFormats.length > 0 ? selectedFormats[0].format_id : null;
     data.purpose_id = selectedPurpose.length > 0 ? selectedPurpose[0].purpose_id : null;
     data.segment_id = selectedSegments.length > 0 ? selectedSegments[0].segment_id : null;
+    
+    if (data.businessType === 1) {
+      data.b2b = 1;
+      data.b2c = 0;
+    }else if (data.businessType === 2) {
+      data.b2b = 0;
+      data.b2c = 1;
+    }else if (data.businessType === 3) {
+      data.b2b = 1;
+      data.b2c = 1;
+    }else {
+      data.b2b = null;
+      data.b2c = null;
+    }
     console.log('data', data);
     console.log('selectedFormats', selectedFormats);
     console.log('selectedSegments', selectedSegments);
     console.log('selectedPurpose', selectedPurpose);
 
-    const filteredData = exampleList.filter((item) => {
+    const filteredData = filterExampleList.filter((item) => {
       return (
         (data.b2b === null || item.b2b === data.b2b) &&
         (data.b2c === null || item.b2c === data.b2c) &&
@@ -498,8 +527,7 @@ const Examples: React.FC = () => {
     reset,
   } = useForm<FilterModel>({
     defaultValues: {
-      b2b: null,
-      b2c: null,
+      businessType: null,
       status: null,
       format_id: null,
       segment_id: null,
@@ -537,7 +565,7 @@ const Examples: React.FC = () => {
                           nameKey="format_name"
                           tooltipKey="format_written_description"
                           placeHolder='Select formats'
-                          label='Select format below'
+                          label='Select format'
                         />
                         { loadingFormats &&
                           <IonProgressBar className='mt-0.5' type="indeterminate"></IonProgressBar>
@@ -555,7 +583,7 @@ const Examples: React.FC = () => {
                           nameKey="segment_name"
                           tooltipKey="segment_name"
                           placeHolder='Select Segments'
-                          label='Select segments below'
+                          label='Select segments'
                         />
                         { loadingSegments &&
                           <IonProgressBar className='mt-0.5' type="indeterminate"></IonProgressBar>
@@ -573,15 +601,15 @@ const Examples: React.FC = () => {
                           nameKey="purpose_name"
                           tooltipKey="purpose_written_description"
                           placeHolder='Select purpose'
-                          label='Select purpose below'
+                          label='Select purpose'
                         />
                         { loadingPurposes &&
                           <IonProgressBar className='mt-0.5' type="indeterminate"></IonProgressBar>
                         }
                       </div>
                     </IonCol>
-                    <IonCol size='3'>
-                      <IonSelect placeholder="Select Status" className='min-h-10 field-item text-sm' label="Select status below" interface="popover" labelPlacement="stacked" fill="outline"
+                    <IonCol size='4'>
+                      <IonSelect placeholder="Select Status" className='min-h-10 field-item text-sm' label="Select status" interface="popover" labelPlacement="stacked" fill="outline"
                         {...filter("status", {
                           validate: {},
                         })}>
@@ -590,34 +618,19 @@ const Examples: React.FC = () => {
                         ))}
                       </IonSelect>
                     </IonCol>
-                    {/* <IonCol size='4'>
-                      <div className='flex justify-between text-sm'>
-                        <IonCheckbox
-                          {...register("b2b", {
-                            validate: {},
-                          })}
-                          checked={isB2b as boolean}
-                          onIonChange={(event: any) => {
-                            console.log('event', event.detail.checked);
-                            setValue("b2b", event.detail.checked);
-                          }}
-                          labelPlacement="start">B2B</IonCheckbox>
-
-                        <IonCheckbox
-                          {...register("b2c", {
-                            validate: {},
-                          })}
-                          checked={isB2c as boolean}
-                          onIonChange={(event: any) => {
-                            console.log('event', event.detail.checked);
-                            setValue("b2c", event.detail.checked);
-                          }}
-                          labelPlacement="start">B2C</IonCheckbox>
-                      </div>
-                    </IonCol> */}
-                    <IonCol size='3'>
+                    <IonCol size='4'>
+                      <IonSelect placeholder="Select Business Type" className='min-h-10 field-item text-sm' label="Select Business Type" interface="popover" labelPlacement="stacked" fill="outline"
+                        {...filter("businessType", {
+                          validate: {},
+                        })}>
+                        {businessType.map((item, index) => (
+                          <IonSelectOption key={index} value={item.id}>{item.name}</IonSelectOption>
+                        ))}
+                      </IonSelect>
+                    </IonCol>
+                    {/* <IonCol size='3'>
                       <IonSelect
-                        placeholder="Select B2B" className='min-h-10 field-item text-sm' label="Select B2B below" interface="popover" labelPlacement="stacked" fill="outline"
+                        placeholder="Select B2B" className='min-h-10 field-item text-sm' label="Select B2B" interface="popover" labelPlacement="stacked" fill="outline"
                         {...filter("b2b", {
                           validate: {},
                         })}>
@@ -627,14 +640,14 @@ const Examples: React.FC = () => {
                     </IonCol>
                     <IonCol size='3'>
                       <IonSelect
-                        placeholder="Select B2C" className='min-h-10 field-item text-sm' label="Select B2C below" interface="popover" labelPlacement="stacked" fill="outline"
+                        placeholder="Select B2C" className='min-h-10 field-item text-sm' label="Select B2C" interface="popover" labelPlacement="stacked" fill="outline"
                         {...filter("b2c", {
                           validate: {},
                         })}>
                         <IonSelectOption value={1}>Yes</IonSelectOption>
                         <IonSelectOption value={0}>No</IonSelectOption>
                       </IonSelect>
-                    </IonCol>
+                    </IonCol> */}
                     <IonCol size='3' className='text-right'>
                       <IonButton type='submit' size='small' className='btn-primary text-xs' shape="round">
                         Filter
@@ -658,16 +671,17 @@ const Examples: React.FC = () => {
                 </IonCheckbox>
               </div>
               <div>
-                <IonButton onClick={() => toggleSort()} size='small' shape="round">
+                <IonButton data-tooltip-id='tooltip' data-tooltip-content={isAscending ? " Ascending" : " Descending"} onClick={() => toggleSort()} size='small' shape="round">
                   <IonIcon  className={isAscending ? "rotate" : "rotate-reverse"} slot="icon-only" icon={swapVerticalOutline}></IonIcon>
                 </IonButton>
-                <IonButton disabled={selectedIds.length === 0} onClick={() => handleChangeData('approve')} size='small' color="success" className='btn-primary text-xs' shape="round">
+                <Tooltip id='tooltip' />
+                <IonButton disabled={selectedIds.length === 0} onClick={() => handleChangeData('active')} size='small' color="success" className='btn-primary text-xs' shape="round">
                   <IonIcon slot="start" icon={checkmarkDoneOutline}></IonIcon>
-                  Approve
+                  Activate
                 </IonButton>
-                <IonButton disabled={selectedIds.length === 0} onClick={() => handleChangeData('reject')} size='small' color="warning" className='btn-primary text-xs' shape="round">
+                <IonButton disabled={selectedIds.length === 0} onClick={() => handleChangeData('discarded')} size='small' color="warning" className='btn-primary text-xs' shape="round">
                   <IonIcon slot="start" icon={closeOutline}></IonIcon>
-                  Reject
+                  Discard
                 </IonButton>
                 <IonButton disabled={selectedIds.length === 0} onClick={() => handleChangeData('delete')} size='small' color="danger" className='btn-primary text-xs' shape="round">
                   <IonIcon slot="start" icon={trashOutline}></IonIcon>
@@ -676,37 +690,55 @@ const Examples: React.FC = () => {
               </div>
             </div>
             <IonList className='bg-transparent'>
-              {exampleList.map((item, index) => (
-                <IonCard key={index}>
-                  <IonItem>
-                    <IonLabel>
-                      <p><b>Example Id:</b> {item.example_id}</p>
-                      <p><b>Segment Id:</b> {item.segment_id}</p>
-                      <p><b>Purpose Id:</b> {item.purpose_id}</p>
-                      <p><b>Format Id:</b> {item.format_id}</p>
-                      <p>
-                        <b>B2B:</b> {item.b2b === 1 ? 'Yes' : item.b2b === 0 ? 'No' : 'invalid value'} | <b>B2C:</b> {item.b2c === 1 ? 'Yes' : item.b2c === 0 ? 'No' : 'invalid value'}
-                      </p>
-                      <p className='capitalize'><b>Status:</b> {item.status}</p>
-                      <p><b>Products:</b> {item.products}</p>
-                      <p><b>Test Result:</b> {item.test_results}</p>
-                      <p><b>User Prompt:</b> {item.user_prompt}</p>
-                      <p><b>Example:</b> {item.example}</p>
-                    </IonLabel>
-                    <IonButton id="open-modal" onClick={() => handleEdit(item, index)} slot="end" size="small" color="warning">
-                      <IonIcon icon={createOutline}></IonIcon>
-                    </IonButton>
-                    {/* <IonButton onClick={() => handleDeleteAleart(true, index)} color="danger" slot="end" size="small">
-                      <IonIcon icon={trashOutline}></IonIcon>
-                    </IonButton> */}
-                    <IonCheckbox
-                      slot="start"
-                      checked={selectedIds.includes(item.example_id)}
-                      onIonChange={() => handleSelectionChange(item.example_id)}>
-                    </IonCheckbox>
-                  </IonItem>
-                </IonCard>
-              ))}
+              {exampleList.map((item, index) => {
+                const testResults = item.test_results;
+
+                const total = testResults ? testResults.length : 0;
+                const passed = testResults ? testResults.filter((x) => x === 1).length : 0;
+
+                return(
+                  <IonCard key={index}>
+                    <IonItem>
+                      <IonLabel>
+                        <p className=''><b>Example Id:</b> {item.example_id}</p>
+                        <p><b>Segment Id:</b> {item.segment_id}</p>
+                        <p><b>Purpose Id:</b> {item.purpose_id}</p>
+                        <p><b>Format Id:</b> {item.format_id}</p>
+                        <p>
+                          <b>B2B:</b> {item.b2b === 1 ? 'Yes' : item.b2b === 0 ? 'No' : 'invalid value'} | <b>B2C:</b> {item.b2c === 1 ? 'Yes' : item.b2c === 0 ? 'No' : 'invalid value'}
+                        </p>
+                        <p><b>Products:</b> {item.products}</p>
+                        <p><b>User Prompt:</b> {item.user_prompt}</p>
+                        <p><b>Example:</b> {item.example}</p>
+                        <p className='float-left italic'><b>Created at:</b> {item.created_at}</p>
+                        <p className='float-right italic'><b>Updated at:</b> {item.updated_at}</p>
+                      </IonLabel>
+                      <IonButton id="open-modal" onClick={() => handleEdit(item, index)} slot="end" size="small" color="warning">
+                        <IonIcon icon={createOutline}></IonIcon>
+                      </IonButton>
+                      <div className='absolute top-0 right-0 flex flex-col items-center'>
+                        <IonChip className='capitalize h-5 min-h-5' color={statusColors[item.status] || "primary"}>{item.status}</IonChip>
+                        <IonChip className='h-5 min-h-5'>
+                          <IonIcon icon={speedometerOutline} color="primary"></IonIcon>
+                          <IonLabel>
+                            {testResults
+                            ? `${passed} of ${total}`
+                            : "No test results available"}
+                          </IonLabel>
+                        </IonChip>
+                      </div>
+                      {/* <IonButton onClick={() => handleDeleteAleart(true, index)} color="danger" slot="end" size="small">
+                        <IonIcon icon={trashOutline}></IonIcon>
+                      </IonButton> */}
+                      <IonCheckbox
+                        slot="start"
+                        checked={selectedIds.includes(item.example_id)}
+                        onIonChange={() => handleSelectionChange(item.example_id)}>
+                      </IonCheckbox>
+                    </IonItem>
+                  </IonCard>
+                )
+              })}
             </IonList>
 
             {exampleList.length === 0 &&

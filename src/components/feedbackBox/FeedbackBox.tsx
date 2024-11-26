@@ -90,14 +90,13 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({
         <h2 className="my-2.5 px-4 text-center">How well does this copy align with the requirements?</h2>
         <IonItem lines="none">
           <IonLabel className="!flex items-center flex-row-reverse justify-end">Format <IonIcon id="format-trigger" className="block ml-1.5 cursor-pointer" slot="icon-only" icon={informationCircleOutline}></IonIcon></IonLabel>
-          <IonPopover trigger="format-trigger" triggerAction="hover">
+          <IonPopover className="rating-popover" size="auto" trigger="format-trigger" triggerAction="hover">
             <IonContent class="ion-padding">
-              Format: 
-              Ensures that the generated copy adheres to the specific structure and requirements outlined in the Format Definition.
-              Structure: Verify that the copy follows the intended structural format, such as paragraph order, header presence, or specified sub-sections.
-              Length: Check if the copy meets the character or word count limits set for each format (e.g., SMS, small email).
-              CTA (Optional): If required by the format, ensure that the call to action placeholder is included.
-              Greeting Text (Optional): If required by the format, confirm that the greeting text is correct.
+              Ensures that the generated copy adheres to the specific structure and requirements outlined in the <b>Format Definition</b>.<br/>
+              <b>Structure:</b> Verify that the copy follows the intended structural format, such as paragraph order, header presence, or specified sub-sections.<br/>
+              <b>Length:</b> Check if the copy meets the character or word count limits set for each format (e.g., SMS, small email).<br/>
+              <b>CTA (Optional):</b> If required by the format, ensure that the call to action placeholder is included.<br/>
+              <b>Greeting Text (Optional):</b> If required by the format, confirm that the greeting text is correct.
             </IonContent>
           </IonPopover>
           <div style={{ display: "flex", gap: "5px" }}>
@@ -124,12 +123,11 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({
         </IonItem>
         <IonItem lines="none">
           <IonLabel className="!flex items-center flex-row-reverse justify-end">Accuracy <IonIcon id="integrity-trigger" className="block ml-1.5 cursor-pointer" slot="icon-only" icon={informationCircleOutline}></IonIcon></IonLabel>
-          <IonPopover trigger="integrity-trigger" triggerAction="hover">
+          <IonPopover className="rating-popover" size="auto" trigger="integrity-trigger" triggerAction="hover">
             <IonContent class="ion-padding">
-              Accuracy:
-              Ensures that the factual accuracy and truthfulness of the copy, especially when it references specific products or services.
-              Product Accuracy: Validate that the copy accurately describes the product features, specifications, or offerings as per Telia’s real products and services.
-              Truth and Factuality: Ensure that all statements in the copy are true, avoiding exaggerations, misrepresentations, or any information that could mislead the customer.
+              Ensures that the factual accuracy and truthfulness of the copy, especially when it references specific products or services.<br/>
+              <b>Product Accuracy:</b> Validate that the copy accurately describes the product features, specifications, or offerings as per Telia’s real products and services.<br/>
+              <b>Truth and Factuality:</b> Ensure that all statements in the copy are true, avoiding exaggerations, misrepresentations, or any information that could mislead the customer.
             </IonContent>
           </IonPopover>
           <div style={{ display: "flex", gap: "5px" }}>
@@ -156,14 +154,13 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({
         </IonItem>
         <IonItem lines="none">
           <IonLabel className="!flex items-center flex-row-reverse justify-end">Language <IonIcon id="communication-trigger" className="block ml-1.5 cursor-pointer" slot="icon-only" icon={informationCircleOutline}></IonIcon></IonLabel>
-          <IonPopover trigger="communication-trigger" triggerAction="hover">
+          <IonPopover className="rating-popover" size="auto" trigger="communication-trigger" triggerAction="hover">
             <IonContent class="ion-padding">
-              Language:
-              Evaluates the tone, clarity, and relevance of the language, as well as its alignment with the Purpose and Segment definitions.
-              Tone: Assess if the copy’s tone matches the general requirements (e.g., warm, savvy, straightforward) or if segment is selected, aligns with the segment and audience (B2B or B2C).
-              Language: Verify that the language is clear, concise, and appropriately informal or formal depending on the purpose and audience (B2B or B2C).
-              Value Proposition: Check if the copy clearly communicates the benefits and value of the product/service, addressing the specific needs and priorities of the target segment.
-              Actionability: Ensure that the copy encourages the intended action (e.g., clicking a link, upgrading a service) and that the action is easy to understand and follow.
+              Evaluates the tone, clarity, and relevance of the language, as well as its alignment with the <b>Purpose</b> and <b>Segment</b> definitions.<br/>
+              <b>Tone:</b> Assess if the copy’s tone matches the general requirements (e.g., warm, savvy, straightforward) or if segment is selected, aligns with the segment and audience (B2B or B2C).<br/>
+              <b>Language:</b> Verify that the language is clear, concise, and appropriately informal or formal depending on the purpose and audience (B2B or B2C).<br/>
+              <b>Value Proposition:</b> Check if the copy clearly communicates the benefits and value of the product/service, addressing the specific needs and priorities of the target segment.<br/>
+              <b>Actionability:</b> Ensure that the copy encourages the intended action (e.g., clicking a link, upgrading a service) and that the action is easy to understand and follow.
             </IonContent>
           </IonPopover>
           <div style={{ display: "flex", gap: "5px" }}>

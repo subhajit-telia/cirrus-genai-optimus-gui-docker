@@ -87,7 +87,8 @@ const B2C: React.FC = () => {
   const apiUrl = window.RUNTIME_ENV?.REACT_APP_API_URL || NetworkInfo.URL;
   const [isOpenModal, setIsOpenModal] = useState(false);
   const [selectedDiv, setSelectedDiv] = useState<number | null>(null);
-  const [feedbackCopy, setFeedbackCopy] = useState([]);
+  const [feedbackCopy, setFeedbackCopy] = useState<any[]>([]);
+  const [currentIndex, setCurrentIndex] = useState<number>(0);
 
   useEffect(() => {
     let userLocalData:any = localStorage.getItem('user');
@@ -476,8 +477,13 @@ const B2C: React.FC = () => {
           showLoadingIndicator(false);
         }else {
           setSelectedDiv(null)
+          
+          // setFeedbackCopy(responseData);
+          setFeedbackCopy(prevArray => [...prevArray, responseData]); 
+          setCurrentIndex(0);
           setIsOpenModal(true);
-          setFeedbackCopy(responseData.responses);
+          setTimeout(() => console.log('feedbackCopy', feedbackCopy), 300); 
+          
           return;
         }
       } else {
@@ -748,6 +754,13 @@ const B2C: React.FC = () => {
     console.log('selectItem', selectItem);
     setSelectedDiv(tabIndex); // Set the clicked div's ID as selected
     setIsOpenModal(false);
+    console.log('feedbackCopy', feedbackCopy);
+    if (currentIndex < feedbackCopy.length - 1) {
+      // Move to the next response
+      setSelectedDiv(null);
+      setCurrentIndex((prev) => prev + 1);
+      setTimeout(() => setIsOpenModal(true), 300); // Reopen the modal with the next response
+    }
     console.log('arrayNoSegment', noSegmentArray);
     console.log('arrayTab', tabArray);
 
@@ -1035,39 +1048,49 @@ const B2C: React.FC = () => {
 
         {/* self learning modal start */}
         <IonModal className='self-learning-modal' isOpen={isOpenModal}  backdropDismiss={false}>
-          <IonHeader>
-            <IonToolbar>
-              <IonTitle className='text-center'>Which copy is better?</IonTitle>
-            </IonToolbar>
-          </IonHeader>
-          <div className="ion-padding inner-content">
-            <IonGrid className='cursor-pointer'>
-              <IonRow>
-                {feedbackCopy.map((feedbackItem:any, tabIndex) => (
-                  <IonCol size="6">
-                    <div onClick={() => handleDivClick(feedbackItem, tabIndex)} className={`${selectedDiv === tabIndex ? 'border-2 border-primary' : ''}  bg-white mb-5 tab-body border p-2 rounded-md relative`}>
-                      {/* <h3 className='capitalize'>{feedbackItem.input_params.format_name}</h3> */}
-                      {feedbackItem.input_params.format_name &&
-                        <IonChip color="primary">Format: {feedbackItem.input_params.format_name}</IonChip>
-                      }
-                      {feedbackItem.input_params.purpose_name &&
-                        <IonChip color="success">Purpose: {feedbackItem.input_params.purpose_name}</IonChip>
-                      }
-                      {feedbackItem.input_params.segment_name &&
-                        <IonChip color="warning">Segment: {feedbackItem.input_params.segment_name}</IonChip>
-                      }
-                      {feedbackItem.input_params.product_names.map((item:string, index:number) => (
-                        <IonChip color="secondary">Product {index + 1}: {item}</IonChip>
-                      ))}
-                      <div className='shadow-md rounded-md p-2 mb-1.5 relative'>
-                        <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} children={feedbackItem.answer}/>
-                      </div>
-                    </div>
-                  </IonCol>
-                ))}
-              </IonRow>
-            </IonGrid>
-          </div>
+          {feedbackCopy.length !== 0 &&
+            <>
+              <IonHeader>
+                <IonToolbar className='text-center'>
+                  <IonTitle>Which copy is better?</IonTitle>
+                  {feedbackCopy[currentIndex].responses[0].input_params.format_name &&
+                    <IonChip color="primary"><b>Format:</b> {feedbackCopy[currentIndex].responses[0].input_params.format_name}</IonChip>
+                  }
+                  {feedbackCopy[currentIndex].responses[0].input_params.purpose_name &&
+                    <IonChip color="success"><b>Purpose:</b> {feedbackCopy[currentIndex].responses[0].input_params.purpose_name}</IonChip>
+                  }
+                  {feedbackCopy[currentIndex].responses[0].input_params.segment_name &&
+                    <IonChip color="warning"><b>Segment:</b> {feedbackCopy[currentIndex].responses[0].input_params.segment_name}</IonChip>
+                  }
+                  {feedbackCopy[currentIndex].responses[0].input_params.product_names.map((item:string, index:number) => (
+                    <IonChip color="secondary"><b>Product {index + 1}:</b> {item}</IonChip>
+                  ))}
+                </IonToolbar>
+              </IonHeader>
+              <div className="inner-content">
+                <IonGrid className='cursor-pointer'>
+                  <div className='flex justify-evenly'>
+                    <div>A</div>
+                    <div>VS</div>
+                    <div>B</div>
+                  </div>
+                  <IonRow>
+                    {feedbackCopy[currentIndex].responses.map((feedbackItem:any, tabIndex:number) => (
+                      <IonCol size="6">
+                        <div onClick={() => handleDivClick(feedbackItem, tabIndex)} className={`${selectedDiv === tabIndex ? 'border-2 border-primary' : ''} hover:border-2 hover:border-primary bg-white mb-5 tab-body border p-2 rounded-md relative`}>
+                          {/* <h3 className='capitalize'>{feedbackItem.input_params.format_name}</h3> */}
+                          
+                          <div className='shadow-md rounded-md p-2 mb-1.5 relative'>
+                            <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} children={feedbackItem.answer}/>
+                          </div>
+                        </div>
+                      </IonCol>
+                    ))}
+                  </IonRow>
+                </IonGrid>
+              </div>
+            </>
+          }
         </IonModal>
         {/* self learning modal end */}
       </IonContent>
