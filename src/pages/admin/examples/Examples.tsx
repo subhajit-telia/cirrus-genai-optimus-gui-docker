@@ -1,8 +1,8 @@
-import { IonAccordion, IonAccordionGroup, IonAlert, IonButton, IonButtons, IonCard, IonCheckbox, IonChip, IonCol, IonContent, IonFab, IonFabButton, IonGrid, IonHeader, IonIcon, IonInput, IonItem, IonItemOption, IonItemOptions, IonItemSliding, IonLabel, IonList, IonModal, IonPage, IonProgressBar, IonRow, IonSelect, IonSelectOption, IonSpinner, IonSplitPane, IonText, IonTextarea, IonTitle, IonToast, IonToolbar } from '@ionic/react';
+import { IonAccordion, IonAccordionGroup, IonAlert, IonButton, IonButtons, IonCard, IonCheckbox, IonChip, IonCol, IonContent, IonFab, IonFabButton, IonGrid, IonHeader, IonIcon, IonInput, IonItem, IonItemOption, IonItemOptions, IonItemSliding, IonLabel, IonList, IonModal, IonPage, IonPopover, IonProgressBar, IonRow, IonSelect, IonSelectOption, IonSpinner, IonSplitPane, IonText, IonTextarea, IonTitle, IonToast, IonToolbar } from '@ionic/react';
 import { useEffect, useRef, useState } from 'react';
 import AppHeader from '../../../components/header/Header';
 import Sidenav from '../../../components/sidenav/Sidenav';
-import { add, checkmarkDoneOutline, closeOutline, createOutline, speedometerOutline, swapVerticalOutline, trashOutline } from 'ionicons/icons';
+import { add, checkmarkDoneOutline, closeOutline, createOutline, informationCircleOutline, informationOutline, speedometerOutline, swapVerticalOutline, trashOutline } from 'ionicons/icons';
 import { HTTPMethod, NetworkInfo } from '../../../routes/network';
 import { useForm } from 'react-hook-form';
 import SelectDropdown from '../../../components/dropdown/Dropdown';
@@ -79,9 +79,9 @@ const Examples: React.FC = () => {
   const [isAscending, setIsAscending] = useState(true);
 
   const statusNames = [
-    { id: 'testing', name: 'Testing' },
-    { id: 'validated', name: 'Validated' },
     { id: 'active', name: 'Active' },
+    { id: 'validated', name: 'Validated' },
+    { id: 'testing', name: 'Testing' },
     { id: 'discarded', name: 'Discarded' },
   ]
   const businessType = [
@@ -691,40 +691,69 @@ const Examples: React.FC = () => {
             </div>
             <IonList className='bg-transparent'>
               {exampleList.map((item, index) => {
-                const testResults = item.test_results;
-
-                const total = testResults ? testResults.length : 0;
-                const passed = testResults ? testResults.filter((x) => x === 1).length : 0;
+                const total = item.test_results?.length || 0; // Total tests
+                const passed = item.test_results?.filter((val) => val === 1).length || 0; // Passed tests
+                const failed = total - passed; // Failed tests
 
                 return(
                   <IonCard key={index}>
                     <IonItem>
                       <IonLabel>
-                        <p className=''><b>Example Id:</b> {item.example_id}</p>
-                        <p><b>Segment Id:</b> {item.segment_id}</p>
-                        <p><b>Purpose Id:</b> {item.purpose_id}</p>
-                        <p><b>Format Id:</b> {item.format_id}</p>
-                        <p>
-                          <b>B2B:</b> {item.b2b === 1 ? 'Yes' : item.b2b === 0 ? 'No' : 'invalid value'} | <b>B2C:</b> {item.b2c === 1 ? 'Yes' : item.b2c === 0 ? 'No' : 'invalid value'}
-                        </p>
-                        <p><b>Products:</b> {item.products}</p>
-                        <p><b>User Prompt:</b> {item.user_prompt}</p>
-                        <p><b>Example:</b> {item.example}</p>
-                        <p className='float-left italic'><b>Created at:</b> {item.created_at}</p>
-                        <p className='float-right italic'><b>Updated at:</b> {item.updated_at}</p>
+                        <IonRow>
+                          <IonCol size='4'><p className=''><b>Example Id:</b> {item.example_id}</p></IonCol>
+                          <IonCol size='4'><p><b>Segment Id:</b> {item.segment_id}</p></IonCol>
+                          <IonCol size='4'><p><b>Purpose Id:</b> {item.purpose_id}</p></IonCol>
+                          <IonCol size='4'><p><b>Format Id:</b> {item.format_id}</p></IonCol>
+                          <IonCol size='4'>
+                            <p>
+                              <b>B2B:</b> {item.b2b === 1 ? 'Yes' : item.b2b === 0 ? 'No' : 'invalid value'} | <b>B2C:</b> {item.b2c === 1 ? 'Yes' : item.b2c === 0 ? 'No' : 'invalid value'}
+                            </p>
+                          </IonCol>
+                          <IonCol size='4'><p><b>Products:</b> {item.products}</p></IonCol>
+                          <IonCol size='12'><p><b>User Prompt:</b> {item.user_prompt}</p></IonCol>
+                          <IonCol size='12'><p><b>Example:</b> {item.example}</p></IonCol>
+                          <IonCol size='4'><p className='italic'><b>Created at:</b> {item.created_at}</p></IonCol>
+                          <IonCol size='4'></IonCol>
+                          <IonCol size='4'><p className='italic'><b>Updated at:</b> {item.updated_at}</p></IonCol>
+                        </IonRow>
                       </IonLabel>
                       <IonButton id="open-modal" onClick={() => handleEdit(item, index)} slot="end" size="small" color="warning">
                         <IonIcon icon={createOutline}></IonIcon>
                       </IonButton>
-                      <div className='absolute top-0 right-0 flex flex-col items-center'>
-                        <IonChip className='capitalize h-5 min-h-5' color={statusColors[item.status] || "primary"}>{item.status}</IonChip>
-                        <IonChip className='h-5 min-h-5'>
-                          <IonIcon icon={speedometerOutline} color="primary"></IonIcon>
-                          <IonLabel>
-                            {testResults
-                            ? `${passed} of ${total}`
-                            : "No test results available"}
+                      <div className='absolute top-0 right-0 flex flex-col'>
+                        <IonChip className='capitalize h-7 min-h-7 font-bold flex items-center justify-center' color={statusColors[item.status] || "primary"}>
+                          <IonLabel>{item.status}</IonLabel>
+                        </IonChip>
+                        <IonChip className='h-7 min-h-7'>
+                          <IonIcon id={`hover-trigger${index}`} color="primary" icon={informationCircleOutline}></IonIcon>
+                          <IonLabel className='font-bold'>
+                            {item.test_results ? (
+                              <>
+                                <span
+                                    className={`result-count ${
+                                        passed >= failed ? "!text-[#2DD55B]" : "!text-[#C5000F]"
+                                    }`}
+                                >
+                                    {passed}
+                                </span>{" "}
+                                |{" "}
+                                <span
+                                    className={`result-count ${
+                                        failed > passed ? "!text-[#2DD55B]" : "!text-[#C5000F]"
+                                    }`}
+                                >
+                                    {failed}
+                                </span>
+                              </>
+                            ) : (
+                                "No test results available"
+                            )}
                           </IonLabel>
+                          <IonPopover trigger={`hover-trigger${index}`} triggerAction="hover">
+                            <IonContent class="ion-padding">
+                            The number of times the output generated using this new example was rated as “better | worse” than the output generated without this example. 
+                            </IonContent>
+                          </IonPopover>
                         </IonChip>
                       </div>
                       {/* <IonButton onClick={() => handleDeleteAleart(true, index)} color="danger" slot="end" size="small">
