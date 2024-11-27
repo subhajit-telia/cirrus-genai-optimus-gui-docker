@@ -264,7 +264,7 @@ const B2C: React.FC = () => {
 
   const handleFormSubmit = (data: any) => {
     console.log('selectedPurpose', selectedPurpose);
-    
+    setFeedbackCopy([]);
     data.format = selectedFormats.map(format => format.format_id);
     data.purpose = selectedPurpose.length > 0 && selectedPurpose[0].purpose_id 
       ? selectedPurpose[0].purpose_id 
@@ -525,6 +525,7 @@ const B2C: React.FC = () => {
     }));
     arrayTab = [];
     arrayNoSegment = [];
+    setFeedbackCopy([]);
     setSegments(updatedSegments);
     setTabs([]);
     setSelectedProducts([]);
@@ -754,6 +755,8 @@ const B2C: React.FC = () => {
     console.log('selectItem', selectItem);
     setSelectedDiv(tabIndex); // Set the clicked div's ID as selected
     setIsOpenModal(false);
+    setIsShowError(true);
+    setIsErrorMsg('Feedback submitted!');
     console.log('feedbackCopy', feedbackCopy);
     if (currentIndex < feedbackCopy.length - 1) {
       // Move to the next response
@@ -1077,7 +1080,7 @@ const B2C: React.FC = () => {
                   <IonRow>
                     {feedbackCopy[currentIndex].responses.map((feedbackItem:any, tabIndex:number) => (
                       <IonCol size="6">
-                        <div onClick={() => handleDivClick(feedbackItem, tabIndex)} className={`${selectedDiv === tabIndex ? 'border-2 border-primary' : ''} hover:border-2 hover:border-primary bg-white mb-5 tab-body border p-2 rounded-md relative`}>
+                        <div onClick={() => handleDivClick(feedbackItem, tabIndex)} className={`${selectedDiv === tabIndex ? 'border-primary' : ''} hover:border-primary bg-white mb-5 tab-body border-2 p-2 rounded-md relative`}>
                           {/* <h3 className='capitalize'>{feedbackItem.input_params.format_name}</h3> */}
                           
                           <div className='shadow-md rounded-md p-2 mb-1.5 relative'>
