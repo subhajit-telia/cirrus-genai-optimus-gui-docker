@@ -77,6 +77,7 @@ const Examples: React.FC = () => {
   const [isAlertHeader, setIsAlertHeader] = useState('');
   const [isAlertSubHeader, setIsAlertSubHeader] = useState('');
   const [isAscending, setIsAscending] = useState(true);
+  const [sortField, setSortField] = useState<"created_at" | "updated_at">("created_at");
 
   const statusNames = [
     { id: 'active', name: 'Active' },
@@ -168,8 +169,8 @@ const Examples: React.FC = () => {
   };
   const toggleSort = () => {
     const sorted = [...exampleList].sort((a, b) => {
-      const dateA = parseDate(a.created_at).getTime();
-      const dateB = parseDate(b.created_at).getTime();
+      const dateA = parseDate(a[sortField]).getTime();
+      const dateB = parseDate(b[sortField]).getTime();
       return isAscending ? dateA - dateB : dateB - dateA;
     });
     console.log('sorted', sorted);
@@ -670,9 +671,18 @@ const Examples: React.FC = () => {
                     Select All
                 </IonCheckbox>
               </div>
-              <div>
+              <div className='flex items-center'>
+                <IonSelect
+                  value={sortField}
+                  onIonChange={(e) => setSortField(e.detail.value)}
+                  placeholder="Select Sort Field"
+                  className='min-h-10 field-item text-sm' label="Select Sort Field" interface="popover" labelPlacement="stacked" fill="outline"
+                >
+                  <IonSelectOption value="created_at">Created Date</IonSelectOption>
+                  <IonSelectOption value="updated_at">Updated Date</IonSelectOption>
+                </IonSelect>
                 <IonButton data-tooltip-id='tooltip' data-tooltip-content={isAscending ? " Ascending" : " Descending"} onClick={() => toggleSort()} size='small' shape="round">
-                  <IonIcon  className={isAscending ? "rotate" : "rotate-reverse"} slot="icon-only" icon={swapVerticalOutline}></IonIcon>
+                  <IonIcon slot="icon-only" className={isAscending ? "rotate" : "rotate-reverse"} icon={swapVerticalOutline}></IonIcon>
                 </IonButton>
                 <Tooltip id='tooltip' />
                 <IonButton disabled={selectedIds.length === 0} onClick={() => handleChangeData('active')} size='small' color="success" className='btn-primary text-xs' shape="round">
@@ -751,7 +761,7 @@ const Examples: React.FC = () => {
                           </IonLabel>
                           <IonPopover trigger={`hover-trigger${index}`} triggerAction="hover">
                             <IonContent class="ion-padding">
-                            The number of times the output generated using this new example was rated as “better | worse” than the output generated without this example. 
+                              The number of times the output generated using this example was rated as <br/>“<span className='text-[#2DD55B]'>better</span> | <span className='text-[#C5000F]'>worse</span>” than the output generated without.
                             </IonContent>
                           </IonPopover>
                         </IonChip>
