@@ -460,12 +460,12 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
       qid: qid,
       rating: rating,
     };
-    // if (itemIndex !== '' && itemIndex !== null) {
-    //   tabs[tabIndex].data[itemIndex].outputs[outputIndex].rating = rating;
-    //   console.log('tabs@@@@', tabs)
-    // }else {
-    //   tabs[tabIndex].outputs[outputIndex].rating = rating;
-    // }
+    if (itemIndex !== '' && itemIndex !== null) {
+      tabs[tabIndex].data[itemIndex].outputs[outputIndex].rating = rating;
+      console.log('tabs@@@@', tabs)
+    }else {
+      tabs[tabIndex].outputs[outputIndex].rating = rating;
+    }
     console.log('tabs', tabs);
     // Open the modal with the updated item
     setSelectedItem(starItem);
