@@ -1,4 +1,4 @@
-import { IonButton, IonChip, IonCol, IonContent, IonFab, IonFabButton, IonFabList, IonGrid, IonIcon, IonPage, IonProgressBar, IonRow, IonSkeletonText, IonSpinner, IonTextarea, IonToast } from '@ionic/react';
+import { IonButton, IonButtons, IonChip, IonCol, IonContent, IonFab, IonFabButton, IonFabList, IonFooter, IonGrid, IonHeader, IonIcon, IonModal, IonPage, IonProgressBar, IonRow, IonSkeletonText, IonSpinner, IonTextarea, IonTitle, IonToast, IonToolbar } from '@ionic/react';
 import AppHeader from '../../components/header/Header';
 import { globe, information, link } from 'ionicons/icons';
 import { useEffect, useState } from 'react';
@@ -11,12 +11,15 @@ import Multiselect from 'multiselect-react-dropdown';
 import optimusLogo from '../../theme/assets/optimus-logo.png'
 import { saveAs } from 'file-saver';
 import SelectDropdown from '../../components/dropdown/Dropdown';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
 
 type Tab = {
   answer: string;
   segment_id: string;
   segment_name: string;
-  outputs:[]
+  outputs:[innerOutput]
   data: [innerTab]
 }
 interface innerTab {
@@ -24,7 +27,13 @@ interface innerTab {
   format_name: string,
   answer: string,
   input_params: string,
-  outputs: []
+  outputs: [innerOutput]
+}
+
+interface innerOutput {
+  answer: string,
+  input_params: any
+  rating: number | null
 }
 
 interface UserAddModel {
@@ -75,8 +84,11 @@ const B2B: React.FC = () => {
   const [selectedFormats, setSelectedFormats] = useState<typeof formats[0][]>([]);
   const [selectedPurpose, setSelectedPurpose] = useState<typeof purposes[0][]>([]);
   const [userName, setUserName] = useState('');
-  const apiUrl = `${NetworkInfo.URL}`;
-
+  const apiUrl = window.RUNTIME_ENV?.REACT_APP_API_URL || NetworkInfo.URL;
+  const [isOpenModal, setIsOpenModal] = useState(false);
+  const [selectedDiv, setSelectedDiv] = useState<number | null>(null);
+  const [feedbackCopy, setFeedbackCopy] = useState<any[]>([]);
+  const [currentIndex, setCurrentIndex] = useState<number>(0);
 
   useEffect(() => {
     let userLocalData:any = localStorage.getItem('user');
@@ -252,7 +264,7 @@ const B2B: React.FC = () => {
 
   const handleFormSubmit = (data: any) => {
     console.log('selectedPurpose', selectedPurpose);
-    
+    setFeedbackCopy([]);
     data.format = selectedFormats.map(format => format.format_id);
     data.purpose = selectedPurpose.length > 0 && selectedPurpose[0].purpose_id 
       ? selectedPurpose[0].purpose_id 
@@ -302,7 +314,7 @@ const B2B: React.FC = () => {
         let eachItem = {
           user: userName,
           session_id: generateDateTimeString(),
-          qid: generateDateTimeString(),
+          session_family_id: generateDateTimeString(),
           use_case: 'content_creation_b2b',
           product_ids: productIds,
           question: data.question,
@@ -322,7 +334,7 @@ const B2B: React.FC = () => {
         let eachItem = {
           user: userName,
           session_id: generateDateTimeString(),
-          qid: generateDateTimeString(),
+          session_family_id: generateDateTimeString(),
           use_case: 'content_creation_b2b',
           product_ids: productIds,
           question: data.question,
@@ -351,7 +363,7 @@ const B2B: React.FC = () => {
           let eachItem = {
             user: userName,
             session_id: generateDateTimeString(),
-            qid: generateDateTimeString(),
+            session_family_id: generateDateTimeString(),
             use_case: 'content_creation_b2b',
             product_ids: productIds,
             question: data.question,
@@ -369,7 +381,7 @@ const B2B: React.FC = () => {
         let eachItem = {
           user: userName,
           session_id: generateDateTimeString(),
-          qid: generateDateTimeString(),
+          session_family_id: generateDateTimeString(),
           use_case: 'content_creation_b2b',
           product_ids: productIds,
           question: data.question,
@@ -390,7 +402,7 @@ const B2B: React.FC = () => {
   const handleApiCall = async (data: any) => {
     console.log('data>>', data);
     setLoading(true);
-    let formUrl = apiUrl + '/process_json';
+    let formUrl = apiUrl + '/chat/request';
     console.log('payload', data);
     console.log('arrayTab>>>', arrayTab);
     console.log('arrayNoSegment', arrayNoSegment);
@@ -409,52 +421,71 @@ const B2B: React.FC = () => {
       console.log('Success:', responseData);
   
       if (response.ok && !responseData.ErrorMessage) {
+        
         setNoSegmentArray(arrayNoSegment);
         setTabArray(arrayTab);
         console.log('tabs>>>', tabs);
-  
-        if (arrayTab !== undefined) {
-          arrayTab = arrayTab.map((segment: { segment_id: any; segment_name: any; data: any[] }) => {
-            if (segment.segment_id === responseData.input_params.segment_id) {
-              segment.data = segment.data.map((format: any) => {
-                if (format.format_id === responseData.input_params.format_id) {
-                  return {
-                    ...format,
-                    answer: DOMPurify.sanitize(responseData.answer),
-                    input_params: responseData.input_params,
-                    outputs: [
-                      ...(format.outputs || []),
-                      { answer: DOMPurify.sanitize(responseData.answer), input_params: responseData.input_params }
-                    ]
-                  };
-                }
-                return format;
-              });
-            }
-            return segment;
-          });
-          setTabs(arrayTab);
-        } else {
-          arrayNoSegment = arrayNoSegment.map((format: { format_id: any; outputs?: any[] }) => {
-            if (format.format_id === responseData.input_params.format_id || format.format_id === 'customPrompts') {
-              const currentOutputs = format.outputs || [];
-              return {
-                ...format,
-                answer: DOMPurify.sanitize(responseData.answer),
-                input_params: responseData.input_params,
-                outputs: [
-                  ...currentOutputs,
-                  { answer: DOMPurify.sanitize(responseData.answer), input_params: responseData.input_params }
-                ]
-              };
-            }
-            return format;
-          });
-          setTabs(arrayNoSegment);
+        if (responseData.responses.length === 1) {
+          if (arrayTab !== undefined) {
+            arrayTab = arrayTab.map((segment: { segment_id: any; segment_name: any; data: any[] }) => {
+              if (segment.segment_id === responseData.responses[0].input_params.segment_id) {
+                segment.data = segment.data.map((format: any) => {
+                  if (format.format_id === responseData.responses[0].input_params.format_id) {
+                    return {
+                      ...format,
+                      answer: DOMPurify.sanitize(responseData.responses[0].answer),
+                      input_params: responseData.responses[0].input_params,
+                      outputs: [
+                        ...(format.outputs || []),
+                        { 
+                          answer: DOMPurify.sanitize(responseData.responses[0].answer), 
+                          input_params: responseData.responses[0].input_params ,
+                          rating: null
+                        }
+                      ]
+                    };
+                  }
+                  return format;
+                });
+              }
+              return segment;
+            });
+            setTabs(arrayTab);
+          } else {
+            arrayNoSegment = arrayNoSegment.map((format: { format_id: any; outputs?: any[] }) => {
+              if (format.format_id === responseData.responses[0].input_params.format_id || format.format_id === 'customPrompts') {
+                const currentOutputs = format.outputs || [];
+                return {
+                  ...format,
+                  answer: DOMPurify.sanitize(responseData.responses[0].answer),
+                  input_params: responseData.responses[0].input_params,
+                  outputs: [
+                    ...currentOutputs,
+                    { 
+                      answer: DOMPurify.sanitize(responseData.responses[0].answer), 
+                      input_params: responseData.responses[0].input_params ,
+                      rating: null
+                    }
+                  ]
+                };
+              }
+              return format;
+            });
+            setTabs(arrayNoSegment);
+          }
+          setLoading(false);
+          showLoadingIndicator(false);
+        }else {
+          setSelectedDiv(null)
+          
+          // setFeedbackCopy(responseData);
+          setFeedbackCopy(prevArray => [...prevArray, responseData]); 
+          setCurrentIndex(0);
+          setIsOpenModal(true);
+          setTimeout(() => console.log('feedbackCopy', feedbackCopy), 300); 
+          
+          return;
         }
-  
-        setLoading(false);
-        showLoadingIndicator(false);
       } else {
         setIsShowError(true);
         setIsErrorMsg(responseData.ErrorMessage || 'Something went wrong!');
@@ -467,8 +498,6 @@ const B2B: React.FC = () => {
       showLoadingIndicator(false);
     }
   };
-  
-  
   
   /* Handle form submit end */
 
@@ -496,6 +525,7 @@ const B2B: React.FC = () => {
     }));
     arrayTab = [];
     arrayNoSegment = [];
+    setFeedbackCopy([]);
     setSegments(updatedSegments);
     setTabs([]);
     setSelectedProducts([]);
@@ -518,6 +548,178 @@ const B2B: React.FC = () => {
     handleApiCall(data);
   };
   /* Regenarate item end */
+
+  /* ----------Save edit answer copy start---------- */
+  const saveEditedAnswer = async (data: any): Promise<void> => {
+    console.log('saveEditedAnswer', data);
+    arrayNoSegment = tabs;
+    arrayTab = tabArray;
+    console.log('arrayTab>>', arrayTab);
+    let formUrl = apiUrl + '/chat/save';
+    try {
+      const response = await fetch(formUrl, {
+        method: HTTPMethod.POST,
+        headers: {
+          '"removed"': `${NetworkInfo.ACCESSTOKEN}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data),
+      });
+  
+      const responseData = await response.json();
+      console.log('Success:', responseData);
+  
+      if (response.ok && !responseData.ErrorMessage) {
+        setNoSegmentArray(arrayNoSegment);
+        setTabArray(arrayTab);
+        console.log('tabs>>>', tabs);
+        console.log('arrayTab>>>', arrayTab);
+        console.log('arrayNoSegment>>>', arrayNoSegment);
+  
+        if (arrayTab !== undefined) {
+          arrayTab = arrayTab.map((segment: { segment_id: any; segment_name: any; data: any[] }) => {
+            if (segment.segment_id === responseData.responses[0].input_params.segment_id) {
+              segment.data = segment.data.map((format: any) => {
+                if (format.format_id === responseData.responses[0].input_params.format_id) {
+                  let replaceOutput = format.outputs.map((output:innerOutput) => 
+                    output.input_params.qid === data.qid ? responseData.responses[0] : output
+                  );
+                  return {
+                    ...format,
+                    answer: DOMPurify.sanitize(responseData.responses[0].answer),
+                    input_params: responseData.responses[0].input_params,
+                    outputs: replaceOutput
+                  };
+                }
+                return format;
+              });
+            }
+            return segment;
+          });
+          setTabs(arrayTab);
+        } else {
+          arrayNoSegment = arrayNoSegment.map((format: { format_id: any; outputs: innerOutput[] }) => {
+            if (format.format_id === responseData.responses[0].input_params.format_id || format.format_id === 'customPrompts') {
+              let replaceOutput = format.outputs.map((output:innerOutput) => 
+                output.input_params.qid === data.qid ? responseData.responses[0] : output
+              );
+              return {
+                ...format,
+                answer: DOMPurify.sanitize(responseData.responses[0].answer),
+                input_params: responseData.responses[0].input_params,
+                outputs: replaceOutput
+              };
+            }
+            return format;
+          });
+          setTabs(arrayNoSegment);
+        }
+  
+        setLoading(false);
+        showLoadingIndicator(false);
+      } else {
+        setIsShowError(true);
+        setIsErrorMsg(responseData.ErrorMessage || 'Something went wrong!');
+      }
+      
+    } catch (error: any) {
+      console.error('Login failed:', error);
+      if (error.response) {
+        setIsShowError(true);
+        setIsErrorMsg(error.response || 'Something went wrong!');
+      }else {
+        setIsShowError(true);
+        setIsErrorMsg(error.response || 'Internal Server Error!');
+      }
+    }
+
+  };
+  /* Save edit answer copy end */
+
+  /* ----------genarate Refine Copy start---------- */
+  const genarateRefineCopy = async (data: any): Promise<void> => {
+    console.log('genarateRefineCopy', data);
+    arrayNoSegment = tabs;
+    arrayTab = tabArray;
+    console.log('arrayTab>>', arrayTab);
+    let formUrl = apiUrl + '/chat/edit';
+    try {
+      const response = await fetch(formUrl, {
+        method: HTTPMethod.POST,
+        headers: {
+          '"removed"': `${NetworkInfo.ACCESSTOKEN}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data),
+      });
+  
+      const responseData = await response.json();
+      console.log('Success:', responseData);
+  
+      if (response.ok && !responseData.ErrorMessage) {
+        setNoSegmentArray(arrayNoSegment);
+        setTabArray(arrayTab);
+        console.log('tabs>>>', tabs);
+  
+        if (arrayTab !== undefined) {
+          arrayTab = arrayTab.map((segment: { segment_id: any; segment_name: any; data: any[] }) => {
+            if (segment.segment_id === responseData.responses[0].input_params.segment_id) {
+              segment.data = segment.data.map((format: any) => {
+                if (format.format_id === responseData.responses[0].input_params.format_id) {
+                  let replaceOutput = format.outputs.map((output:innerOutput) => 
+                    output.input_params.qid === data.qid ? responseData.responses[0] : output
+                  );
+                  return {
+                    ...format,
+                    answer: DOMPurify.sanitize(responseData.responses[0].answer),
+                    input_params: responseData.responses[0].input_params,
+                    outputs: replaceOutput
+                  };
+                }
+                return format;
+              });
+            }
+            return segment;
+          });
+          setTabs(arrayTab);
+        } else {
+          arrayNoSegment = arrayNoSegment.map((format: { format_id: any; outputs: innerOutput[] }) => {
+            if (format.format_id === responseData.responses[0].input_params.format_id || format.format_id === 'customPrompts') {
+              let replaceOutput = format.outputs.map((output:innerOutput) => 
+                output.input_params.qid === data.qid ? responseData.responses[0] : output
+              );
+              return {
+                ...format,
+                answer: DOMPurify.sanitize(responseData.responses[0].answer),
+                input_params: responseData.responses[0].input_params,
+                outputs: replaceOutput
+              };
+            }
+            return format;
+          });
+          setTabs(arrayNoSegment);
+        }
+  
+        setLoading(false);
+        showLoadingIndicator(false);
+      } else {
+        setIsShowError(true);
+        setIsErrorMsg(responseData.ErrorMessage || 'Something went wrong!');
+      }
+    } catch (error: any) {
+      console.error('Login failed:', error);
+
+      if (error.response) {
+        setIsShowError(true);
+        setIsErrorMsg(error.response || 'Something went wrong!');
+      }else {
+        setIsShowError(true);
+        setIsErrorMsg(error.response || 'Internal Server Error!');
+      }
+    }
+
+  };
+  /* genarate Refine Copy end */
 
   /* ---------------Export to doc start--------------- */
   const exportToDoc = (data:any) => {
@@ -547,6 +749,93 @@ const B2B: React.FC = () => {
     saveAs(blob, fileName);
   };
   /* Export to doc end */
+
+  /* ---------------Self learning start--------------- */
+  const handleDivClick = async (selectItem:any, tabIndex:number) => {
+    console.log('selectItem', selectItem);
+    setSelectedDiv(tabIndex); // Set the clicked div's ID as selected
+    setIsOpenModal(false);
+    setIsShowError(true);
+    setIsErrorMsg('Feedback submitted!');
+    console.log('feedbackCopy', feedbackCopy);
+    if (currentIndex < feedbackCopy.length - 1) {
+      // Move to the next response
+      setSelectedDiv(null);
+      setCurrentIndex((prev) => prev + 1);
+      setTimeout(() => setIsOpenModal(true), 300); // Reopen the modal with the next response
+    }
+    console.log('arrayNoSegment', noSegmentArray);
+    console.log('arrayTab', tabArray);
+
+    let currentArrayTab:any = tabArray;
+    let currentNoSegmentArray:any = noSegmentArray;
+    if (currentArrayTab !== undefined) {
+      currentArrayTab = currentArrayTab.map((segment: { segment_id: any; segment_name: any; data: any[] }) => {
+        if (segment.segment_id === selectItem.input_params.segment_id) {
+          segment.data = segment.data.map((format: any) => {
+            if (format.format_id === selectItem.input_params.format_id) {
+              return {
+                ...format,
+                answer: DOMPurify.sanitize(selectItem.answer),
+                input_params: selectItem.input_params,
+                outputs: [
+                  ...(format.outputs || []),
+                  { 
+                    answer: DOMPurify.sanitize(selectItem.answer), 
+                    input_params: selectItem.input_params ,
+                    rating: null
+                  }
+                ]
+              };
+            }
+            return format;
+          });
+        }
+        return segment;
+      });
+      setTabs(currentArrayTab);
+    } else {
+      currentNoSegmentArray = currentNoSegmentArray.map((format: { format_id: any; outputs?: any[] }) => {
+        if (format.format_id === selectItem.input_params.format_id || format.format_id === 'customPrompts') {
+          const currentOutputs = format.outputs || [];
+          return {
+            ...format,
+            answer: DOMPurify.sanitize(selectItem.answer),
+            input_params: selectItem.input_params,
+            outputs: [
+              ...currentOutputs,
+              { 
+                answer: DOMPurify.sanitize(selectItem.answer), 
+                input_params: selectItem.input_params ,
+                rating: null
+              }
+            ]
+          };
+        }
+        return format;
+      });
+      setTabs(currentNoSegmentArray);
+    }
+    setLoading(false);
+    showLoadingIndicator(false);
+
+    let formUrl = apiUrl + '/self_learning/select_answer?qid='+selectItem.input_params.qid;
+    try {
+      const response = await fetch(formUrl, {
+        method: HTTPMethod.PUT,
+        headers: {
+          '"removed"': `${NetworkInfo.ACCESSTOKEN}`,
+          'Content-Type': 'application/json'
+        },
+      });
+  
+      const responseData = await response.json();
+      console.log('Success:', responseData);
+    } catch (error: any) {
+      console.error('Login failed:', error);
+    }
+  };
+  /* Self learning end */
 
   return (
     <IonPage>
@@ -630,6 +919,7 @@ const B2B: React.FC = () => {
                         <IonProgressBar className='mt-0.5' type="indeterminate"></IonProgressBar>
                       }
                     </div> */}
+
                     <div className='px-4 pb-3.5'>
                       <SelectDropdown
                         options={products}
@@ -692,7 +982,7 @@ const B2B: React.FC = () => {
               </IonRow>
             </IonGrid>
             
-            
+            <p className='p-4 italic mt-2.5'>Disclaimer: There may be risks associated with using AI-generated content. All content produced by this tool, i.e. Optimus, is for use at the user's discretion, and <u>the user is solely responsible for reviewing and approving any text before sharing it externally.</u></p>
             
               <div className='text-center mt-6'>
                 <IonButton type='submit' className='btn-primary' shape="round">
@@ -706,7 +996,7 @@ const B2B: React.FC = () => {
                 }
                 </IonButton>
               </div>
-            
+                
           </form>
 
           {tabs.length > 0 &&
@@ -714,7 +1004,7 @@ const B2B: React.FC = () => {
               <IonRow>
                 <IonCol>
                   <div className="mx-2.5 mt-7">
-                    <Tabs tabs={tabs} regenarateItem={regenarateItem}/>
+                    <Tabs tabs={tabs} regenarateItem={regenarateItem} saveEditedAnswer={saveEditedAnswer} genarateRefineCopy={genarateRefineCopy}/>
                     <div className="text-right mt-3">
                       <IonChip onClick={() => handleFormSubmit(requestData)} className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Rewrite all suggestions</IonChip>
                       <IonChip disabled className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Send to contentful</IonChip>
@@ -758,6 +1048,54 @@ const B2B: React.FC = () => {
           duration={3000}
           onDidDismiss={() => setIsShowError(false)}
         ></IonToast>
+
+        {/* self learning modal start */}
+        <IonModal className='self-learning-modal' isOpen={isOpenModal}  backdropDismiss={false}>
+          {feedbackCopy.length !== 0 &&
+            <>
+              <IonHeader>
+                <IonToolbar className='text-center'>
+                  <IonTitle>Which copy is better?</IonTitle>
+                  {feedbackCopy[currentIndex].responses[0].input_params.format_name &&
+                    <IonChip color="primary"><b>Format:</b> {feedbackCopy[currentIndex].responses[0].input_params.format_name}</IonChip>
+                  }
+                  {feedbackCopy[currentIndex].responses[0].input_params.purpose_name &&
+                    <IonChip color="success"><b>Purpose:</b> {feedbackCopy[currentIndex].responses[0].input_params.purpose_name}</IonChip>
+                  }
+                  {feedbackCopy[currentIndex].responses[0].input_params.segment_name &&
+                    <IonChip color="warning"><b>Segment:</b> {feedbackCopy[currentIndex].responses[0].input_params.segment_name}</IonChip>
+                  }
+                  {feedbackCopy[currentIndex].responses[0].input_params.product_names.map((item:string, index:number) => (
+                    <IonChip color="secondary"><b>Product {index + 1}:</b> {item}</IonChip>
+                  ))}
+                </IonToolbar>
+              </IonHeader>
+              <div className="inner-content">
+                <IonGrid className='cursor-pointer'>
+                  <div className='flex justify-evenly'>
+                    <div>A</div>
+                    <div>VS</div>
+                    <div>B</div>
+                  </div>
+                  <IonRow>
+                    {feedbackCopy[currentIndex].responses.map((feedbackItem:any, tabIndex:number) => (
+                      <IonCol size="6">
+                        <div onClick={() => handleDivClick(feedbackItem, tabIndex)} className={`${selectedDiv === tabIndex ? 'border-primary' : ''} hover:border-primary bg-white mb-5 tab-body border-2 p-2 rounded-md relative`}>
+                          {/* <h3 className='capitalize'>{feedbackItem.input_params.format_name}</h3> */}
+                          
+                          <div className='shadow-md rounded-md p-2 mb-1.5 relative'>
+                            <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} children={feedbackItem.answer}/>
+                          </div>
+                        </div>
+                      </IonCol>
+                    ))}
+                  </IonRow>
+                </IonGrid>
+              </div>
+            </>
+          }
+        </IonModal>
+        {/* self learning modal end */}
       </IonContent>
     </IonPage>
   );
