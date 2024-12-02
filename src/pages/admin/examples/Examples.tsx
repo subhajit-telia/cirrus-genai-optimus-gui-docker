@@ -22,6 +22,7 @@ interface ExampleAddModel {
   updated_at: string;
   b2b: number | boolean;
   b2c: number | boolean;
+  example_type: string;
 }
 
 interface FilterModel {
@@ -320,6 +321,7 @@ const Examples: React.FC = () => {
     console.log('_value', _value);
     setValue("example", _value.example);
     setValue("example_id", _value.example_id);
+    setValue("example_type", _value.example_type);
     setValue("segment_id", _value.segment_id);
     setValue("purpose_id", _value.purpose_id);
     setValue("format_id", _value.format_id);
@@ -328,6 +330,7 @@ const Examples: React.FC = () => {
     setValue("test_results", _value.test_results);
     setValue("products", _value.products);
     setValue("created_at", _value.created_at);
+    setValue("status", _value.status);
 
     if (_value.b2b === 1) {
       setValue("b2b", true);
@@ -417,6 +420,7 @@ const Examples: React.FC = () => {
 
     let payLoad: any = {};
     payLoad.example = data.example;
+    payLoad.example_type = data.example_type;
     payLoad.format_id = data.format_id;
     payLoad.products = data.products;
     payLoad.purpose_id = data.purpose_id;
@@ -720,6 +724,7 @@ const Examples: React.FC = () => {
                             </p>
                           </IonCol>
                           <IonCol size='4'><p><b>Products:</b> {item.products}</p></IonCol>
+                          <IonCol size='12'><p><b>Example Type:</b> {item.example_type}</p></IonCol>
                           <IonCol size='12'><p><b>User Prompt:</b> {item.user_prompt}</p></IonCol>
                           <IonCol size='12'><p><b>Example:</b> {item.example}</p></IonCol>
                           <IonCol size='4'><p className='italic'><b>Created at:</b> {item.created_at}</p></IonCol>
@@ -828,6 +833,12 @@ const Examples: React.FC = () => {
 
                   <IonInput className='mb-4 text-sm' label="Product Name" labelPlacement="floating" fill="outline" placeholder="Enter Product Name"
                     {...register("products", {
+                      validate: {},
+                    })}
+                  ></IonInput>
+
+                  <IonInput className='mb-4 text-sm' label="Example Type" labelPlacement="floating" fill="outline" placeholder="Enter Example Type"
+                    {...register("example_type", {
                       validate: {},
                     })}
                   ></IonInput>
