@@ -117,3 +117,35 @@
     text-align: center;
     font-style: italic;
   }
+
+  .category-group {
+    margin-bottom: 2px;
+  }
+  
+  .category-header {
+    padding: 8px;
+    background: #f0f0f0;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .category-options {
+    padding-left: 16px;
+  }
+  
+  .multi-select-option {
+    padding: 8px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  
+  .multi-select-option.selected {
+    background: #e6e6e6;
+  }
+  
+  .arrow {
+    font-size: 12px;
+  }
+  

@@ -264,7 +264,7 @@ const Examples: React.FC = () => {
   /* -------------get formats data start------------- */
   const getFormatsData = async () => {
     try {
-      const urlData = apiUrl + '/resource/get?table=formats&use_case=content_creation_b2c&columns=format_id&columns=format_name';
+      const urlData = apiUrl + '/resource/get?table=formats&columns=format_id&columns=format_name';
 
       const response = await fetch(urlData, {
         method: 'GET',
@@ -564,7 +564,7 @@ const Examples: React.FC = () => {
                           multiSelect={false} // Multi-select mode
                           idKey="format_id"
                           nameKey="format_name"
-                          tooltipKey="format_written_description"
+                          tooltipKey="format_id"
                           placeHolder='Select formats'
                           label='Select format'
                         />
