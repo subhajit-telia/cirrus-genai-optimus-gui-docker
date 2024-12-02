@@ -489,7 +489,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
 
       if (response.ok && !responseData.ErrorMessage) {
         setIsShowError(true);
-        setIsErrorMsg('Rating submitted!');
+        setIsErrorMsg('Feedback submitted!');
       }
     } catch (error: any) {
       console.error('Login failed:', error);

@@ -14,6 +14,7 @@ import SelectDropdown from '../../components/dropdown/Dropdown';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
+import ProductDropdown from '../../components/dropdown/productDropdown/ProductDropdown';
 
 type Tab = {
   answer: string;
@@ -56,6 +57,7 @@ interface Purposes {
 interface Products {
   product_id: string;
   product_name: string;
+  category: string;
 }
 interface Formats {
   format_name: string;
@@ -174,7 +176,7 @@ const B2B: React.FC = () => {
   const getProductsData = async () => {
     setLoadingProducts(true);
     try {
-      const urlData =apiUrl + '/resource/get?table=products_b2b&columns=product_id&columns=product_name';
+      const urlData =apiUrl + '/resource/get?table=products_b2b&columns=product_id&columns=product_name&columns=category';
 
       const response = await fetch(urlData, {
         method: 'GET',
@@ -756,7 +758,7 @@ const B2B: React.FC = () => {
     setSelectedDiv(tabIndex); // Set the clicked div's ID as selected
     setIsOpenModal(false);
     setIsShowError(true);
-    setIsErrorMsg('Feedback submitted!');
+    setIsErrorMsg('Testing submitted!');
     console.log('feedbackCopy', feedbackCopy);
     if (currentIndex < feedbackCopy.length - 1) {
       // Move to the next response
@@ -900,34 +902,15 @@ const B2B: React.FC = () => {
                 <IonCol size="12" size-lg="4" size-md="4" size-sm="12">
                   <div className='rounded-xl text-[#000] bg-white shadow-md'>
                     <div className='font-bold p-4 text-sm'>About...</div>
-                    {/* <div className='px-4 pb-3.5 custom-search relative'>
-                      <p>Which product/offer do you want to report on?</p>
-                      <Multiselect
-                        displayValue="product_name"
-                        placeholder="Select products"
-                        options={products} // Options to display in the dropdown
-                        selectedValues= {selectedProducts}
-                        onKeyPressFn={function noRefCheck(){}}
-                        onRemove={onRemove}
-                        onSearch={function noRefCheck(){}}
-                        onSelect={onSelect}
-                        {...register("products", {
-                          validate: {},
-                        })}
-                      />
-                      { loadingProducts &&
-                        <IonProgressBar className='mt-0.5' type="indeterminate"></IonProgressBar>
-                      }
-                    </div> */}
-
                     <div className='px-4 pb-3.5'>
-                      <SelectDropdown
+                      <ProductDropdown
                         options={products}
                         selectedOptions={selectedProducts}
                         setSelectedOptions={setSelectedProducts}
                         multiSelect={true} // Multi-select mode
                         idKey="product_id"
                         nameKey="product_name"
+                        categoryKey="category"
                         tooltipKey="product_name"
                         placeHolder='Select products'
                         label='Which product/offer do you want to report on?'
@@ -1055,7 +1038,7 @@ const B2B: React.FC = () => {
             <>
               <IonHeader>
                 <IonToolbar className='text-center'>
-                  <IonTitle>Which copy is better?</IonTitle>
+                  <IonTitle className='font-bold'>Which copy is better?</IonTitle>
                   {feedbackCopy[currentIndex].responses[0].input_params.format_name &&
                     <IonChip color="primary"><b>Format:</b> {feedbackCopy[currentIndex].responses[0].input_params.format_name}</IonChip>
                   }
@@ -1072,11 +1055,6 @@ const B2B: React.FC = () => {
               </IonHeader>
               <div className="inner-content">
                 <IonGrid className='cursor-pointer'>
-                  <div className='flex justify-evenly'>
-                    <div>A</div>
-                    <div>VS</div>
-                    <div>B</div>
-                  </div>
                   <IonRow>
                     {feedbackCopy[currentIndex].responses.map((feedbackItem:any, tabIndex:number) => (
                       <IonCol size="6">
