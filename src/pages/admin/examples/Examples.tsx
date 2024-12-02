@@ -330,7 +330,7 @@ const Examples: React.FC = () => {
     setValue("test_results", _value.test_results);
     setValue("products", _value.products);
     setValue("created_at", _value.created_at);
-    setValue("status", _value.status);
+    setValue("status", _value.status); 
 
     if (_value.b2b === 1) {
       setValue("b2b", true);
