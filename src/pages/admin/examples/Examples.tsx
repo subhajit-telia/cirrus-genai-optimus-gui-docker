@@ -442,15 +442,15 @@ const Examples: React.FC = () => {
 
 
 
-    let prevExampleList = exampleList;
+    let prevExampleList = filterExampleList;
     let index: any = targetIndex;
 
     console.log('finalData', payLoad);
     if (isEdit === true) {
       prevExampleList.splice(index, 1, payLoad);
     } else {
-      payLoad.example_id = `ex${exampleList.length}`;
-      prevExampleList = [...exampleList, payLoad];
+      payLoad.example_id = `ex${filterExampleList.length}`;
+      prevExampleList = [...filterExampleList, payLoad];
     }
 
 
@@ -803,7 +803,7 @@ const Examples: React.FC = () => {
                       validate: {},
                     })}>
                     {formats.map((item, index) => (
-                      <IonSelectOption key={index} value={item.format_id}>{item.format_name}</IonSelectOption>
+                      <IonSelectOption key={index} value={item.format_id}>{item.format_name} ({item.format_id})</IonSelectOption>
                     ))}
                   </IonSelect>
 
