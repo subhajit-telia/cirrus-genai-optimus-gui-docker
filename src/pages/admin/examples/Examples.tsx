@@ -22,6 +22,7 @@ interface ExampleAddModel {
   updated_at: string;
   b2b: number | boolean;
   b2c: number | boolean;
+  example_type: string;
 }
 
 interface FilterModel {
@@ -46,6 +47,8 @@ interface Formats {
   format_name: string;
   format_id: string;
   format_written_description: string;
+  b2b: number;
+  b2c: number;
 }
 
 const Examples: React.FC = () => {
@@ -85,11 +88,18 @@ const Examples: React.FC = () => {
     { id: 'testing', name: 'Testing' },
     { id: 'discarded', name: 'Discarded' },
   ]
+
   const businessType = [
     { id: 1, name: 'B2B' },
     { id: 2, name: 'B2C' },
     { id: 3, name: 'B2X' },
   ]
+
+  const exampleType = [
+    { id: 1, name: "AI generated" },
+    { id: 2, name: "Admin submission" }
+  ]
+
   const statusColors: Record<string, string> = {
     testing: "primary",
     validated: "warning",
@@ -125,10 +135,10 @@ const Examples: React.FC = () => {
   const handleChangeData = (_identifier:string) => {
     console.log('_identifier', _identifier);
     if (_identifier === 'active') {
-      setIsAlertHeader('Approve example!');
-      setIsAlertSubHeader('Are you want to approve this examples?');
+      setIsAlertHeader('Approve examples!');
+      setIsAlertSubHeader('Do you want to approve this example/these examples?');
 
-      let updatedExamples = exampleList.map((item) =>
+      let updatedExamples = filterExampleList.map((item) =>
         selectedIds.includes(item.example_id)
           ? { ...item, status: "active", updated_at: getCurrentTimestamp()  }
           : item
@@ -137,10 +147,10 @@ const Examples: React.FC = () => {
       console.log('updatedExamples', updatedExamples);
       handleAleart(true, updatedExamples);
     }else if (_identifier === 'discarded') {
-      setIsAlertHeader('Reject example!');
-      setIsAlertSubHeader('Are you want to reject this examples?');
+      setIsAlertHeader('Reject examples!');
+      setIsAlertSubHeader('Do you want to reject this example/these examples?');
 
-      let updatedExamples = exampleList.map((item) =>
+      let updatedExamples = filterExampleList.map((item) =>
         selectedIds.includes(item.example_id)
           ? { ...item, status: "discarded", updated_at: getCurrentTimestamp() }
           : item
@@ -149,10 +159,10 @@ const Examples: React.FC = () => {
       console.log('updatedExamples', updatedExamples);
       handleAleart(true, updatedExamples);
     }else if (_identifier === 'delete') {
-      setIsAlertHeader('Delete example!');
-      setIsAlertSubHeader('Are you want to delete this examples?');
+      setIsAlertHeader('Delete examples!');
+      setIsAlertSubHeader('Do you want to delete this example/these examples?');
 
-      let updatedExamples = exampleList.filter(
+      let updatedExamples = filterExampleList.filter(
         (item) => !selectedIds.includes(item.example_id)
       );
   
@@ -264,7 +274,7 @@ const Examples: React.FC = () => {
   /* -------------get formats data start------------- */
   const getFormatsData = async () => {
     try {
-      const urlData = apiUrl + '/resource/get?table=formats&columns=format_id&columns=format_name';
+      const urlData = apiUrl + '/resource/get?table=formats&columns=format_id&columns=format_name&columns=b2b&columns=b2c';
 
       const response = await fetch(urlData, {
         method: 'GET',
@@ -320,6 +330,7 @@ const Examples: React.FC = () => {
     console.log('_value', _value);
     setValue("example", _value.example);
     setValue("example_id", _value.example_id);
+    setValue("example_type", _value.example_type);
     setValue("segment_id", _value.segment_id);
     setValue("purpose_id", _value.purpose_id);
     setValue("format_id", _value.format_id);
@@ -328,6 +339,7 @@ const Examples: React.FC = () => {
     setValue("test_results", _value.test_results);
     setValue("products", _value.products);
     setValue("created_at", _value.created_at);
+    setValue("status", _value.status); 
 
     if (_value.b2b === 1) {
       setValue("b2b", true);
@@ -354,7 +366,7 @@ const Examples: React.FC = () => {
 
   /* -----------Filter form submit start----------- */
   const filterFormSubmit = async (data: any) => {
-    data.format_id = selectedFormats.length > 0 ? selectedFormats[0].format_id : null;
+    // data.format_id = selectedFormats.length > 0 ? selectedFormats[0].format_id : null;
     data.purpose_id = selectedPurpose.length > 0 ? selectedPurpose[0].purpose_id : null;
     data.segment_id = selectedSegments.length > 0 ? selectedSegments[0].segment_id : null;
     
@@ -417,6 +429,7 @@ const Examples: React.FC = () => {
 
     let payLoad: any = {};
     payLoad.example = data.example;
+    payLoad.example_type = data.example_type;
     payLoad.format_id = data.format_id;
     payLoad.products = data.products;
     payLoad.purpose_id = data.purpose_id;
@@ -539,6 +552,13 @@ const Examples: React.FC = () => {
   const isB2c = watch('b2c');
   /* Handle form input field changes end */
 
+  const getLabel = (b2b: number, b2c: number): string => {
+    if (b2b === 1 && b2c === 0) return "B2B";
+    if (b2b === 0 && b2c === 1) return "B2C";
+    if (b2b === 1 && b2c === 1) return "B2X";
+    return "";
+  };
+
   return (
     <>
       <IonSplitPane contentId="main">
@@ -556,7 +576,7 @@ const Examples: React.FC = () => {
                 <IonGrid>
                   <IonRow className='items-center'>
                     <IonCol size='4'>
-                      <div>
+                      {/* <div>
                         <SelectDropdown
                           options={formats}
                           selectedOptions={selectedFormats}
@@ -571,7 +591,15 @@ const Examples: React.FC = () => {
                         { loadingFormats &&
                           <IonProgressBar className='mt-0.5' type="indeterminate"></IonProgressBar>
                         }
-                      </div>
+                      </div> */}
+                      <IonSelect placeholder="Select formats" className='min-h-10 field-item text-sm' label="Select formats" interface="popover" labelPlacement="stacked" fill="outline"
+                        {...filter("format_id", {
+                          validate: {},
+                        })}>
+                        {formats.map((item, index) => (
+                          <IonSelectOption key={index} value={item.format_id}>{item.format_name} ({getLabel(item.b2b, item.b2c)})</IonSelectOption>
+                        ))}
+                      </IonSelect>
                     </IonCol>
                     <IonCol size='4'>
                       <div>
@@ -676,7 +704,7 @@ const Examples: React.FC = () => {
                   value={sortField}
                   onIonChange={(e) => setSortField(e.detail.value)}
                   placeholder="Select Sort Field"
-                  className='min-h-10 field-item text-sm' label="Select Sort Field" interface="popover" labelPlacement="stacked" fill="outline"
+                  className='min-h-10 w-36 mr-2 field-item text-sm' label="Select Sort Field" interface="popover" labelPlacement="stacked" fill="outline"
                 >
                   <IonSelectOption value="created_at">Created Date</IonSelectOption>
                   <IonSelectOption value="updated_at">Updated Date</IonSelectOption>
@@ -720,6 +748,7 @@ const Examples: React.FC = () => {
                             </p>
                           </IonCol>
                           <IonCol size='4'><p><b>Products:</b> {item.products}</p></IonCol>
+                          <IonCol size='12'><p><b>Example Type:</b> {item.example_type}</p></IonCol>
                           <IonCol size='12'><p><b>User Prompt:</b> {item.user_prompt}</p></IonCol>
                           <IonCol size='12'><p><b>Example:</b> {item.example}</p></IonCol>
                           <IonCol size='4'><p className='italic'><b>Created at:</b> {item.created_at}</p></IonCol>
@@ -739,19 +768,12 @@ const Examples: React.FC = () => {
                           <IonLabel className='font-bold'>
                             {item.test_results ? (
                               <>
-                                <span
-                                    className={`result-count ${
-                                        passed >= failed ? "!text-[#2DD55B]" : "!text-[#C5000F]"
-                                    }`}
-                                >
+                                <span className="result-count text-[#2DD55B]">
                                     {passed}
                                 </span>{" "}
                                 |{" "}
                                 <span
-                                    className={`result-count ${
-                                        failed > passed ? "!text-[#2DD55B]" : "!text-[#C5000F]"
-                                    }`}
-                                >
+                                    className="result-count text-[#C5000F]">
                                     {failed}
                                 </span>
                               </>
@@ -803,7 +825,7 @@ const Examples: React.FC = () => {
                       validate: {},
                     })}>
                     {formats.map((item, index) => (
-                      <IonSelectOption key={index} value={item.format_id}>{item.format_name} ({item.format_id})</IonSelectOption>
+                      <IonSelectOption key={index} value={item.format_id}>{item.format_name} ({getLabel(item.b2b, item.b2c)})</IonSelectOption>
                     ))}
                   </IonSelect>
 
@@ -825,6 +847,23 @@ const Examples: React.FC = () => {
                     ))}
                   </IonSelect>
 
+                  <IonSelect placeholder="Select Example Type" className='min-h-10 field-item mb-4 text-sm' label="Select desired example type below" interface="popover" labelPlacement="stacked" fill="outline"
+                    {...register("example_type", {
+                      validate: {},
+                    })}>
+                    {exampleType.map((item, index) => (
+                      <IonSelectOption key={index} value={item.name}>{item.name}</IonSelectOption>
+                    ))}
+                  </IonSelect>
+
+                  <IonSelect placeholder="Select Status" className='min-h-10 field-item mb-4 text-sm' label="Select desired status below" interface="popover" labelPlacement="stacked" fill="outline"
+                    {...register("status", {
+                      validate: {},
+                    })}>
+                    {statusNames.map((item, index) => (
+                      <IonSelectOption key={index} value={item.id}>{item.name}</IonSelectOption>
+                    ))}
+                  </IonSelect>
 
                   <IonInput className='mb-4 text-sm' label="Product Name" labelPlacement="floating" fill="outline" placeholder="Enter Product Name"
                     {...register("products", {
@@ -923,7 +962,7 @@ const Examples: React.FC = () => {
             {/* aleart end */}
 
             <IonFab slot="fixed" vertical="bottom" horizontal="end">
-              <IonFabButton size="small" onClick={() => setIsOpenModal(true)}>
+              <IonFabButton size="small" onClick={() => {setIsOpenModal(true), setValue("example_type", 'Admin submission')}}>
                 <IonIcon icon={add}></IonIcon>
               </IonFabButton>
             </IonFab>
