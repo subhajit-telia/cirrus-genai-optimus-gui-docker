@@ -2,4 +2,4 @@ ingress:
   annotations:
     alb.ingress.kubernetes.io/group.name: cirrus-genai-optimus-gui-group
     alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:eu-north-1:076129519469:certificate/8cd09a2b-b55b-411e-a8ba-56e1791100ef
-    external-dns.alpha.kubernetes.io/hostname: genai-optimus-gui.cirrus.teliacompany.net
+    external-dns.alpha.kubernetes.io/hostname: genai-optimus-gui.cirrus-stage.teliacompany.net
