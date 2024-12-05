@@ -78,7 +78,8 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [selectedText, setSelectedText] = useState("");
   const [clickedText, setClickedText] = useState("");
-  const [popoverPosition, setPopoverPosition] = useState<{ x: number; y: number } | null>(null);
+  const [popoverPosition, setPopoverPosition] = useState({ top: 0, left: 0 });
+  // const [popoverEvent, setPopoverEvent] = useState<MouseEvent | null>(null);
 
   const [hoveredRating, setHoveredRating] = useState<{ qid: string; rating: number | null } | null>(null);
 
@@ -212,18 +213,21 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
   }, [tabs]);
 
   // Handle text selection and show popover
-  const handleSelection = () => {
+  const handleSelection = (event: React.MouseEvent) => {
     setClickedText('');
     const selection = window.getSelection();
     if (selection && selection.toString().trim()) {
       const selectedText = selection.toString().trim();
-      const range = selection.getRangeAt(0);
-      const rect = range.getBoundingClientRect();
       console.log('selectedText', selectedText);
       // Show popover at the selected text's position
       setSelectedText(selectedText);
-      setPopoverPosition({ x: rect.left, y: rect.top });
+      setPopoverPosition({
+        top: event.clientY + window.scrollY - 130, // Include scrolling offset
+        left: event.clientX + window.scrollX - 200,
+      });
+      // setPopoverEvent(event.nativeEvent);
       setPopoverOpen(true);
+      console.log('clientX', event.nativeEvent.clientX, 'clientY', event.nativeEvent.clientY);
     }
   };
 
@@ -239,9 +243,16 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
         if (word) {
           navigator.clipboard.writeText(word).then(() => {
             console.log(`Copied: ${word}`);
-            setPopoverOpen(true);
-            setClickedText(word)
           });
+          setClickedText(word)
+          setPopoverPosition({
+            top: event.clientY + window.scrollY - 155, // Include scrolling offset
+            left: event.clientX + window.scrollX - 200,
+          });
+          // setPopoverEvent(event.nativeEvent);
+          setPopoverOpen(true);
+          console.log('clientX', event.nativeEvent.clientX, 'clientY', event.nativeEvent.clientY);
+
         }
       }
     });
@@ -285,7 +296,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
   const refineSelectedText = (_identifier:any, _text:any) => {
     console.log('_text', _text);
     setPopoverOpen(false);
-    setIsRefineText(_text)
+    setIsRefineText(_text);
     setIsRefineType(_identifier);
     console.log('selectedText', selectedText);
     console.log('clickedText', clickedText);
@@ -308,12 +319,24 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
     console.log('isRefineDetails', isRefineDetails);
     console.log('isRefineText',isRefineText);
     console.log('text>>>>>',text);
-    let refineData:any = {
-      qid: isRefineDetails.outputItem.input_params.qid,
-      action: identifier,
-      text: text,
-      text_index: isTextIndex,
-      question: data
+    console.log('isRefineType>>>>', isRefineType);
+    let refineData:any;
+    if (isRefineType === 'insert') {
+      refineData = {
+        qid: isRefineDetails.outputItem.input_params.qid,
+        action: identifier,
+        text: '',
+        text_index: isTextIndex,
+        question: data
+      }
+    }else {
+      refineData = {
+        qid: isRefineDetails.outputItem.input_params.qid,
+        action: identifier,
+        text: text,
+        text_index: isTextIndex,
+        question: data
+      }
     }
     console.log('refineData', refineData);
     genarateRefineCopy(refineData);
@@ -597,7 +620,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                                   ref={textareaRef}
                                   onMouseUp={handleSelection}
                                   onClick={handleWordClick}
-                                  className='z-0 bottom-textarea rounded-xl mb-2.5 text-black'
+                                  className='relative z-0 bottom-textarea rounded-xl mb-2.5 text-black'
                                   aria-label="Custom textarea"
                                   placeholder="Write your question."
                                   autoGrow={true}
@@ -605,32 +628,48 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                                   onIonInput={(event) => handleEditChange(tabIndex, itemIndex, outputIndex, event)}
                                 >        
                                 </IonTextarea>
-                                {/* Popover only for the active box */}
-                                <IonPopover
-                                  className='editing-popover'
-                                  isOpen={popoverOpen}
-                                  onDidDismiss={() => onDismissPopup()}
-                                  showBackdrop={false}
-                                  event={popoverPosition ? { clientX: popoverPosition.x, clientY: popoverPosition.y } : undefined}
-                                >
-                                  <div style={{ padding: "10px" }}>
-                                    {selectedText !== '' ?
-                                      <>
-                                        <IonButton onClick={() => refineSelectedText('refine', selectedText)} data-tooltip-id='tooltip' data-tooltip-content='Refine Answer' className='text-xs' shape="round">
-                                          <IonIcon slot="icon-only" icon={chatbubblesOutline}></IonIcon>
+
+                                {/* Backdrop */}
+                                {popoverOpen && (
+                                  <>
+                                    <div
+                                      style={{
+                                        position: "fixed",
+                                        top: 0,
+                                        left: 0,
+                                        width: "100%",
+                                        height: "100%",
+                                        zIndex: 999,
+                                      }}
+                                      onClick={() => onDismissPopup()} // Close popover on backdrop click
+                                    ></div>
+
+                                    {/* Custom Popover */}
+                                    <div
+                                      style={{
+                                        position: "absolute",
+                                        top: `${popoverPosition.top}px`,
+                                        left: `${popoverPosition.left}px`,
+                                        zIndex: 1000,
+                                      }}
+                                    >
+                                      {selectedText !== '' ?
+                                        <>
+                                          <IonButton onClick={() => refineSelectedText('refine', selectedText)} data-tooltip-id='tooltip' data-tooltip-content='Refine Answer' className='text-xs' shape="round">
+                                            <IonIcon slot="icon-only" icon={chatbubblesOutline}></IonIcon>
+                                          </IonButton>
+                                          <IonButton onClick={() => refineSelectedText('regenarate', selectedText)} data-tooltip-id='tooltip' data-tooltip-content='Regenerate' className='text-xs' shape="round">
+                                            <IonIcon slot="icon-only" icon={refreshOutline}></IonIcon>
+                                          </IonButton>
+                                        </>
+                                      :
+                                        <IonButton onClick={() => refineSelectedText('insert', clickedText)} data-tooltip-id='tooltip' data-tooltip-content='Generate More' className='text-xs' shape="round">
+                                          <IonIcon slot="icon-only" icon={reloadOutline}></IonIcon>
                                         </IonButton>
-                                        <IonButton onClick={() => refineSelectedText('regenarate', selectedText)} data-tooltip-id='tooltip' data-tooltip-content='Regenerate' className='text-xs' shape="round">
-                                          <IonIcon slot="icon-only" icon={refreshOutline}></IonIcon>
-                                        </IonButton>
-                                      </>
-                                    :
-                                      <IonButton onClick={() => refineSelectedText('insert', clickedText)} data-tooltip-id='tooltip' data-tooltip-content='Generate More' className='text-xs' shape="round">
-                                        <IonIcon slot="icon-only" icon={reloadOutline}></IonIcon>
-                                      </IonButton>
-                                    }
-                                    
-                                  </div>
-                                </IonPopover>
+                                      }
+                                    </div>
+                                  </>
+                                )}
                               </div>
                             }
 
@@ -793,7 +832,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                             ref={textareaRef}
                             onMouseUp={handleSelection}
                             onClick={handleWordClick}
-                            className='z-0 bottom-textarea rounded-xl text-black'
+                            className='relative z-0 bottom-textarea rounded-xl text-black'
                             aria-label="Custom textarea"
                             placeholder="Write your question."
                             autoGrow={true}
@@ -802,32 +841,47 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                           >
                           </IonTextarea>
 
-                          {/* Popover only for the active box */}
-                          <IonPopover
-                            className='editing-popover'
-                            isOpen={popoverOpen}
-                            onDidDismiss={() => onDismissPopup()}
-                            showBackdrop={false}
-                            event={popoverPosition ? { clientX: popoverPosition.x, clientY: popoverPosition.y } : undefined}
-                          >
-                            <div style={{ padding: "10px" }}>
-                              {selectedText !== '' ?
-                                <>
-                                  <IonButton onClick={() => refineSelectedText('refine', selectedText)} data-tooltip-id='tooltip' data-tooltip-content='Refine Answer' className='text-xs' shape="round">
-                                    <IonIcon slot="icon-only" icon={chatbubblesOutline}></IonIcon>
+                          {/* Backdrop */}
+                          {popoverOpen && (
+                            <>
+                              <div
+                                style={{
+                                  position: "fixed",
+                                  top: 0,
+                                  left: 0,
+                                  width: "100%",
+                                  height: "100%",
+                                  zIndex: 999,
+                                }}
+                                onClick={() => onDismissPopup()} // Close popover on backdrop click
+                              ></div>
+
+                              {/* Custom Popover */}
+                              <div
+                                style={{
+                                  position: "absolute",
+                                  top: `${popoverPosition.top}px`,
+                                  left: `${popoverPosition.left}px`,
+                                  zIndex: 1000,
+                                }}
+                              >
+                                {selectedText !== '' ?
+                                  <>
+                                    <IonButton onClick={() => refineSelectedText('refine', selectedText)} data-tooltip-id='tooltip' data-tooltip-content='Refine Answer' className='text-xs' shape="round">
+                                      <IonIcon slot="icon-only" icon={chatbubblesOutline}></IonIcon>
+                                    </IonButton>
+                                    <IonButton onClick={() => refineSelectedText('regenarate', selectedText)} data-tooltip-id='tooltip' data-tooltip-content='Regenerate' className='text-xs' shape="round">
+                                      <IonIcon slot="icon-only" icon={refreshOutline}></IonIcon>
+                                    </IonButton>
+                                  </>
+                                :
+                                  <IonButton onClick={() => refineSelectedText('insert', clickedText)} data-tooltip-id='tooltip' data-tooltip-content='Generate More' className='text-xs' shape="round">
+                                    <IonIcon slot="icon-only" icon={reloadOutline}></IonIcon>
                                   </IonButton>
-                                  <IonButton onClick={() => refineSelectedText('regenarate', selectedText)} data-tooltip-id='tooltip' data-tooltip-content='Regenerate' className='text-xs' shape="round">
-                                    <IonIcon slot="icon-only" icon={refreshOutline}></IonIcon>
-                                  </IonButton>
-                                </>
-                              :
-                                <IonButton onClick={() => refineSelectedText('insert', clickedText)} data-tooltip-id='tooltip' data-tooltip-content='Generate More' className='text-xs' shape="round">
-                                  <IonIcon slot="icon-only" icon={reloadOutline}></IonIcon>
-                                </IonButton>
-                              }
-                              
-                            </div>
-                          </IonPopover>
+                                }
+                              </div>
+                            </>
+                          )}
                         </div>
                       }
                       {/* Action buttons for each output */}

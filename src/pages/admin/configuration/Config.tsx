@@ -16,8 +16,11 @@ interface ConfigAddModel {
     quality_check_retry_count: number;
     generation_max_"removed"s: number;
     temperature: number;
-
-
+    example_validation_steps: number;
+    test_example_chance: number;
+    example_acceptance_threshold: number;
+    example_automatic_approval: boolean;
+    edit_max_attempts: number;
 }
 
 const Config: React.FC = () => {
@@ -62,6 +65,12 @@ const Config: React.FC = () => {
         setValue("max_attempts", responseData.retry.max_attempts);
 
         setValue("history_unit_test", responseData.history_unit_test);
+
+        setValue("edit_max_attempts", responseData.retry.edit_max_attempts);
+        setValue("test_example_chance", responseData.example_validation.test_example_chance);
+        setValue("example_validation_steps", responseData.example_validation.example_validation_steps);
+        setValue("example_acceptance_threshold", responseData.example_validation.example_acceptance_threshold);
+        setValue("example_automatic_approval", responseData.example_validation.example_automatic_approval);
         
         setConfigList(responseData);
         setLoading(false);
@@ -92,6 +101,12 @@ const Config: React.FC = () => {
     payLoad.retry.max_attempts = data.max_attempts;
 
     payLoad.history_unit_test = data.history_unit_test;
+
+    payLoad.retry.edit_max_attempts = data.edit_max_attempts;
+    payLoad.example_validation.test_example_chance = data.test_example_chance;
+    payLoad.example_validation.example_validation_steps = data.example_validation_steps;
+    payLoad.example_validation.example_acceptance_threshold = data.example_acceptance_threshold;
+    payLoad.example_validation.example_automatic_approval = data.example_automatic_approval;
     
 
     console.log('payLoad', payLoad)
@@ -141,6 +156,7 @@ const Config: React.FC = () => {
 
   const isQualityGates = watch('quality_check_enabled');
   const isHistoryUnitTest = watch('history_unit_test');
+  const isExampleAutomaticApproval = watch('example_automatic_approval');
   /* Handle form input field changes end */
 
   return (
@@ -216,6 +232,38 @@ const Config: React.FC = () => {
                                 ></IonInput>
                             </IonCol>
 
+                            <IonCol size="4">
+                                <IonInput type='number' step="0.1" className='mb-4 text-sm' label="Example Validation Steps" labelPlacement="floating" fill="outline" placeholder="Enter Validation Steps"
+                                {...register("example_validation_steps", {
+                                    validate: {},
+                                })}
+                                ></IonInput>
+                            </IonCol>
+
+                            <IonCol size="4">
+                                <IonInput type='number' step="0.1" className='mb-4 text-sm' label="User Test Case Random Allocation" labelPlacement="floating" fill="outline" placeholder="Enter User Test Case"
+                                {...register("test_example_chance", {
+                                    validate: {},
+                                })}
+                                ></IonInput>
+                            </IonCol>
+
+                            <IonCol size="4">
+                                <IonInput type='number' step="0.1" className='mb-4 text-sm' label="Example Acceptance Threshold" labelPlacement="floating" fill="outline" placeholder="Enter Example Acceptance Threshold"
+                                {...register("example_acceptance_threshold", {
+                                    validate: {},
+                                })}
+                                ></IonInput>
+                            </IonCol>
+                            
+                            <IonCol size="4">
+                                <IonInput type='number' className='mb-4 text-sm' label="Maximum attempts for the LLM to generate correct edits" labelPlacement="floating" fill="outline" placeholder="Enter Maximum attempts for the LLM to generate correct edits"
+                                {...register("edit_max_attempts", {
+                                    validate: {},
+                                })}
+                                ></IonInput>
+                            </IonCol>
+
                             <IonCol size="4" className='flex items-center'>
                                 <IonCheckbox 
                                 {...register("quality_check_enabled", {
@@ -242,6 +290,20 @@ const Config: React.FC = () => {
                                 className='mb-4 text-sm' labelPlacement="start">Save user history and feedback</IonCheckbox>
                             </IonCol>
 
+                            <IonCol size="4" className='flex items-center'>
+                                <IonCheckbox 
+                                {...register("example_automatic_approval", {
+                                    validate: {},
+                                })}
+                                checked={isExampleAutomaticApproval as boolean}
+                                onIonChange={(event: any) => {
+                                    console.log('event', event.detail.checked);
+                                    setValue("example_automatic_approval", event.detail.checked);
+                                }}
+                                className='mb-4 text-sm' labelPlacement="start">Automatic Approval of Validated Examples</IonCheckbox>
+                            </IonCol>
+
+                            
                         </IonRow>
                     </IonGrid>
                     <div className='flex justify-end'>
