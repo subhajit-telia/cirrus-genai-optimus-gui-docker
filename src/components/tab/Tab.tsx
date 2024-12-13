@@ -1,6 +1,6 @@
 import { IonButton, IonCol, IonGrid, IonIcon, IonItem, IonLabel, IonList, IonPopover, IonRow, IonSpinner, IonTextarea, IonToast } from '@ionic/react';
 import React, { useEffect, useRef, useState } from 'react';
-import { chatbubbleEllipsesOutline, chatbubblesOutline, closeOutline, copyOutline, createOutline, documentTextOutline, refreshOutline, reloadOutline, returnDownForwardOutline, saveOutline, send, star, starOutline, thumbsDownOutline, thumbsUpOutline } from 'ionicons/icons';
+import { addOutline, arrowUndoOutline, chatbubbleEllipsesOutline, chatbubblesOutline, closeCircleOutline, closeOutline, copyOutline, createOutline, documentTextOutline, refreshOutline, reloadOutline, returnDownForwardOutline, saveOutline, send, star, starOutline, thumbsDownOutline, thumbsUpOutline } from 'ionicons/icons';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
@@ -10,6 +10,9 @@ import FeedbackAlert from '../feedback/Feedback';
 import { Tooltip } from 'react-tooltip';
 import { AccessToken, HTTPMethod, NetworkInfo } from '../../routes/network';
 import FeedbackModal from '../feedbackBox/FeedbackBox';
+
+import {MDXEditor, MDXEditorMethods, headingsPlugin, listsPlugin, quotePlugin, thematicBreakPlugin} from '@mdxeditor/editor';
+import '@mdxeditor/editor/style.css';
 
 interface Tab {
   answer: string;
@@ -74,11 +77,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<FeedbackBox | null>(null);
   const apiUrl = window.RUNTIME_ENV?.REACT_APP_API_URL || NetworkInfo.URL;
-
-  const [popoverOpen, setPopoverOpen] = useState(false);
-  const [selectedText, setSelectedText] = useState("");
-  const [clickedText, setClickedText] = useState("");
-  const [popoverPosition, setPopoverPosition] = useState({ top: 0, left: 0 });
+ 
   // const [popoverEvent, setPopoverEvent] = useState<MouseEvent | null>(null);
 
   const [hoveredRating, setHoveredRating] = useState<{ qid: string; rating: number | null } | null>(null);
@@ -87,6 +86,15 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
 
   const [isShowError, setIsShowError] = useState(false);
   const [isErrorMsg, setIsErrorMsg] = useState('');
+
+  const mdxEditorRef = React.useRef<MDXEditorMethods>(null)
+
+  const [popoverOpen, setPopoverOpen] = useState(false);
+  const [popoverPosition, setPopoverPosition] = useState({ top: 0, left: 0 });
+  const [selectedText, setSelectedText] = useState("");
+  const [clickedText, setClickedText] = useState("");
+  const [editorChangedText, setEditorChangedText] = useState('');
+  const editorRef = useRef<HTMLDivElement | null>(null);
 
   const changeTab = (segment_id: string) => {
     setActiveTab(segment_id);
@@ -191,6 +199,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
   /* Save edit answer copy end */
 
   useEffect(() => {
+    console.log('tabstabstabstabstabs', tabs);
     if (tabs[0].data && tabs.length === 1) {
       setActiveTab(tabs[0].segment_id)
     }
@@ -208,6 +217,9 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
     if (editInputValues[0].length === 0) {
       setEditVisibility({ tabIndex: null, itemIndex: null, outputIndex: null });
       setIsRefineBox(false);
+    }else if (editInputValues[0][0].length === 0) {
+      setEditVisibility({ tabIndex: null, itemIndex: null, outputIndex: null });
+      setIsRefineBox(false);
     }
     console.log('tabs>><<', tabs);
     setIsSaveChanges(false);
@@ -215,6 +227,68 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
 
     // console.log('selectedText', selectedText)
   }, [tabs]);
+
+  const onDismissEditorPopup = () => {
+    setPopoverOpen(false);
+    setSelectedText("");
+    setClickedText("");
+  };
+
+  // Handle text selection
+  const handleEditorSelection = (event: React.MouseEvent<HTMLDivElement>) => {
+    const selection = window.getSelection();
+    if (selection && selection.toString().trim()) {
+      const selected = selection.toString();
+
+      // Get the position for the popover
+      const range = selection.getRangeAt(0);
+      const rect = range.getBoundingClientRect();
+
+       // Get the start index of the selection
+       const startIndex = range.startOffset;
+       const endIndex = range.endOffset;
+
+       setIsTextIndex(startIndex);
+
+      setPopoverPosition({
+        top: rect.top + window.scrollY + rect.height, // Position below the text
+        left: rect.left + window.scrollX,
+      });
+
+      setSelectedText(selected);
+      setPopoverOpen(true);
+    } else {
+      setPopoverOpen(false);
+    }
+  };
+
+  // Handle mouse click
+  const handleEditorMouseClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    const selection = window.getSelection();
+    if (!selection || !selection.toString().trim()) {
+      const range = document.caretRangeFromPoint(event.clientX, event.clientY);
+
+      setPopoverPosition({
+        top: event.clientY + window.scrollY,
+        left: event.clientX + window.scrollX,
+      });
+
+      setClickedText("You clicked here!");
+      setPopoverOpen(true);
+    }
+
+    if (selection && selection.rangeCount > 0) {
+      const range = selection.getRangeAt(0); // Get the selected range
+      const offset = range.startOffset; // The index of the clicked text
+
+      setIsTextIndex(offset);
+    }
+  };
+
+  const handleChangeEditor = (updatedMarkdown: string) => {
+    console.log('handleChangeEditor', updatedMarkdown);
+    setEditorChangedText(updatedMarkdown);
+  }
 
   // Handle text selection and show popover
   const handleSelection = (event: React.MouseEvent) => {
@@ -608,7 +682,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                     {tabItem.outputs.length > 0 ?
                       <>
                         {tabItem.outputs.map((outputItem:any, outputIndex) => (
-                          <div className='shadow-md rounded-md p-2 mb-1.5 relative'>
+                          <div className='shadow-md rounded-md p-2 mb-1.5 relative' key={outputIndex}>
                             {/* Show the output copy */}
                             {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === itemIndex && editVisibility.outputIndex === outputIndex ?
                               <></>
@@ -620,7 +694,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                             {/* Edit answer for each output */}
                             {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === itemIndex && editVisibility.outputIndex === outputIndex &&
                               <div className='relative' onClick={() => selectCopyQid(tabIndex, itemIndex, outputIndex, outputItem)}>
-                                <IonTextarea
+                                {/* <IonTextarea
                                   ref={textareaRef}
                                   onMouseUp={handleSelection}
                                   onClick={handleWordClick}
@@ -631,7 +705,19 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                                   value={editInputValues[tabIndex][itemIndex][outputIndex]}
                                   onIonInput={(event) => handleEditChange(tabIndex, itemIndex, outputIndex, event)}
                                 >        
-                                </IonTextarea>
+                                </IonTextarea> */}
+                                {editInputValues[tabIndex][itemIndex][outputIndex] &&
+                                  <div ref={editorRef} onMouseUp={handleEditorSelection} onClick={handleEditorMouseClick} className='relative'>
+                                    <MDXEditor 
+                                      ref={mdxEditorRef}
+                                      markdown={editInputValues[tabIndex][itemIndex][outputIndex]}
+                                      key={editInputValues[tabIndex][itemIndex][outputIndex]}
+                                      onChange={handleChangeEditor}
+                                      plugins={[headingsPlugin(), listsPlugin(), quotePlugin(), thematicBreakPlugin()]}
+                                    />
+                                  </div>
+                                }
+                                
 
                                 {/* Backdrop */}
                                 {popoverOpen && (
@@ -645,7 +731,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                                         height: "100%",
                                         zIndex: 999,
                                       }}
-                                      onClick={() => onDismissPopup()} // Close popover on backdrop click
+                                      onClick={() => onDismissEditorPopup()} // Close popover on backdrop click
                                     ></div>
 
                                     {/* Custom Popover */}
@@ -710,9 +796,15 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                                   <IonIcon className='' slot="icon-only" icon={copyOutline}></IonIcon>
                                 </IonButton>
                                 {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === itemIndex && editVisibility.outputIndex === outputIndex ? 
-                                  <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Save answer' className='text-xs' onClick={() => {saveAnswerChange(editInputValues[tabIndex][itemIndex][outputIndex], outputItem.input_params.qid); editAnswerVisibility(tabIndex, itemIndex, outputIndex)}} shape="round">
-                                    <IonIcon className='' slot="icon-only" icon={saveOutline}></IonIcon>
-                                  </IonButton>
+                                  <>
+                                    <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Save answer' className='text-xs' onClick={() => {saveAnswerChange(editorChangedText || editInputValues[tabIndex][itemIndex][outputIndex], outputItem.input_params.qid); editAnswerVisibility(tabIndex, itemIndex, outputIndex)}} shape="round">
+                                      <IonIcon className='' slot="icon-only" icon={saveOutline}></IonIcon>
+                                    </IonButton>
+
+                                    <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Discard' className='text-xs' onClick={() => editAnswerVisibility(tabIndex, itemIndex, outputIndex)} shape="round">
+                                      <IonIcon className='' slot="icon-only" icon={closeCircleOutline}></IonIcon>
+                                    </IonButton>
+                                  </>
                                 :
                                   <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Edit answer' className='text-xs' onClick={() => editAnswerVisibility(tabIndex, itemIndex, outputIndex)} shape="round">
                                     {isSaveChanges && outputItem.input_params.qid === isEditQid ?
@@ -828,11 +920,11 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                         :
                         <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} children={outputItem.answer}/>
                       }
-
+                      
                       {/* Edit answer for each output */}
                       {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === null && editVisibility.outputIndex === outputIndex &&
                         <div className='relative' onClick={() => selectCopyQid(tabIndex, null, outputIndex, outputItem)}>
-                          <IonTextarea
+                          {/* <IonTextarea
                             ref={textareaRef}
                             onMouseUp={handleSelection}
                             onClick={handleWordClick}
@@ -843,7 +935,19 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                             value={editInputValues[tabIndex][outputIndex] as string}
                             onIonInput={(event) => handleEditChange(tabIndex,null,outputIndex, event)}
                           >
-                          </IonTextarea>
+                          </IonTextarea> */}
+                          {editInputValues[tabIndex][outputIndex] && 
+                            <div ref={editorRef} onMouseUp={handleEditorSelection} onClick={handleEditorMouseClick} className='relative'>
+                              <MDXEditor 
+                                ref={mdxEditorRef}
+                                markdown={editInputValues[tabIndex][outputIndex] as string} 
+                                key={editInputValues[tabIndex][outputIndex] as string} 
+                                onChange={handleChangeEditor}
+                                plugins={[headingsPlugin(), listsPlugin(), quotePlugin(), thematicBreakPlugin()]}
+                              />
+                            </div>
+                          }
+                          
 
                           {/* Backdrop */}
                           {popoverOpen && (
@@ -857,7 +961,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                                   height: "100%",
                                   zIndex: 999,
                                 }}
-                                onClick={() => onDismissPopup()} // Close popover on backdrop click
+                                onClick={() => onDismissEditorPopup()} // Close popover on backdrop click
                               ></div>
 
                               {/* Custom Popover */}
@@ -880,7 +984,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                                   </>
                                 :
                                   <IonButton onClick={() => refineSelectedText('insert', clickedText)} data-tooltip-id='tooltip' data-tooltip-content='Generate More' className='text-xs' shape="round">
-                                    <IonIcon slot="icon-only" icon={chatbubblesOutline}></IonIcon>
+                                    <IonIcon slot="icon-only" icon={addOutline}></IonIcon>
                                   </IonButton>
                                 }
                               </div>
@@ -921,9 +1025,15 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                           </IonButton>
 
                           {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === null && editVisibility.outputIndex === outputIndex ? 
-                            <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Save answer' className='text-xs' onClick={() => {saveAnswerChange(editInputValues[tabIndex][outputIndex] as string, outputItem.input_params.qid); editAnswerVisibility(tabIndex, null, outputIndex)}} shape="round">
-                              <IonIcon className='' slot="icon-only" icon={saveOutline}></IonIcon>
-                            </IonButton>
+                            <>
+                              <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Save answer' className='text-xs' onClick={() => {saveAnswerChange(editorChangedText || editInputValues[tabIndex][outputIndex] as string, outputItem.input_params.qid); editAnswerVisibility(tabIndex, null, outputIndex)}} shape="round">
+                                <IonIcon className='' slot="icon-only" icon={saveOutline}></IonIcon>
+                              </IonButton>
+
+                              <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Discard' className='text-xs' onClick={() => editAnswerVisibility(tabIndex, null, outputIndex)} shape="round">
+                                <IonIcon className='' slot="icon-only" icon={closeCircleOutline}></IonIcon>
+                              </IonButton>
+                            </>
                           :
                             <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Edit answer' className='text-xs' onClick={() => editAnswerVisibility(tabIndex, null, outputIndex)} shape="round">
                               {isSaveChanges && outputItem.input_params.qid === isEditQid ?
@@ -1014,7 +1124,6 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
               :
                 <IonSpinner name="dots"></IonSpinner>
               }
-              
             </div>
           ))}
         </div>
