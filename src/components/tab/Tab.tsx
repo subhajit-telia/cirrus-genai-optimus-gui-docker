@@ -163,6 +163,8 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
       editVisibility.outputIndex === outputIndex
     ) {
       // If it is the same, hide the input by setting editVisibility to null
+      setIsRefineBox(false);
+      setIsRefineText('');
       setEditVisibility({ tabIndex: null, itemIndex: null, outputIndex: null });
     } else {
       // Otherwise, set the new active input
@@ -230,8 +232,8 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
 
   const onDismissEditorPopup = () => {
     setPopoverOpen(false);
-    setSelectedText("");
-    setClickedText("");
+    setSelectedText('');
+    setClickedText('');
   };
 
   // Handle text selection
@@ -248,7 +250,8 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
        const startIndex = range.startOffset;
        const endIndex = range.endOffset;
 
-       setIsTextIndex(startIndex);
+      //  setIsTextIndex(startIndex);
+       console.log('setIsTextIndex<<', startIndex);
 
       setPopoverPosition({
         top: rect.top + window.scrollY + rect.height, // Position below the text
@@ -265,6 +268,9 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
   // Handle mouse click
   const handleEditorMouseClick = (event: React.MouseEvent<HTMLDivElement>) => {
     const selection = window.getSelection();
+
+    console.log('selection', selection);
+    console.log('event', event);
     if (!selection || !selection.toString().trim()) {
       const range = document.caretRangeFromPoint(event.clientX, event.clientY);
 
@@ -273,15 +279,43 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
         left: event.clientX + window.scrollX,
       });
 
-      setClickedText("You clicked here!");
+      setClickedText("");
       setPopoverOpen(true);
     }
 
     if (selection && selection.rangeCount > 0) {
-      const range = selection.getRangeAt(0); // Get the selected range
-      const offset = range.startOffset; // The index of the clicked text
+      const range2 = selection.getRangeAt(0); // Get the selected range
+      const offset = range2.startOffset; // The index of the clicked text
 
-      setIsTextIndex(offset);
+      
+      console.log('setIsTextIndex>>', offset);
+
+      console.log('isRefineDetails', isRefineDetails);
+
+
+      // Split content into lines
+      const actualContent = isRefineDetails.outputItem.answer;
+      const currentLine:any = range2.startContainer.textContent;
+      const lines = actualContent.split("\n").map((line:string) => line.trim());
+      console.log('lines', lines);
+      console.log('currentLine', currentLine);
+      const normalizedClickedLine = currentLine.trim();
+      // Find the index of the clicked line in the markdown content
+      const lineIndex = lines.findIndex((line:string) => line == normalizedClickedLine);
+      console.log('lineIndex', lineIndex);
+
+      // Calculate the global index
+      let cumulativeLength = 0;
+
+      // Sum the lengths of all previous lines (including line breaks)
+      for (let i = 0; i < lineIndex; i++) {
+        cumulativeLength += lines[i].length + 1; // Add 1 for '\n'
+      }
+
+      // Add the relative index (clicked position within the line)
+      const globalIndex = cumulativeLength + offset;
+      setIsTextIndex(globalIndex);
+      console.log('globalIndex', globalIndex);
     }
   };
 
@@ -430,6 +464,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
       console.log('tabs@@@@', tabs)
     }else {
       tabs[isRefineDetails.tabIndex].answer = '';
+      console.log('tabs####', tabs)
     }
   }
   /* refine Selected copy end */
@@ -682,7 +717,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                     {tabItem.outputs.length > 0 ?
                       <>
                         {tabItem.outputs.map((outputItem:any, outputIndex) => (
-                          <div className='shadow-md rounded-md p-2 mb-1.5 relative' key={outputIndex}>
+                          <div onClick={() => selectCopyQid(tabIndex, itemIndex, outputIndex, outputItem)} className='shadow-md rounded-md p-2 mb-1.5 relative' key={outputIndex}>
                             {/* Show the output copy */}
                             {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === itemIndex && editVisibility.outputIndex === outputIndex ?
                               <></>
@@ -693,7 +728,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
 
                             {/* Edit answer for each output */}
                             {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === itemIndex && editVisibility.outputIndex === outputIndex &&
-                              <div className='relative' onClick={() => selectCopyQid(tabIndex, itemIndex, outputIndex, outputItem)}>
+                              <>
                                 {/* <IonTextarea
                                   ref={textareaRef}
                                   onMouseUp={handleSelection}
@@ -754,13 +789,13 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                                         </>
                                       :
                                         <IonButton onClick={() => refineSelectedText('insert', clickedText)} data-tooltip-id='tooltip' data-tooltip-content='Generate More' className='text-xs' shape="round">
-                                          <IonIcon slot="icon-only" icon={chatbubblesOutline}></IonIcon>
+                                          <IonIcon slot="icon-only" icon={addOutline}></IonIcon>
                                         </IonButton>
                                       }
                                     </div>
                                   </>
                                 )}
-                              </div>
+                              </>
                             }
 
                             {/* Action buttons for each output */}
@@ -913,7 +948,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
               {tabItem.outputs.length !== 0 ?
                 <>
                   {tabItem.outputs.map((outputItem:any, outputIndex:number) => (
-                    <div className='shadow-md rounded-md p-2 mb-1.5 relative'>
+                    <div onClick={() => selectCopyQid(tabIndex, null, outputIndex, outputItem)} className='shadow-md rounded-md p-2 mb-1.5 relative'>
                       {/* Show the output copy */}
                       {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === null && editVisibility.outputIndex === outputIndex ?
                         <></>
@@ -923,7 +958,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                       
                       {/* Edit answer for each output */}
                       {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === null && editVisibility.outputIndex === outputIndex &&
-                        <div className='relative' onClick={() => selectCopyQid(tabIndex, null, outputIndex, outputItem)}>
+                        <>
                           {/* <IonTextarea
                             ref={textareaRef}
                             onMouseUp={handleSelection}
@@ -990,7 +1025,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                               </div>
                             </>
                           )}
-                        </div>
+                        </>
                       }
                       {/* Action buttons for each output */}
                       <div className='flex items-center justify-between'>
@@ -1051,7 +1086,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                     </div>
                   ))}
                   
-                  {!tabItem.answer &&
+                  {(!tabItem.answer  || tabItem.answer === "") &&
                     <IonSpinner name="dots"></IonSpinner>
                   }
                   
