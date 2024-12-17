@@ -13,6 +13,7 @@ import FeedbackModal from '../feedbackBox/FeedbackBox';
 
 import {MDXEditor, MDXEditorMethods, headingsPlugin, listsPlugin, quotePlugin, thematicBreakPlugin} from '@mdxeditor/editor';
 import '@mdxeditor/editor/style.css';
+import stringSimilarity from "string-similarity";
 
 interface Tab {
   answer: string;
@@ -244,19 +245,20 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
 
       // Get the position for the popover
       const range = selection.getRangeAt(0);
-      const rect = range.getBoundingClientRect();
+      const rects = range.getClientRects();
 
        // Get the start index of the selection
        const startIndex = range.startOffset;
        const endIndex = range.endOffset;
 
-      //  setIsTextIndex(startIndex);
-       console.log('setIsTextIndex<<', startIndex);
-
-      setPopoverPosition({
-        top: rect.top + window.scrollY + rect.height, // Position below the text
-        left: rect.left + window.scrollX,
-      });
+      if (rects.length > 0) {
+        const rect = rects[0]; // First bounding rect
+        const top = rect.top + window.scrollY - 35; // Adjust for the button (above selection)
+        const left = rect.left + window.scrollX; // Adjust horizontal position
+  
+        setSelectedText(selection.toString());
+        setPopoverPosition({ top, left });
+      }
 
       setSelectedText(selected);
       setPopoverOpen(true);
@@ -289,26 +291,60 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
 
       
       console.log('setIsTextIndex>>', offset);
+      console.log('range2>>', range2);
 
       console.log('isRefineDetails', isRefineDetails);
 
 
       // Split content into lines
       const actualContent = isRefineDetails.outputItem.answer;
-      const currentLine:any = range2.startContainer.textContent;
+      const currentLine:any = range2.commonAncestorContainer;
       const lines = actualContent.split("\n").map((line:string) => line.trim());
       console.log('lines', lines);
       console.log('currentLine', currentLine);
-      const normalizedClickedLine = currentLine.trim();
+      const normalizedClickedLine = (currentLine.innerText || currentLine.wholeText).trim();
+      console.log('normalizedClickedLine', normalizedClickedLine);
       // Find the index of the clicked line in the markdown content
-      const lineIndex = lines.findIndex((line:string) => line == normalizedClickedLine);
-      console.log('lineIndex', lineIndex);
+      // const lineIndex = lines.findIndex((line:string) => line.replace(/\*\*(.*?)\*\*/g, "$1") == normalizedClickedLine.replace(/\*\*(.*?)\*\*/g, "$1"));
+      // console.log('lineIndex', lineIndex);
+
+      let lineIndexed:number = -1;
+      for (let index = 0; index < lines.length; index++) {
+        const line: string = lines[index];
+        
+        if (line === normalizedClickedLine) {
+          lineIndexed = index;
+          break; // Stop the loop if an exact match is found
+        } else {
+          const cleanedText1 = line.replace(/\*\*(.*?)\*\*/g, "$1");
+          const cleanedText2 = normalizedClickedLine.replace(/\*\*(.*?)\*\*/g, "$1");
+      
+          const similarityScore = stringSimilarity.compareTwoStrings(
+            cleanedText1,
+            cleanedText2
+          );
+      
+          console.log("similarityScore", similarityScore);
+          if (similarityScore > 0.8) {
+            console.log("lineIndexed", index);
+            lineIndexed = index;
+            break; // Stop the loop if a similar match is found
+          }
+        }
+      }
+      console.log('lineIndexed<<<<>>>>', lineIndexed);
+      if (lineIndexed === -1) {
+        console.error("Clicked line not found. Check formatting or spaces.");
+        setIsShowError(true);
+        setIsErrorMsg('Clicked line not found. Please select again!');
+        return;
+      }
 
       // Calculate the global index
       let cumulativeLength = 0;
 
       // Sum the lengths of all previous lines (including line breaks)
-      for (let i = 0; i < lineIndex; i++) {
+      for (let i = 0; i < lineIndexed; i++) {
         cumulativeLength += lines[i].length + 1; // Add 1 for '\n'
       }
 
@@ -416,6 +452,8 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
     if (_identifier === 'refine') {
       setIsRefineBox(true);
     }else if (_identifier === 'regenarate'){
+      setIsRefineBox(false);
+      setIsRefineText('');
       submitRefineQuestion('','regenerate', _text)
     }else {
       // submitRefineQuestion('','insert')
