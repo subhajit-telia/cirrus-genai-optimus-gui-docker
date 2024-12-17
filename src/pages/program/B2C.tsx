@@ -631,7 +631,7 @@ const B2C: React.FC = () => {
         setIsErrorMsg(error.response || 'Something went wrong!');
       }else {
         setIsShowError(true);
-        setIsErrorMsg(error.response || 'Internal Server Error!');
+        setIsErrorMsg(error.response || 'Please generate again!');
       }
     }
 
@@ -716,7 +716,7 @@ const B2C: React.FC = () => {
         setIsErrorMsg(error.response || 'Something went wrong!');
       }else {
         setIsShowError(true);
-        setIsErrorMsg(error.response || 'Internal Server Error!');
+        setIsErrorMsg(error.response || 'Please generate again!');
       }
     }
 
