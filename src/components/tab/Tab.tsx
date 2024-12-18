@@ -96,6 +96,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
   const [clickedText, setClickedText] = useState("");
   const [editorChangedText, setEditorChangedText] = useState('');
   const editorRef = useRef<HTMLDivElement | null>(null);
+  const [currentEditCopy, setCurrentEditCopy] = useState("");
 
   const changeTab = (segment_id: string) => {
     setActiveTab(segment_id);
@@ -201,6 +202,22 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
   }
   /* Save edit answer copy end */
 
+  /* ----------Discard edit answer copy start---------- */
+  const discardAnswerChange = async () => {
+    console.log('currentEditCopy', currentEditCopy);
+    console.log('isRefineDetails', isRefineDetails);
+
+    if (isRefineDetails.itemIndex !== '' && isRefineDetails.itemIndex !== null) {
+      tabs[isRefineDetails.tabIndex].data[isRefineDetails.itemIndex].outputs[isRefineDetails.outputIndex].answer = currentEditCopy;
+      console.log('tabs@@@@', tabs)
+    }else {
+      tabs[isRefineDetails.tabIndex].outputs[isRefineDetails.outputIndex].answer = currentEditCopy;
+      console.log('tabs####', tabs)
+    }
+    setCurrentEditCopy('');
+  }
+  /* Discard edit answer copy end */
+
   useEffect(() => {
     console.log('tabstabstabstabstabs', tabs);
     if (tabs[0].data && tabs.length === 1) {
@@ -292,7 +309,10 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
       
       console.log('setIsTextIndex>>', offset);
       console.log('range2>>', range2);
-
+      console.log('selection>>', selection.toString());
+      const selectedLine = selection.toString()
+      const selectionlines = selectedLine.split("\n").map((line:string) => line.trim());
+      console.log('selectionlines', selectionlines);
       console.log('isRefineDetails', isRefineDetails);
 
 
@@ -329,6 +349,23 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
             console.log("lineIndexed", index);
             lineIndexed = index;
             break; // Stop the loop if a similar match is found
+          }else{
+            const similarityScore2 = stringSimilarity.compareTwoStrings(
+              line,
+              selectionlines[0]
+            );
+
+
+            if (similarityScore2 > 0.8) {
+              console.log("similarityScore2", similarityScore2);
+              console.log("line", line);
+              console.log("selectionlines[0]", selectionlines[0]);
+
+              console.log("lineIndexed", index);
+              lineIndexed = index;
+            }
+
+            
           }
         }
       }
@@ -345,6 +382,8 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
 
       // Sum the lengths of all previous lines (including line breaks)
       for (let i = 0; i < lineIndexed; i++) {
+        console.log('cumulativeLength$$>>', cumulativeLength);
+        console.log('lines[i]$$>>', lines[i]);
         cumulativeLength += lines[i].length + 1; // Add 1 for '\n'
       }
 
@@ -874,12 +913,12 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                                       <IonIcon className='' slot="icon-only" icon={saveOutline}></IonIcon>
                                     </IonButton>
 
-                                    <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Discard' className='text-xs' onClick={() => editAnswerVisibility(tabIndex, itemIndex, outputIndex)} shape="round">
+                                    <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Discard' className='text-xs' onClick={() => {editAnswerVisibility(tabIndex, itemIndex, outputIndex), discardAnswerChange()}} shape="round">
                                       <IonIcon className='' slot="icon-only" icon={closeCircleOutline}></IonIcon>
                                     </IonButton>
                                   </>
                                 :
-                                  <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Edit answer' className='text-xs' onClick={() => editAnswerVisibility(tabIndex, itemIndex, outputIndex)} shape="round">
+                                  <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Edit answer' className='text-xs' onClick={() => {editAnswerVisibility(tabIndex, itemIndex, outputIndex), setCurrentEditCopy(outputItem.answer)}} shape="round">
                                     {isSaveChanges && outputItem.input_params.qid === isEditQid ?
                                       <IonIcon className='animate-spin' slot="icon-only" icon={refreshOutline}></IonIcon>
                                     :
@@ -1103,12 +1142,12 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                                 <IonIcon className='' slot="icon-only" icon={saveOutline}></IonIcon>
                               </IonButton>
 
-                              <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Discard' className='text-xs' onClick={() => editAnswerVisibility(tabIndex, null, outputIndex)} shape="round">
+                              <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Discard' className='text-xs' onClick={() => {editAnswerVisibility(tabIndex, null, outputIndex), discardAnswerChange()}} shape="round">
                                 <IonIcon className='' slot="icon-only" icon={closeCircleOutline}></IonIcon>
                               </IonButton>
                             </>
                           :
-                            <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Edit answer' className='text-xs' onClick={() => editAnswerVisibility(tabIndex, null, outputIndex)} shape="round">
+                            <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Edit answer' className='text-xs' onClick={() => {editAnswerVisibility(tabIndex, null, outputIndex), setCurrentEditCopy(outputItem.answer)}} shape="round">
                               {isSaveChanges && outputItem.input_params.qid === isEditQid ?
                                 <IonIcon className='animate-spin' slot="icon-only" icon={refreshOutline}></IonIcon>
                               :
