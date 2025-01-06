@@ -28,3 +28,18 @@ h1, h2, h3, h4, h5, h6 {
 .editing-popover {
     --width: auto;
 }
+.editingIcons {
+    position: absolute;
+    right: -8px;
+    display: flex;
+    flex-direction: column;
+    top: 50%;
+    transform: translateY(-50%);
+}
+._contentEditable_uazmk_379 {
+    padding: 0px !important;
+}
+
+.highlighted {
+    background-color: yellow;
+  }
