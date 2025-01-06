@@ -11,9 +11,10 @@ import { Tooltip } from 'react-tooltip';
 import { AccessToken, HTTPMethod, NetworkInfo } from '../../routes/network';
 import FeedbackModal from '../feedbackBox/FeedbackBox';
 
-import {MDXEditor, MDXEditorMethods, headingsPlugin, listsPlugin, quotePlugin, thematicBreakPlugin} from '@mdxeditor/editor';
+import {MDXEditor, MDXEditorMethods, headingsPlugin, listsPlugin, markdownShortcutPlugin, quotePlugin, thematicBreakPlugin} from '@mdxeditor/editor';
 import '@mdxeditor/editor/style.css';
 import stringSimilarity from "string-similarity";
+import { marked } from "marked";
 
 interface Tab {
   answer: string;
@@ -63,6 +64,13 @@ interface FeedbackBox {
   comment: string
 }
 
+const stripMarkdown = (markdown: string) => {
+  const html = marked(markdown);
+  const tempDiv:any = document.createElement("div");
+  tempDiv.innerHTML = html;
+  return tempDiv.innerText;
+};
+
 const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, genarateRefineCopy }) => {
   const [activeTab, setActiveTab] = useState(tabs[0].segment_id); // Set the first tab as active initially
   
@@ -92,11 +100,21 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
 
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [popoverPosition, setPopoverPosition] = useState({ top: 0, left: 0 });
-  const [selectedText, setSelectedText] = useState("");
+  const [selectedText, setSelectedText] = useState<string | null>(null);
   const [clickedText, setClickedText] = useState("");
   const [editorChangedText, setEditorChangedText] = useState('');
   const editorRef = useRef<HTMLDivElement | null>(null);
   const [currentEditCopy, setCurrentEditCopy] = useState("");
+  const [abc, setAbc] = useState("");
+
+
+  const [position, setPosition] = useState<Position | null>(null);
+  const [activeBox, setActiveBox] = useState<number | null>(null);
+
+  const containerRefs = useRef<HTMLDivElement[]>([]);
+
+  const [highlightStartIndex, setHighlightStartIndex] = useState<number | null>(null);
+  const [highlightEndIndex, setHighlightEndIndex] = useState<number | null>(null);
 
   const changeTab = (segment_id: string) => {
     setActiveTab(segment_id);
@@ -145,7 +163,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
 
   /* --------------Edit answer start-------------- */
 
-  const [editVisibility, setEditVisibility] = useState({ tabIndex: null, itemIndex: null, outputIndex: null });
+  const [editVisibility, setEditVisibility] = useState({ tabIndex: null, itemIndex: null, outputIndex: null, isEdit: false });
   const [editInputValues, setEditInputValues] = useState(
     tabs.map(item => {
       if (item.outputs) {
@@ -157,7 +175,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
     })
   );
 
-  const editAnswerVisibility = (tabIndex:any, itemIndex:any, outputIndex:any) => {
+  const handleEditingMode = (tabIndex:any, itemIndex:any, outputIndex:any, isEdit: boolean) => {
     // Check if the currently active input is the same as the one being clicked
     if (
       editVisibility.tabIndex === tabIndex &&
@@ -167,11 +185,35 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
       // If it is the same, hide the input by setting editVisibility to null
       setIsRefineBox(false);
       setIsRefineText('');
-      setEditVisibility({ tabIndex: null, itemIndex: null, outputIndex: null });
+      setEditVisibility({ tabIndex: null, itemIndex: null, outputIndex: null, isEdit: false });
     } else {
       // Otherwise, set the new active input
-      setEditVisibility({ tabIndex, itemIndex, outputIndex });
+      setEditVisibility({ tabIndex, itemIndex, outputIndex, isEdit });
     }
+
+    console.log('editVisibility>>>>', editVisibility)
+  };
+
+  const handleEditAnswer = (tabIndex:any, itemIndex:any, outputIndex:any) => {
+    // Check if the currently active input is the same as the one being clicked
+    console.log('editVisibility>>>>>', editVisibility);
+    setSelectedText(null);
+    if (
+      editVisibility.tabIndex === tabIndex &&
+      editVisibility.itemIndex === itemIndex &&
+      editVisibility.outputIndex === outputIndex &&
+      editVisibility.isEdit === true
+    ) {
+      setEditVisibility({ tabIndex: tabIndex, itemIndex: itemIndex, outputIndex: outputIndex, isEdit: false });
+    } else {
+      // Otherwise, set the new active input
+      setEditVisibility({ tabIndex: tabIndex, itemIndex: itemIndex, outputIndex: outputIndex, isEdit: true });
+    }
+
+    console.log('editVisibility>>>>', editVisibility);
+    document.querySelectorAll('._contentEditable_uazmk_379').forEach(element => {
+      element.setAttribute('spellcheck', 'false');
+    });
   };
 
   const handleEditChange = (tabIndex:any, itemIndex:any, outputIndex:any, event:any) => {
@@ -235,10 +277,10 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
     setEditInputValues(copyAnswer);
     console.log('editInputValues', editInputValues);
     if (editInputValues[0].length === 0) {
-      setEditVisibility({ tabIndex: null, itemIndex: null, outputIndex: null });
+      setEditVisibility({ tabIndex: null, itemIndex: null, outputIndex: null, isEdit: false });
       setIsRefineBox(false);
     }else if (editInputValues[0][0].length === 0) {
-      setEditVisibility({ tabIndex: null, itemIndex: null, outputIndex: null });
+      setEditVisibility({ tabIndex: null, itemIndex: null, outputIndex: null, isEdit: false });
       setIsRefineBox(false);
     }
     console.log('tabs>><<', tabs);
@@ -247,6 +289,186 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
 
     // console.log('selectedText', selectedText)
   }, [tabs]);
+
+  // //////////
+  const getExactIndexAndText = (
+    selection: Selection,
+    container: HTMLElement
+  ) => {
+    if (!selection || selection.rangeCount === 0) return { text: "", index: -1 };
+
+    const range = selection.getRangeAt(0);
+    const preCaretRange = range.cloneRange();
+    preCaretRange.selectNodeContents(container);
+    preCaretRange.setEnd(range.endContainer, range.endOffset);
+
+    const selectedText = selection.toString();
+    const calculatedIndex = preCaretRange.toString().length - selectedText.length;
+
+    return {
+      text: selectedText,
+      index: calculatedIndex,
+    };
+  };
+
+  const highlightHTMLText = (
+    html: string,
+    start: number | null,
+    end: number | null
+  ) => {
+    if (start === null || end === null) return html;
+
+    
+    const preText = html.slice(0, start);
+    const highlightedText = html.slice(start, end);
+    const postText = html.slice(end);
+
+    // console.log('preText:', preText);
+    // console.log('highlightedText:', highlightedText);
+    // console.log('postText:', postText);
+
+    // return `${preText}<span class="highlighted">${highlightedText}</span>${postText}`;
+    // Process highlighted text with proper handling for newlines
+      const highlightedWithSpans = highlightedText
+      .split("\n")
+      .map((line) => {
+        if (line.trim().startsWith("#")) {
+          return `<h1 class="highlighted">${line.slice(1).trim()}</h1>`;
+        }
+        return `<span class="highlighted">${line}</span>`;
+      })
+      .join(""); // No additional line breaks in the output
+
+    // Return the full HTML with processed parts
+    return `${preText}${highlightedWithSpans}${postText}`;
+  };
+
+  const handleMouseUp = (event: React.MouseEvent, tabIndex:number, itemIndex:any, outputIndex:number) => {
+    const container = containerRefs.current[outputIndex];
+    if (!container) return;
+
+    const selection = window.getSelection();
+    if (selection) {
+      const { text, index: exactIndex } = getExactIndexAndText(selection, container);
+
+      console.log('start Index', exactIndex);
+      console.log('end Index', exactIndex + text.length);
+      console.log('text', text);
+
+      let fullString;
+      if (itemIndex !== '' && itemIndex !== null) {
+        fullString = tabs[tabIndex].data[itemIndex].outputs[outputIndex].answer;
+      }else {
+        fullString =tabs[tabIndex].outputs[outputIndex].answer;
+      }
+
+      const startIndex = fullString.indexOf(text, exactIndex);
+
+      // Find the end index
+      const endIndex = startIndex + text.length;
+
+      
+
+      console.log("Start index>>:", startIndex);
+      console.log("End index>>:", endIndex);
+      // console.log("fullString>>:", fullString);
+      if (text) {
+        
+        const result:any = findMatch(fullString, text);
+        
+
+        if (result) {
+          console.log("Start >>:", result.startIndex);
+          console.log("End >>:", result.endIndex);
+          console.log("match >>:", result.match);
+          setSelectedText(result.match);
+          setHighlightStartIndex(result.startIndex);
+          setHighlightEndIndex(result.endIndex);
+          setIsTextIndex(result.startIndex);
+        }else {
+          setSelectedText(text);
+          setIsTextIndex(startIndex > 0 ? startIndex : exactIndex);
+        }
+
+         // Reset clicked word highlighting
+      }
+    }
+  };
+
+  const handleMouseClick = (event: React.MouseEvent, tabIndex:number, itemIndex:any, outputIndex:number) => {
+    const container = containerRefs.current[outputIndex];
+    if (!container) return;
+
+    const selection = window.getSelection();
+    if (selection && selection.toString()) return; // Ignore clicks when there's a selection
+
+    const range = document.caretRangeFromPoint(event.clientX, event.clientY);
+    if (!range) return;
+
+    const preCaretRange = range.cloneRange();
+    preCaretRange.selectNodeContents(container);
+    preCaretRange.setEnd(range.startContainer, range.startOffset);
+
+    const caretIndex = preCaretRange.toString().length;
+    const textContent = container.textContent || "";
+    const wordStart = textContent.lastIndexOf(" ", caretIndex - 1) + 1;
+    const wordEnd = textContent.indexOf(" ", caretIndex);
+
+    const clickedWord = textContent.slice(
+      wordStart,
+      wordEnd === -1 ? textContent.length : wordEnd
+    );
+
+    let fullString;
+    if (itemIndex !== '' && itemIndex !== null) {
+      fullString = tabs[tabIndex].data[itemIndex].outputs[outputIndex].answer;
+    }else {
+      fullString =tabs[tabIndex].outputs[outputIndex].answer;
+    }
+    const startIndex = fullString.indexOf(clickedWord, wordStart);
+
+
+    console.log('handleMouseClick startIndex', startIndex);
+    console.log('clickedWord', clickedWord);
+    console.log('wordStart', wordStart);
+    setIsTextIndex(startIndex);
+    setSelectedText("");
+    setHighlightStartIndex(null);
+    setHighlightEndIndex(null); // Reset text selection highlighting
+  };
+
+  const findMatch = (
+    original: string,
+    search: string,
+    threshold: number = 80
+  ): { match: string; startIndex: number; endIndex: number } | null => {
+    const originalWords = original.split(' ');
+    const searchWords = search.split(' ');
+  
+    let bestMatch = null;
+    let bestSimilarity = 0;
+  
+    for (let i = 0; i <= originalWords.length - searchWords.length; i++) {
+      // Form a substring using a sliding window
+      const substring = originalWords.slice(i, i + searchWords.length).join(' ');
+  
+      // Calculate similarity
+      const similarity = stringSimilarity.compareTwoStrings(substring, search) * 100;
+  
+      // Update best match if similarity is above threshold
+      if (similarity > threshold && similarity > bestSimilarity) {
+        bestMatch = {
+          match: substring,
+          startIndex: original.indexOf(substring),
+          endIndex: original.indexOf(substring) + substring.length - 1,
+        };
+        bestSimilarity = similarity;
+      }
+    }
+  
+    return bestMatch;
+  };
+  // /////////
 
   const onDismissEditorPopup = () => {
     setPopoverOpen(false);
@@ -318,12 +540,19 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
 
       // Split content into lines
       const actualContent = isRefineDetails.outputItem.answer;
+      console.log('actualContent', actualContent);
+
+      const result = matchAndAddSpecialCharacters(selectedLine, abc);
+      console.log('result@@@@', result.enhancedSentence);
+
       const currentLine:any = range2.commonAncestorContainer;
       const lines = actualContent.split("\n").map((line:string) => line.trim());
       console.log('lines', lines);
       console.log('currentLine', currentLine);
       const normalizedClickedLine = (currentLine.innerText || currentLine.wholeText).trim();
-      console.log('normalizedClickedLine', normalizedClickedLine);
+      // console.log('normalizedClickedLine', normalizedClickedLine);
+      const matchingLine = findMatchingSentence(lines, normalizedClickedLine) || normalizedClickedLine;
+      console.log('matchingLine', matchingLine);
       // Find the index of the clicked line in the markdown content
       // const lineIndex = lines.findIndex((line:string) => line.replace(/\*\*(.*?)\*\*/g, "$1") == normalizedClickedLine.replace(/\*\*(.*?)\*\*/g, "$1"));
       // console.log('lineIndex', lineIndex);
@@ -332,12 +561,12 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
       for (let index = 0; index < lines.length; index++) {
         const line: string = lines[index];
         
-        if (line === normalizedClickedLine) {
+        if (line === matchingLine) {
           lineIndexed = index;
           break; // Stop the loop if an exact match is found
         } else {
           const cleanedText1 = line.replace(/\*\*(.*?)\*\*/g, "$1");
-          const cleanedText2 = normalizedClickedLine.replace(/\*\*(.*?)\*\*/g, "$1");
+          const cleanedText2 = matchingLine.replace(/\*\*(.*?)\*\*/g, "$1");
       
           const similarityScore = stringSimilarity.compareTwoStrings(
             cleanedText1,
@@ -382,9 +611,10 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
 
       // Sum the lengths of all previous lines (including line breaks)
       for (let i = 0; i < lineIndexed; i++) {
+        cumulativeLength += lines[i].length + 1; // Add 1 for '\n'
+
         console.log('cumulativeLength$$>>', cumulativeLength);
         console.log('lines[i]$$>>', lines[i]);
-        cumulativeLength += lines[i].length + 1; // Add 1 for '\n'
       }
 
       // Add the relative index (clicked position within the line)
@@ -394,8 +624,95 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
     }
   };
 
+  function matchAndAddSpecialCharacters(sentence1:string, sentence2:string) {   
+    // Remove special characters and normalize sentences   
+    const normalize = (str:any) => str.replace(/[^a-zA-Z0-9\s]/g, "").toLowerCase();   
+    const normalizedSentence1 = normalize(sentence1);   
+    const normalizedSentence2 = normalize(sentence2);   // Check if the first sentence exists in the second   
+    if (normalizedSentence2.includes(normalizedSentence1)) {     
+      const words1 = sentence1.split(/\s+/); // Split first sentence into words     
+      const words2 = sentence2.split(/\s+/); // Split second sentence into words     // Add special characters to the first sentence     
+      const enhancedSentence = words1       
+      .map((word) => {         // Find the matching word in the second sentence         
+      const matchingWord = words2.find((w) => normalize(w) === word.toLowerCase());         
+      return matchingWord || word; // Use the original word if no match found       
+      }).join(" ");     
+      return { match: true, enhancedSentence };   
+    }   return { match: false, enhancedSentence: null }; 
+  }
+
+  const extractMarkdown = (markDownText: string, selectedText: string) => {
+    const lines = markDownText.split("\n");
+
+    // Extract the section name from the selected text (e.g., "headline", "copy_block_1")
+    const selectedKey = selectedText.split(":")[0].trim();
+
+    let result = '';
+    let isMatching = false;
+
+    // Iterate through each line of the markdown content
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+
+      // Check if the line matches the selected section (e.g., # headline)
+      if (line.startsWith(`# ${selectedKey}:`)) {
+        isMatching = true;
+        result += line + "\n";  // Add the header to the result
+      } else if (isMatching) {
+        // Add the content lines after the header
+        result += line + "\n";
+
+        // Check if we have reached the next section (another header)
+        if (line.startsWith("# ") && !line.startsWith(`# ${selectedKey}:`)) {
+          break; // Stop adding content when a new header is found
+        }
+      }
+    }
+
+    return result.trim(); // Remove any trailing spaces and return the result
+  };
+
+  const findMatchingSentence = (arr: string[], textLine: string): string | null => {
+    // Split the textLine into words
+    const textWords = textLine.split(' ');
+
+    const words = textLine.trim().split(/\s+/);
+
+    // Count the number of words in the array
+    const wordCount = words.length;
+  
+    // Generate 6-word chunks from textLine
+    const chunks = [];
+    for (let i = 0; i <= textWords.length - wordCount; i++) {
+      const chunk = textWords.slice(i, i + wordCount).join(' ');
+      chunks.push(chunk);
+    }
+  
+    // Iterate over the array and check for each chunk
+    for (let i = 0; i < arr.length; i++) {
+      const line = arr[i];
+  
+      // Check if any chunk from textLine exists in the current line
+      for (const chunk of chunks) {
+        if (line.includes(chunk)) {
+          return line; // Return the full line if a match is found
+        }
+      }
+    }
+  
+    // Return null if no matching sentence is found
+    return null;
+  };
+
+  // llllllllllllllllllllllllllllll
+  
+
   const handleChangeEditor = (updatedMarkdown: string) => {
     console.log('handleChangeEditor', updatedMarkdown);
+    document.querySelectorAll('._contentEditable_uazmk_379').forEach(element => {
+      element.setAttribute('spellcheck', 'false');
+    });
+    setAbc(updatedMarkdown);
     setEditorChangedText(updatedMarkdown);
   }
 
@@ -531,10 +848,10 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
     genarateRefineCopy(refineData);
     // setIsRefineBox(false);
     // setPosition(null);
-    // setPopoverContent('');
+    // setSelectedText('');
 
     console.log('isRefineDetails', isRefineDetails);
-    // editAnswerVisibility(isRefineDetails.tabIndex, isRefineDetails.itemIndex, isRefineDetails.outputIndex);
+    // handleEditingMode(isRefineDetails.tabIndex, isRefineDetails.itemIndex, isRefineDetails.outputIndex);
 
     if (isRefineDetails.itemIndex !== '' && isRefineDetails.itemIndex !== null) {
       tabs[isRefineDetails.tabIndex].data[isRefineDetails.itemIndex].answer = '';
@@ -806,72 +1123,57 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                             {/* Edit answer for each output */}
                             {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === itemIndex && editVisibility.outputIndex === outputIndex &&
                               <>
-                                {/* <IonTextarea
-                                  ref={textareaRef}
-                                  onMouseUp={handleSelection}
-                                  onClick={handleWordClick}
-                                  className='relative editing-box z-0 bottom-textarea rounded-xl mb-2.5 text-black'
-                                  aria-label="Custom textarea"
-                                  placeholder="Write your question."
-                                  autoGrow={true}
-                                  value={editInputValues[tabIndex][itemIndex][outputIndex]}
-                                  onIonInput={(event) => handleEditChange(tabIndex, itemIndex, outputIndex, event)}
-                                >        
-                                </IonTextarea> */}
                                 {editInputValues[tabIndex][itemIndex][outputIndex] &&
-                                  <div ref={editorRef} onMouseUp={handleEditorSelection} onClick={handleEditorMouseClick} className='relative'>
-                                    <MDXEditor 
-                                      ref={mdxEditorRef}
-                                      markdown={editInputValues[tabIndex][itemIndex][outputIndex]}
-                                      key={editInputValues[tabIndex][itemIndex][outputIndex]}
-                                      onChange={handleChangeEditor}
-                                      plugins={[headingsPlugin(), listsPlugin(), quotePlugin(), thematicBreakPlugin()]}
-                                    />
-                                  </div>
-                                }
-                                
-
-                                {/* Backdrop */}
-                                {popoverOpen && (
                                   <>
-                                    <div
-                                      style={{
-                                        position: "fixed",
-                                        top: 0,
-                                        left: 0,
-                                        width: "100%",
-                                        height: "100%",
-                                        zIndex: 999,
-                                      }}
-                                      onClick={() => onDismissEditorPopup()} // Close popover on backdrop click
-                                    ></div>
-
-                                    {/* Custom Popover */}
-                                    <div
-                                      style={{
-                                        position: "absolute",
-                                        top: `${popoverPosition.top}px`,
-                                        left: `${popoverPosition.left}px`,
-                                        zIndex: 1000,
-                                      }}
-                                    >
-                                      {selectedText !== '' ?
-                                        <>
-                                          <IonButton onClick={() => refineSelectedText('refine', selectedText)} data-tooltip-id='tooltip' data-tooltip-content='Refine' className='text-xs' shape="round">
-                                            <IonIcon slot="icon-only" icon={chatbubblesOutline}></IonIcon>
-                                          </IonButton>
-                                          <IonButton onClick={() => refineSelectedText('regenarate', selectedText)} data-tooltip-id='tooltip' data-tooltip-content='Regenerate' className='text-xs' shape="round">
-                                            <IonIcon slot="icon-only" icon={refreshOutline}></IonIcon>
-                                          </IonButton>
-                                        </>
+                                    <div className='relative'>
+                                      {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === itemIndex && editVisibility.outputIndex === outputIndex && editVisibility.isEdit === false ?
+                                        <div
+                                          key={outputIndex}
+                                          ref={(el) => (containerRefs.current[outputIndex] = el!)}
+                                          onMouseUp={(e) => handleMouseUp(e, tabIndex, itemIndex, outputIndex)}
+                                          onClick={(e) => handleMouseClick(e, tabIndex, itemIndex, outputIndex)}
+                                          dangerouslySetInnerHTML={{
+                                            __html: marked(outputItem.answer) as string
+                                          }}
+                                        >
+                                          {/* <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} children={outputItem.answer}/> */}
+                                        </div>
                                       :
-                                        <IonButton onClick={() => refineSelectedText('insert', clickedText)} data-tooltip-id='tooltip' data-tooltip-content='Generate More' className='text-xs' shape="round">
+                                        <MDXEditor 
+                                          ref={mdxEditorRef}
+                                          markdown={editInputValues[tabIndex][itemIndex][outputIndex]}
+                                          key={editInputValues[tabIndex][itemIndex][outputIndex]}
+                                          onChange={handleChangeEditor}
+                                          plugins={[headingsPlugin(), listsPlugin(), quotePlugin(), thematicBreakPlugin()]}
+                                        />
+                                      }
+                                      <div className='editingIcons'>
+                                        {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === itemIndex && editVisibility.outputIndex === outputIndex && editVisibility.isEdit === false ?
+                                          <IonButton data-tooltip-id='tooltip' data-tooltip-content='Edit answer' className='text-xs' onClick={() => {handleEditAnswer(tabIndex, itemIndex, outputIndex), setCurrentEditCopy(outputItem.answer)}} shape="round">
+                                            {isSaveChanges && outputItem.input_params.qid === isEditQid ?
+                                              <IonIcon className='animate-spin' slot="icon-only" icon={closeCircleOutline}></IonIcon>
+                                            :
+                                              <IonIcon slot="icon-only" icon={createOutline}></IonIcon>
+                                            }
+                                          </IonButton>
+                                        :
+                                          <IonButton data-tooltip-id='tooltip' data-tooltip-content='Discard' className='text-xs' onClick={() => {handleEditAnswer(tabIndex, itemIndex, outputIndex), discardAnswerChange()}} shape="round">
+                                            <IonIcon slot="icon-only" icon={closeCircleOutline}></IonIcon>
+                                          </IonButton>
+                                        }
+                                        <IonButton disabled={selectedText === '' || selectedText === null} onClick={() => refineSelectedText('refine', selectedText)} data-tooltip-id='tooltip' data-tooltip-content='Refine' className='text-xs' shape="round">
+                                          <IonIcon slot="icon-only" icon={chatbubblesOutline}></IonIcon>
+                                        </IonButton>
+                                        <IonButton disabled={selectedText === '' || selectedText === null} onClick={() => refineSelectedText('regenarate', selectedText)} data-tooltip-id='tooltip' data-tooltip-content='Regenerate' className='text-xs' shape="round">
+                                          <IonIcon slot="icon-only" icon={refreshOutline}></IonIcon>
+                                        </IonButton>
+                                        <IonButton disabled={selectedText !== '' || selectedText === null} onClick={() => refineSelectedText('insert', clickedText)} data-tooltip-id='tooltip' data-tooltip-content='Generate More' className='text-xs' shape="round">
                                           <IonIcon slot="icon-only" icon={addOutline}></IonIcon>
                                         </IonButton>
-                                      }
+                                      </div>
                                     </div>
                                   </>
-                                )}
+                                }
                               </>
                             }
 
@@ -909,16 +1211,16 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                                 </IonButton>
                                 {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === itemIndex && editVisibility.outputIndex === outputIndex ? 
                                   <>
-                                    <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Save answer' className='text-xs' onClick={() => {saveAnswerChange(editorChangedText || editInputValues[tabIndex][itemIndex][outputIndex], outputItem.input_params.qid); editAnswerVisibility(tabIndex, itemIndex, outputIndex)}} shape="round">
+                                    <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Save answer' className='text-xs' onClick={() => {saveAnswerChange(editorChangedText || editInputValues[tabIndex][itemIndex][outputIndex], outputItem.input_params.qid); handleEditingMode(tabIndex, itemIndex, outputIndex, false)}} shape="round">
                                       <IonIcon className='' slot="icon-only" icon={saveOutline}></IonIcon>
                                     </IonButton>
 
-                                    <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Discard' className='text-xs' onClick={() => {editAnswerVisibility(tabIndex, itemIndex, outputIndex), discardAnswerChange()}} shape="round">
+                                    <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Discard' className='text-xs' onClick={() => {handleEditingMode(tabIndex, itemIndex, outputIndex, false), discardAnswerChange()}} shape="round">
                                       <IonIcon className='' slot="icon-only" icon={closeCircleOutline}></IonIcon>
                                     </IonButton>
                                   </>
                                 :
-                                  <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Edit answer' className='text-xs' onClick={() => {editAnswerVisibility(tabIndex, itemIndex, outputIndex), setCurrentEditCopy(outputItem.answer)}} shape="round">
+                                  <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Edit answer' className='text-xs' onClick={() => {handleEditingMode(tabIndex, itemIndex, outputIndex, false), setCurrentEditCopy(outputItem.answer)}} shape="round">
                                     {isSaveChanges && outputItem.input_params.qid === isEditQid ?
                                       <IonIcon className='animate-spin' slot="icon-only" icon={refreshOutline}></IonIcon>
                                     :
@@ -1024,144 +1326,134 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
 
               {tabItem.outputs.length !== 0 ?
                 <>
-                  {tabItem.outputs.map((outputItem:any, outputIndex:number) => (
-                    <div onClick={() => selectCopyQid(tabIndex, null, outputIndex, outputItem)} className='shadow-md rounded-md p-2 mb-1.5 relative'>
-                      {/* Show the output copy */}
-                      {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === null && editVisibility.outputIndex === outputIndex ?
-                        <></>
-                        :
-                        <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} children={outputItem.answer}/>
-                      }
-                      
-                      {/* Edit answer for each output */}
-                      {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === null && editVisibility.outputIndex === outputIndex &&
-                        <>
-                          {/* <IonTextarea
-                            ref={textareaRef}
-                            onMouseUp={handleSelection}
-                            onClick={handleWordClick}
-                            className='relative editing-box z-0 bottom-textarea rounded-xl text-black'
-                            aria-label="Custom textarea"
-                            placeholder="Write your question."
-                            autoGrow={true}
-                            value={editInputValues[tabIndex][outputIndex] as string}
-                            onIonInput={(event) => handleEditChange(tabIndex,null,outputIndex, event)}
-                          >
-                          </IonTextarea> */}
-                          {editInputValues[tabIndex][outputIndex] && 
-                            <div ref={editorRef} onMouseUp={handleEditorSelection} onClick={handleEditorMouseClick} className='relative'>
-                              <MDXEditor 
-                                ref={mdxEditorRef}
-                                markdown={editInputValues[tabIndex][outputIndex] as string} 
-                                key={editInputValues[tabIndex][outputIndex] as string} 
-                                onChange={handleChangeEditor}
-                                plugins={[headingsPlugin(), listsPlugin(), quotePlugin(), thematicBreakPlugin()]}
-                              />
-                            </div>
-                          }
-                          
-
-                          {/* Backdrop */}
-                          {popoverOpen && (
-                            <>
-                              <div
-                                style={{
-                                  position: "fixed",
-                                  top: 0,
-                                  left: 0,
-                                  width: "100%",
-                                  height: "100%",
-                                  zIndex: 999,
-                                }}
-                                onClick={() => onDismissEditorPopup()} // Close popover on backdrop click
-                              ></div>
-
-                              {/* Custom Popover */}
-                              <div
-                                style={{
-                                  position: "absolute",
-                                  top: `${popoverPosition.top}px`,
-                                  left: `${popoverPosition.left}px`,
-                                  zIndex: 1000,
-                                }}
-                              >
-                                {selectedText !== '' ?
-                                  <>
-                                    <IonButton onClick={() => refineSelectedText('refine', selectedText)} data-tooltip-id='tooltip' data-tooltip-content='Refine' className='text-xs' shape="round">
+                  {tabItem.outputs.map((outputItem:any, outputIndex:number) => {
+                    const containerRef = React.createRef<HTMLDivElement>();
+                    const boxIndex = tabIndex * 10 + outputIndex;
+                    return (
+                      <div key={boxIndex} onClick={() => selectCopyQid(tabIndex, null, outputIndex, outputItem)} className='shadow-md rounded-md p-2 mb-1.5 relative'>
+                        {/* Show the output copy */}
+                        {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === null && editVisibility.outputIndex === outputIndex ?
+                          <></>
+                          :
+                          <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} children={outputItem.answer}/>
+                        }
+                        
+                        {/* Edit answer for each output */}
+                        {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === null && editVisibility.outputIndex === outputIndex &&
+                          <>
+                            {editInputValues[tabIndex][outputIndex] && 
+                              <>
+                                <div className='relative'>
+                                  {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === null && editVisibility.outputIndex === outputIndex && editVisibility.isEdit === false ?
+                                    <div
+                                      key={outputIndex}
+                                      ref={(el) => (containerRefs.current[outputIndex] = el!)}
+                                      onMouseUp={(e) => handleMouseUp(e, tabIndex, null, outputIndex)}
+                                      onClick={(e) => handleMouseClick(e, tabIndex, null, outputIndex)}
+                                      dangerouslySetInnerHTML={{
+                                        __html: marked(outputItem.answer) as string
+                                      }}
+                                    >
+                                      {/* <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} children={outputItem.answer}/> */}
+                                    </div>
+                                  :
+                                    <MDXEditor 
+                                      ref={mdxEditorRef}
+                                      markdown={editInputValues[tabIndex][outputIndex] as string} 
+                                      key={editInputValues[tabIndex][outputIndex] as string} 
+                                      onChange={handleChangeEditor}
+                                      plugins={[headingsPlugin(), listsPlugin(), quotePlugin(), thematicBreakPlugin(), markdownShortcutPlugin()]}
+                                    />
+                                  }
+                                  <div className='editingIcons'>
+                                    {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === null && editVisibility.outputIndex === outputIndex && editVisibility.isEdit === false ?
+                                      <IonButton data-tooltip-id='tooltip' data-tooltip-content='Edit answer' className='text-xs' onClick={() => {handleEditAnswer(tabIndex, null, outputIndex), setCurrentEditCopy(outputItem.answer)}} shape="round">
+                                        {isSaveChanges && outputItem.input_params.qid === isEditQid ?
+                                          <IonIcon className='animate-spin' slot="icon-only" icon={closeCircleOutline}></IonIcon>
+                                        :
+                                          <IonIcon slot="icon-only" icon={createOutline}></IonIcon>
+                                        }
+                                      </IonButton>
+                                    :
+                                      <IonButton data-tooltip-id='tooltip' data-tooltip-content='Discard' className='text-xs' onClick={() => {handleEditAnswer(tabIndex, null, outputIndex), discardAnswerChange()}} shape="round">
+                                        <IonIcon slot="icon-only" icon={closeCircleOutline}></IonIcon>
+                                      </IonButton>
+                                    }
+                                    <IonButton disabled={selectedText === '' || selectedText === null} onClick={() => refineSelectedText('refine', selectedText)} data-tooltip-id='tooltip' data-tooltip-content='Refine' className='text-xs' shape="round">
                                       <IonIcon slot="icon-only" icon={chatbubblesOutline}></IonIcon>
                                     </IonButton>
-                                    <IonButton onClick={() => refineSelectedText('regenarate', selectedText)} data-tooltip-id='tooltip' data-tooltip-content='Regenerate' className='text-xs' shape="round">
+                                    <IonButton disabled={selectedText === '' || selectedText === null} onClick={() => refineSelectedText('regenarate', selectedText)} data-tooltip-id='tooltip' data-tooltip-content='Regenerate' className='text-xs' shape="round">
                                       <IonIcon slot="icon-only" icon={refreshOutline}></IonIcon>
                                     </IonButton>
-                                  </>
+                                    <IonButton disabled={selectedText !== '' || selectedText === null} onClick={() => refineSelectedText('insert', clickedText)} data-tooltip-id='tooltip' data-tooltip-content='Generate More' className='text-xs' shape="round">
+                                      <IonIcon slot="icon-only" icon={addOutline}></IonIcon>
+                                    </IonButton>
+                                  </div>
+                                </div>
+                              </>
+                            }
+                          </>
+                        }
+                        
+                        {/* Action buttons for each output */}
+                        <div className='flex items-center justify-between'>
+                          <div>
+                            <div style={{ display: "flex", gap: "5px" }}>
+                              {[1, 2, 3, 4, 5].map((starValue) => (
+                                <IonIcon
+                                  key={starValue}
+                                  icon={
+                                    starValue <=
+                                    (hoveredRating && hoveredRating.qid === outputItem.input_params.qid
+                                      ? hoveredRating.rating ?? 0
+                                      : outputItem.rating ?? 0)
+                                      ? star
+                                      : starOutline
+                                  }
+                                  onMouseEnter={() =>
+                                    setHoveredRating({ qid: outputItem.input_params.qid, rating: starValue })
+                                  }
+                                  onMouseLeave={() => setHoveredRating(null)}
+                                  color="primary"
+                                  onClick={() => handleTotalRatingClick(tabIndex, null, outputIndex, outputItem.input_params.qid, starValue)}
+                                  
+                                  style={{ cursor: "pointer", fontSize: "24px" }}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                          <div >
+                            <IonButton data-tooltip-id='tooltip' data-tooltip-content='Copy text' fill="clear" className='text-xs' onClick={() => copyToClipboard('single', editInputValues[tabIndex][outputIndex] as string)} shape="round">
+                              <IonIcon className='' slot="icon-only" icon={copyOutline}></IonIcon>
+                            </IonButton>
+
+                            {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === null && editVisibility.outputIndex === outputIndex ? 
+                              <>
+                                <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Save answer' className='text-xs' onClick={() => {saveAnswerChange(editorChangedText || editInputValues[tabIndex][outputIndex] as string, outputItem.input_params.qid); handleEditingMode(tabIndex, null, outputIndex, false)}} shape="round">
+                                  <IonIcon className='' slot="icon-only" icon={saveOutline}></IonIcon>
+                                </IonButton>
+
+                                <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Discard' className='text-xs' onClick={() => {handleEditingMode(tabIndex, null, outputIndex, false), discardAnswerChange()}} shape="round">
+                                  <IonIcon className='' slot="icon-only" icon={closeCircleOutline}></IonIcon>
+                                </IonButton>
+                              </>
+                            :
+                              <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Edit answer' className='text-xs' onClick={() => {handleEditingMode(tabIndex, null, outputIndex, false), setCurrentEditCopy(outputItem.answer)}} shape="round">
+                                {isSaveChanges && outputItem.input_params.qid === isEditQid ?
+                                  <IonIcon className='animate-spin' slot="icon-only" icon={refreshOutline}></IonIcon>
                                 :
-                                  <IonButton onClick={() => refineSelectedText('insert', clickedText)} data-tooltip-id='tooltip' data-tooltip-content='Generate More' className='text-xs' shape="round">
-                                    <IonIcon slot="icon-only" icon={addOutline}></IonIcon>
-                                  </IonButton>
+                                  <IonIcon className='' slot="icon-only" icon={createOutline}></IonIcon>
                                 }
-                              </div>
-                            </>
-                          )}
-                        </>
-                      }
-                      {/* Action buttons for each output */}
-                      <div className='flex items-center justify-between'>
-                        <div>
-                          <div style={{ display: "flex", gap: "5px" }}>
-                            {[1, 2, 3, 4, 5].map((starValue) => (
-                              <IonIcon
-                                key={starValue}
-                                icon={
-                                  starValue <=
-                                  (hoveredRating && hoveredRating.qid === outputItem.input_params.qid
-                                    ? hoveredRating.rating ?? 0
-                                    : outputItem.rating ?? 0)
-                                    ? star
-                                    : starOutline
-                                }
-                                onMouseEnter={() =>
-                                  setHoveredRating({ qid: outputItem.input_params.qid, rating: starValue })
-                                }
-                                onMouseLeave={() => setHoveredRating(null)}
-                                color="primary"
-                                onClick={() => handleTotalRatingClick(tabIndex, null, outputIndex, outputItem.input_params.qid, starValue)}
-                                
-                                style={{ cursor: "pointer", fontSize: "24px" }}
-                              />
-                            ))}
+                              </IonButton>
+                            }
+                            <IonButton data-tooltip-id='tooltip' data-tooltip-content='Download as .doc' fill="clear" className='text-xs' onClick={() => exportToDoc('single', outputItem.answer)} shape="round">
+                              <IonIcon className='' slot="icon-only" icon={documentTextOutline}></IonIcon>
+                            </IonButton>
                           </div>
                         </div>
-                        <div >
-                          <IonButton data-tooltip-id='tooltip' data-tooltip-content='Copy text' fill="clear" className='text-xs' onClick={() => copyToClipboard('single', editInputValues[tabIndex][outputIndex] as string)} shape="round">
-                            <IonIcon className='' slot="icon-only" icon={copyOutline}></IonIcon>
-                          </IonButton>
-
-                          {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === null && editVisibility.outputIndex === outputIndex ? 
-                            <>
-                              <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Save answer' className='text-xs' onClick={() => {saveAnswerChange(editorChangedText || editInputValues[tabIndex][outputIndex] as string, outputItem.input_params.qid); editAnswerVisibility(tabIndex, null, outputIndex)}} shape="round">
-                                <IonIcon className='' slot="icon-only" icon={saveOutline}></IonIcon>
-                              </IonButton>
-
-                              <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Discard' className='text-xs' onClick={() => {editAnswerVisibility(tabIndex, null, outputIndex), discardAnswerChange()}} shape="round">
-                                <IonIcon className='' slot="icon-only" icon={closeCircleOutline}></IonIcon>
-                              </IonButton>
-                            </>
-                          :
-                            <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Edit answer' className='text-xs' onClick={() => {editAnswerVisibility(tabIndex, null, outputIndex), setCurrentEditCopy(outputItem.answer)}} shape="round">
-                              {isSaveChanges && outputItem.input_params.qid === isEditQid ?
-                                <IonIcon className='animate-spin' slot="icon-only" icon={refreshOutline}></IonIcon>
-                              :
-                                <IonIcon className='' slot="icon-only" icon={createOutline}></IonIcon>
-                              }
-                            </IonButton>
-                          }
-                          <IonButton data-tooltip-id='tooltip' data-tooltip-content='Download as .doc' fill="clear" className='text-xs' onClick={() => exportToDoc('single', outputItem.answer)} shape="round">
-                            <IonIcon className='' slot="icon-only" icon={documentTextOutline}></IonIcon>
-                          </IonButton>
-                        </div>
                       </div>
-                    </div>
-                  ))}
+                     );
+                  })}
                   
                   {(!tabItem.answer  || tabItem.answer === "") &&
                     <IonSpinner name="dots"></IonSpinner>
