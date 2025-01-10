@@ -260,9 +260,11 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
     if (currentEditCopy) {
       if (isRefineDetails.itemIndex !== '' && isRefineDetails.itemIndex !== null) {
         tabs[isRefineDetails.tabIndex].data[isRefineDetails.itemIndex].outputs[isRefineDetails.outputIndex].answer = currentEditCopy;
+        saveAnswerChange(currentEditCopy, tabs[isRefineDetails.tabIndex].data[isRefineDetails.itemIndex].outputs[isRefineDetails.outputIndex].input_params.qid);
         console.log('tabs@@@@', tabs)
       }else {
         tabs[isRefineDetails.tabIndex].outputs[isRefineDetails.outputIndex].answer = currentEditCopy;
+        saveAnswerChange(currentEditCopy, tabs[isRefineDetails.tabIndex].outputs[isRefineDetails.outputIndex].input_params.qid);
         console.log('tabs####', tabs)
       }
     }
@@ -444,9 +446,10 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
     console.log('result>>>', result);
 
     console.log('handleMouseClick startIndex', startIndex);
+    console.log('word index', Math.round(clickedWord.length/2));
     console.log('clickedWord', clickedWord);
     console.log('wordStart', wordStart);
-    setIsTextIndex(startIndex);
+    setIsTextIndex(startIndex + Math.round(clickedWord.length/2));
     setSelectedText("");
     setHighlightStartIndex(result.startIndex);
     setHighlightEndIndex(result.endIndex); // Reset text selection highlighting
@@ -840,9 +843,10 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
     console.log('isRefineDetails', isRefineDetails);
     console.log('isRefineText',isRefineText);
     console.log('text>>>>>',selecteText);
+    console.log('selectedText>>>>>',selectedText);
     console.log('isRefineType>>>>', isRefineType);
     let refineData:any;
-    if (isRefineType === 'insert') {
+    if (identifier === 'insert') {
       refineData = {
         qid: isRefineDetails.outputItem.input_params.qid,
         action: identifier,
@@ -851,6 +855,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
         question: data
       }
     }else {
+      console.log('regenarate', selecteText);
       refineData = {
         qid: isRefineDetails.outputItem.input_params.qid,
         action: identifier,
@@ -1396,7 +1401,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                                         <IonIcon slot="icon-only" icon={createOutline}></IonIcon>
                                       </IonButton>
                                     :
-                                      <IonButton data-tooltip-id='tooltip' data-tooltip-content='Close editing' className='text-xs' onClick={() => {handleEditAnswer(tabIndex, null, outputIndex), saveAnswerChange(editorChangedText || editInputValues[tabIndex][outputIndex] as string, outputItem.input_params.qid)}} shape="round">
+                                      <IonButton fill='outline' data-tooltip-id='tooltip' data-tooltip-content='Close editing' className='text-xs' onClick={() => {handleEditAnswer(tabIndex, null, outputIndex), saveAnswerChange(editorChangedText || editInputValues[tabIndex][outputIndex] as string, outputItem.input_params.qid)}} shape="round">
                                         <IonIcon slot="icon-only" icon={createOutline}></IonIcon>
                                       </IonButton>
                                     }
