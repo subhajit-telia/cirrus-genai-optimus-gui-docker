@@ -835,11 +835,11 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
   /* refine Selected Text end */
 
   /* --------refine Selected copy start-------- */
-  const submitRefineQuestion = (data:any, identifier:any, selectedText:any) => {
+  const submitRefineQuestion = (data:any, identifier:any, selecteText:any) => {
     console.log('submitRefineQuestion', data);
     console.log('isRefineDetails', isRefineDetails);
     console.log('isRefineText',isRefineText);
-    console.log('text>>>>>',selectedText);
+    console.log('text>>>>>',selecteText);
     console.log('isRefineType>>>>', isRefineType);
     let refineData:any;
     if (isRefineType === 'insert') {
@@ -854,7 +854,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
       refineData = {
         qid: isRefineDetails.outputItem.input_params.qid,
         action: identifier,
-        text: selectedText,
+        text: selecteText || selectedText,
         text_index: isTextIndex,
         question: data
       }
