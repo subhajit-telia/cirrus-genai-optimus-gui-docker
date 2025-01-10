@@ -40,6 +40,9 @@ h1, h2, h3, h4, h5, h6 {
     padding: 0px !important;
 }
 
-.highlighted {
+.highlighted, .new_content {
     background-color: yellow;
-  }
+}
+.editing-area {
+    outline: none;
+}
