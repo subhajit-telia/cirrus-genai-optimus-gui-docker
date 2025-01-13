@@ -449,6 +449,54 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
     console.log('word index', Math.round(clickedWord.length/2));
     console.log('clickedWord', clickedWord);
     console.log('wordStart', wordStart);
+    if (selection && selection.rangeCount > 0) {
+      const range = selection.getRangeAt(0);
+      const parentElement = range.startContainer.parentElement;
+  
+      if (parentElement) {
+        const textContent = parentElement.textContent || "";
+        const cursorIndex = range.startOffset;
+  
+        // Handle multiline text with \n
+        const lines = textContent.split("\n");
+  
+        let totalChars = 0;
+        let lineIndex = 0;
+  
+        // Identify the current line based on the cursor index
+        for (let i = 0; i < lines.length; i++) {
+          if (totalChars + lines[i].length >= cursorIndex) {
+            lineIndex = i;
+            break;
+          }
+          totalChars += lines[i].length + 1; // +1 for \n
+        }
+  
+        const relativeCursorIndex = cursorIndex - totalChars;
+  
+        // Get the current line's text
+        const currentLine = lines[lineIndex];
+  
+        // Extract specific characters around the click
+        const beforeText = currentLine.slice(
+          Math.max(0, relativeCursorIndex - 20),
+          relativeCursorIndex
+        );
+        const afterText = currentLine.slice(
+          relativeCursorIndex,
+          relativeCursorIndex + 20
+        );
+  
+        const surroundingText = `${beforeText}${afterText}`;
+  
+        console.log("beforeText Text:", beforeText);
+        console.log("afterText Text:", afterText);
+        setClickedText(afterText);
+        console.log("Clicked Text:", surroundingText);
+        console.log("Clicked Line:", currentLine);
+        console.log("Relative Cursor Index:", relativeCursorIndex);
+      }
+    }
     setIsTextIndex(startIndex + Math.round(clickedWord.length/2));
     setSelectedText("");
     setHighlightStartIndex(result.startIndex);
@@ -850,7 +898,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
       refineData = {
         qid: isRefineDetails.outputItem.input_params.qid,
         action: identifier,
-        text: '',
+        text: clickedText,
         text_index: isTextIndex,
         question: data
       }
@@ -1178,7 +1226,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                                             <IonIcon slot="icon-only" icon={createOutline}></IonIcon>
                                           </IonButton>
                                         :
-                                          <IonButton data-tooltip-id='tooltip' data-tooltip-content='Close editing' className='text-xs' onClick={() => {handleEditAnswer(tabIndex, itemIndex, outputIndex), saveAnswerChange(editorChangedText || editInputValues[tabIndex][itemIndex][outputIndex], outputItem.input_params.qid)}} shape="round">
+                                          <IonButton fill='outline' data-tooltip-id='tooltip' data-tooltip-content='Close editing' className='text-xs' onClick={() => {handleEditAnswer(tabIndex, itemIndex, outputIndex), saveAnswerChange(editorChangedText || editInputValues[tabIndex][itemIndex][outputIndex], outputItem.input_params.qid)}} shape="round">
                                             <IonIcon slot="icon-only" icon={createOutline}></IonIcon>
                                           </IonButton>
                                         }
