@@ -487,6 +487,9 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
           relativeCursorIndex + 20
         );
 
+        console.log('long index', fullString.length);
+        console.log('short index', (container.textContent || "".replace(/\n/g, ' ')).length);
+        
         if (afterText.length < 20) {
           const textContent2 = container.textContent || "";
           const noNewlineContent = textContent2.replace(/\n/g, ' ');
@@ -499,7 +502,12 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
           setClickedText(secondAfterText);
         }else {
           console.log('afterText', afterText);
-          setClickedText(afterText);
+          if (result) {
+            setClickedText(afterText);
+          }else {
+            setClickedText('');
+          }
+          
         }
       }
     }
