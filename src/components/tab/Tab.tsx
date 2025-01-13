@@ -64,13 +64,6 @@ interface FeedbackBox {
   comment: string
 }
 
-const stripMarkdown = (markdown: string) => {
-  const html = marked(markdown);
-  const tempDiv:any = document.createElement("div");
-  tempDiv.innerHTML = html;
-  return tempDiv.innerText;
-};
-
 const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, genarateRefineCopy }) => {
   const [activeTab, setActiveTab] = useState(tabs[0].segment_id); // Set the first tab as active initially
   
@@ -91,30 +84,17 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
 
   const [hoveredRating, setHoveredRating] = useState<{ qid: string; rating: number | null } | null>(null);
 
-  const textareaRef = useRef<HTMLIonTextareaElement>(null);
-
   const [isShowError, setIsShowError] = useState(false);
   const [isErrorMsg, setIsErrorMsg] = useState('');
 
   const mdxEditorRef = React.useRef<MDXEditorMethods>(null)
 
-  const [popoverOpen, setPopoverOpen] = useState(false);
-  const [popoverPosition, setPopoverPosition] = useState({ top: 0, left: 0 });
   const [selectedText, setSelectedText] = useState<string | null>(null);
   const [clickedText, setClickedText] = useState("");
   const [editorChangedText, setEditorChangedText] = useState('');
-  const editorRef = useRef<HTMLDivElement | null>(null);
   const [currentEditCopy, setCurrentEditCopy] = useState("");
-  const [abc, setAbc] = useState("");
-
-
-  const [position, setPosition] = useState<Position | null>(null);
-  const [activeBox, setActiveBox] = useState<number | null>(null);
 
   const containerRefs = useRef<HTMLDivElement[]>([]);
-
-  const [highlightStartIndex, setHighlightStartIndex] = useState<number | null>(null);
-  const [highlightEndIndex, setHighlightEndIndex] = useState<number | null>(null);
 
   const changeTab = (segment_id: string) => {
     setActiveTab(segment_id);
@@ -216,18 +196,6 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
       element.setAttribute('spellcheck', 'false');
     });
   };
-
-  const handleEditChange = (tabIndex:any, itemIndex:any, outputIndex:any, event:any) => {
-    const newValues = [...editInputValues];
-    if (Array.isArray(newValues[tabIndex])) {
-      if (Array.isArray(newValues[tabIndex][itemIndex])) {
-        newValues[tabIndex][itemIndex][outputIndex] = event.target.value;
-      } else {
-        newValues[tabIndex][outputIndex] = event.target.value;
-      }
-    }
-    setEditInputValues(newValues);
-  };
   /* Edit answer end */
 
   /* ----------Disabled key press on editing mode start---------- */
@@ -324,38 +292,6 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
     };
   };
 
-  const highlightHTMLText = (
-    html: string,
-    start: number | null,
-    end: number | null
-  ) => {
-    if (start === null || end === null) return html;
-
-    
-    const preText = html.slice(0, start);
-    const highlightedText = html.slice(start, end);
-    const postText = html.slice(end);
-
-    // console.log('preText:', preText);
-    // console.log('highlightedText:', highlightedText);
-    // console.log('postText:', postText);
-
-    // return `${preText}<span class="highlighted">${highlightedText}</span>${postText}`;
-    // Process highlighted text with proper handling for newlines
-      const highlightedWithSpans = highlightedText
-      .split("\n")
-      .map((line) => {
-        if (line.trim().startsWith("#")) {
-          return `<h1 class="highlighted">${line.slice(1).trim()}</h1>`;
-        }
-        return `<span class="highlighted">${line}</span>`;
-      })
-      .join(""); // No additional line breaks in the output
-
-    // Return the full HTML with processed parts
-    return `${preText}${highlightedWithSpans}${postText}`;
-  };
-
   const handleMouseUp = (event: React.MouseEvent, tabIndex:number, itemIndex:any, outputIndex:number) => {
     const container = containerRefs.current[outputIndex];
     if (!container) return;
@@ -395,8 +331,6 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
           console.log("End >>:", result.endIndex);
           console.log("match >>:", result.match);
           setSelectedText(result.match);
-          setHighlightStartIndex(result.startIndex);
-          setHighlightEndIndex(result.endIndex);
           setIsTextIndex(result.startIndex);
         }else {
           setSelectedText(text);
@@ -521,8 +455,6 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
     console.log('index>>', startIndex + Math.round(clickedWord.length/2))
     
     setSelectedText("");
-    setHighlightStartIndex(result.startIndex);
-    setHighlightEndIndex(result.endIndex); // Reset text selection highlighting
   };
 
   const findMatch = (
@@ -557,242 +489,6 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
     return bestMatch;
   };
   // /////////
-
-  const onDismissEditorPopup = () => {
-    setPopoverOpen(false);
-    setSelectedText('');
-    setClickedText('');
-  };
-
-  // Handle text selection
-  const handleEditorSelection = (event: React.MouseEvent<HTMLDivElement>) => {
-    const selection = window.getSelection();
-    if (selection && selection.toString().trim()) {
-      const selected = selection.toString();
-
-      // Get the position for the popover
-      const range = selection.getRangeAt(0);
-      const rects = range.getClientRects();
-
-       // Get the start index of the selection
-       const startIndex = range.startOffset;
-       const endIndex = range.endOffset;
-
-      if (rects.length > 0) {
-        const rect = rects[0]; // First bounding rect
-        const top = rect.top + window.scrollY - 35; // Adjust for the button (above selection)
-        const left = rect.left + window.scrollX; // Adjust horizontal position
-  
-        setSelectedText(selection.toString());
-        setPopoverPosition({ top, left });
-      }
-
-      setSelectedText(selected);
-      setPopoverOpen(true);
-    } else {
-      setPopoverOpen(false);
-    }
-  };
-
-  // Handle mouse click
-  const handleEditorMouseClick = (event: React.MouseEvent<HTMLDivElement>) => {
-    const selection = window.getSelection();
-
-    console.log('selection', selection);
-    console.log('event', event);
-    if (!selection || !selection.toString().trim()) {
-      const range = document.caretRangeFromPoint(event.clientX, event.clientY);
-
-      setPopoverPosition({
-        top: event.clientY + window.scrollY,
-        left: event.clientX + window.scrollX,
-      });
-
-      setClickedText("");
-      setPopoverOpen(true);
-    }
-
-    if (selection && selection.rangeCount > 0) {
-      const range2 = selection.getRangeAt(0); // Get the selected range
-      const offset = range2.startOffset; // The index of the clicked text
-
-      
-      console.log('setIsTextIndex>>', offset);
-      console.log('range2>>', range2);
-      console.log('selection>>', selection.toString());
-      const selectedLine = selection.toString()
-      const selectionlines = selectedLine.split("\n").map((line:string) => line.trim());
-      console.log('selectionlines', selectionlines);
-      console.log('isRefineDetails', isRefineDetails);
-
-
-      // Split content into lines
-      const actualContent = isRefineDetails.outputItem.answer;
-      console.log('actualContent', actualContent);
-
-      const result = matchAndAddSpecialCharacters(selectedLine, abc);
-      console.log('result@@@@', result.enhancedSentence);
-
-      const currentLine:any = range2.commonAncestorContainer;
-      const lines = actualContent.split("\n").map((line:string) => line.trim());
-      console.log('lines', lines);
-      console.log('currentLine', currentLine);
-      const normalizedClickedLine = (currentLine.innerText || currentLine.wholeText).trim();
-      // console.log('normalizedClickedLine', normalizedClickedLine);
-      const matchingLine = findMatchingSentence(lines, normalizedClickedLine) || normalizedClickedLine;
-      console.log('matchingLine', matchingLine);
-      // Find the index of the clicked line in the markdown content
-      // const lineIndex = lines.findIndex((line:string) => line.replace(/\*\*(.*?)\*\*/g, "$1") == normalizedClickedLine.replace(/\*\*(.*?)\*\*/g, "$1"));
-      // console.log('lineIndex', lineIndex);
-
-      let lineIndexed:number = -1;
-      for (let index = 0; index < lines.length; index++) {
-        const line: string = lines[index];
-        
-        if (line === matchingLine) {
-          lineIndexed = index;
-          break; // Stop the loop if an exact match is found
-        } else {
-          const cleanedText1 = line.replace(/\*\*(.*?)\*\*/g, "$1");
-          const cleanedText2 = matchingLine.replace(/\*\*(.*?)\*\*/g, "$1");
-      
-          const similarityScore = stringSimilarity.compareTwoStrings(
-            cleanedText1,
-            cleanedText2
-          );
-      
-          console.log("similarityScore", similarityScore);
-          if (similarityScore > 0.8) {
-            console.log("lineIndexed", index);
-            lineIndexed = index;
-            break; // Stop the loop if a similar match is found
-          }else{
-            const similarityScore2 = stringSimilarity.compareTwoStrings(
-              line,
-              selectionlines[0]
-            );
-
-
-            if (similarityScore2 > 0.8) {
-              console.log("similarityScore2", similarityScore2);
-              console.log("line", line);
-              console.log("selectionlines[0]", selectionlines[0]);
-
-              console.log("lineIndexed", index);
-              lineIndexed = index;
-            }
-
-            
-          }
-        }
-      }
-      console.log('lineIndexed<<<<>>>>', lineIndexed);
-      if (lineIndexed === -1) {
-        console.error("Clicked line not found. Check formatting or spaces.");
-        setIsShowError(true);
-        setIsErrorMsg('Clicked line not found. Please select again!');
-        return;
-      }
-
-      // Calculate the global index
-      let cumulativeLength = 0;
-
-      // Sum the lengths of all previous lines (including line breaks)
-      for (let i = 0; i < lineIndexed; i++) {
-        cumulativeLength += lines[i].length + 1; // Add 1 for '\n'
-
-        console.log('cumulativeLength$$>>', cumulativeLength);
-        console.log('lines[i]$$>>', lines[i]);
-      }
-
-      // Add the relative index (clicked position within the line)
-      const globalIndex = cumulativeLength + offset;
-      setIsTextIndex(globalIndex);
-      console.log('globalIndex', globalIndex);
-    }
-  };
-
-  function matchAndAddSpecialCharacters(sentence1:string, sentence2:string) {   
-    // Remove special characters and normalize sentences   
-    const normalize = (str:any) => str.replace(/[^a-zA-Z0-9\s]/g, "").toLowerCase();   
-    const normalizedSentence1 = normalize(sentence1);   
-    const normalizedSentence2 = normalize(sentence2);   // Check if the first sentence exists in the second   
-    if (normalizedSentence2.includes(normalizedSentence1)) {     
-      const words1 = sentence1.split(/\s+/); // Split first sentence into words     
-      const words2 = sentence2.split(/\s+/); // Split second sentence into words     // Add special characters to the first sentence     
-      const enhancedSentence = words1       
-      .map((word) => {         // Find the matching word in the second sentence         
-      const matchingWord = words2.find((w) => normalize(w) === word.toLowerCase());         
-      return matchingWord || word; // Use the original word if no match found       
-      }).join(" ");     
-      return { match: true, enhancedSentence };   
-    }   return { match: false, enhancedSentence: null }; 
-  }
-
-  const extractMarkdown = (markDownText: string, selectedText: string) => {
-    const lines = markDownText.split("\n");
-
-    // Extract the section name from the selected text (e.g., "headline", "copy_block_1")
-    const selectedKey = selectedText.split(":")[0].trim();
-
-    let result = '';
-    let isMatching = false;
-
-    // Iterate through each line of the markdown content
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i].trim();
-
-      // Check if the line matches the selected section (e.g., # headline)
-      if (line.startsWith(`# ${selectedKey}:`)) {
-        isMatching = true;
-        result += line + "\n";  // Add the header to the result
-      } else if (isMatching) {
-        // Add the content lines after the header
-        result += line + "\n";
-
-        // Check if we have reached the next section (another header)
-        if (line.startsWith("# ") && !line.startsWith(`# ${selectedKey}:`)) {
-          break; // Stop adding content when a new header is found
-        }
-      }
-    }
-
-    return result.trim(); // Remove any trailing spaces and return the result
-  };
-
-  const findMatchingSentence = (arr: string[], textLine: string): string | null => {
-    // Split the textLine into words
-    const textWords = textLine.split(' ');
-
-    const words = textLine.trim().split(/\s+/);
-
-    // Count the number of words in the array
-    const wordCount = words.length;
-  
-    // Generate 6-word chunks from textLine
-    const chunks = [];
-    for (let i = 0; i <= textWords.length - wordCount; i++) {
-      const chunk = textWords.slice(i, i + wordCount).join(' ');
-      chunks.push(chunk);
-    }
-  
-    // Iterate over the array and check for each chunk
-    for (let i = 0; i < arr.length; i++) {
-      const line = arr[i];
-  
-      // Check if any chunk from textLine exists in the current line
-      for (const chunk of chunks) {
-        if (line.includes(chunk)) {
-          return line; // Return the full line if a match is found
-        }
-      }
-    }
-  
-    // Return null if no matching sentence is found
-    return null;
-  };
-
-  // llllllllllllllllllllllllllllll
   
 
   const handleChangeEditor = (updatedMarkdown: string) => {
@@ -800,74 +496,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
     document.querySelectorAll('._contentEditable_uazmk_379').forEach(element => {
       element.setAttribute('spellcheck', 'false');
     });
-    setAbc(updatedMarkdown);
     setEditorChangedText(updatedMarkdown);
-  }
-
-  // Handle text selection and show popover
-  const handleSelection = (event: React.MouseEvent) => {
-    setClickedText('');
-    const selection = window.getSelection();
-    if (selection && selection.toString().trim()) {
-      const selectedText = selection.toString().trim();
-      console.log('selectedText', selectedText);
-      // Show popover at the selected text's position
-      setSelectedText(selectedText);
-      setPopoverPosition({
-        top: event.clientY + window.scrollY - 160, // Include scrolling offset
-        left: event.clientX + window.scrollX - 200,
-      });
-      // setPopoverEvent(event.nativeEvent);
-      setPopoverOpen(true);
-      console.log('clientX', event.nativeEvent.clientX, 'clientY', event.nativeEvent.clientY);
-    }
-  };
-
-  // Handle word click and copy the word to clipboard
-  const handleWordClick = (event: React.MouseEvent) => {
-    const textareaElement = textareaRef.current?.getInputElement();
-    textareaElement?.then((element) => {
-      if (element) {
-        const caretPosition = element.selectionStart; // Get caret position
-        const word = getWordAtCaretPosition(element.value, caretPosition);
-        console.log('caretPosition', caretPosition);
-        setIsTextIndex(caretPosition);
-        if (word) {
-          navigator.clipboard.writeText(word).then(() => {
-            console.log(`Copied: ${word}`);
-          });
-          setClickedText(word)
-          setPopoverPosition({
-            top: event.clientY + window.scrollY - 160, // Include scrolling offset
-            left: event.clientX + window.scrollX - 200,
-          });
-          // setPopoverEvent(event.nativeEvent);
-          setPopoverOpen(true);
-          console.log('clientX', event.nativeEvent.clientX, 'clientY', event.nativeEvent.clientY);
-
-        }
-      }
-    });
-
-    // Close popover if open
-    if (popoverOpen) {
-      // setPopoverOpen(false);
-    }
-  };
-
-  // Get the word at the caret position
-  const getWordAtCaretPosition = (text: string, position: number) => {
-    const leftPart = text.slice(0, position).split(/\s+/).pop();
-    const rightPart = text.slice(position).split(/\s+/).shift();
-
-    return [leftPart, rightPart].filter(Boolean).join(""); // Join left and right parts to form the word
-  };
-
-  // onDismissPopup start
-  const onDismissPopup = () => {
-    setPopoverOpen(false);
-    setSelectedText('');
-    setClickedText('')
   }
   
   /* ----------select Copy Qid start---------- */
@@ -887,12 +516,10 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
   /* --------refine Selected Text start-------- */
   const refineSelectedText = (_identifier:any, _text:any) => {
     console.log('_text', _text);
-    setPopoverOpen(false);
     // setIsRefineText(_text);
     setIsRefineType(_identifier);
     console.log('selectedText', selectedText);
     console.log('clickedText', clickedText);
-    // setPosition(null);
     if (_identifier === 'refine') {
       setIsRefineBox(true);
     }else if (_identifier === 'regenarate'){
@@ -937,7 +564,6 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
     console.log('refineData', refineData);
     genarateRefineCopy(refineData);
     // setIsRefineBox(false);
-    // setPosition(null);
     // setSelectedText('');
 
     console.log('isRefineDetails', isRefineDetails);
