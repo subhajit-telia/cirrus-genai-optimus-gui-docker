@@ -443,10 +443,10 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
 
     const result:any = findMatch(fullString, clickedWord);
 
-    console.log('result>>>', result);
+    // console.log('result>>>', result);
 
-    console.log('handleMouseClick startIndex', startIndex);
-    console.log('word index', Math.round(clickedWord.length/2));
+    // console.log('handleMouseClick startIndex', startIndex);
+    // console.log('word index', Math.round(clickedWord.length/2));
     console.log('clickedWord', clickedWord);
     console.log('wordStart', wordStart);
     if (selection && selection.rangeCount > 0) {
@@ -486,18 +486,32 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
           relativeCursorIndex,
           relativeCursorIndex + 20
         );
-  
-        const surroundingText = `${beforeText}${afterText}`;
-  
-        console.log("beforeText Text:", beforeText);
-        console.log("afterText Text:", afterText);
-        setClickedText(afterText);
-        console.log("Clicked Text:", surroundingText);
-        console.log("Clicked Line:", currentLine);
-        console.log("Relative Cursor Index:", relativeCursorIndex);
+
+        if (afterText.length < 20) {
+          const textContent2 = container.textContent || "";
+          const noNewlineContent = textContent2.replace(/\n/g, ' ');
+
+          const firstIndex = noNewlineContent.indexOf(beforeText); // Find index of 'textB' in 'textA'
+          if (firstIndex === -1) return ''; // Return empty string if 'textB' is not found
+          const startPos = firstIndex + beforeText.length; // Get the index after 'textB'
+          const secondAfterText = noNewlineContent.slice(startPos, startPos + 20);
+          console.log('secondAfterText', secondAfterText);
+          setClickedText(secondAfterText);
+        }else {
+          console.log('afterText', afterText);
+          setClickedText(afterText);
+        }
       }
     }
-    setIsTextIndex(startIndex + Math.round(clickedWord.length/2));
+
+    if ((startIndex + Math.round(clickedWord.length/2)) > wordStart) {
+      setIsTextIndex(startIndex + Math.round(clickedWord.length/2));
+    }else {
+      setIsTextIndex(wordStart);
+    }
+
+    console.log('index>>', startIndex + Math.round(clickedWord.length/2))
+    
     setSelectedText("");
     setHighlightStartIndex(result.startIndex);
     setHighlightEndIndex(result.endIndex); // Reset text selection highlighting
