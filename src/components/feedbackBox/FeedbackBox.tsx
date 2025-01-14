@@ -87,7 +87,7 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({
         </IonToolbar>
       </IonHeader>
       <div>
-        <h2 className="my-2.5 px-4 text-center">How well does this copy align with the requirements?</h2>
+        <h2 className="my-2.5 px-4 text-center">How well does this copy align with the requirements? Refine your rating here.</h2>
         <IonItem lines="none">
           <IonLabel className="!flex items-center flex-row-reverse justify-end">Format <IonIcon id="format-trigger" className="block ml-1.5 cursor-pointer" slot="icon-only" icon={informationCircleOutline}></IonIcon></IonLabel>
           <IonPopover className="rating-popover" size="auto" trigger="format-trigger" triggerAction="hover">
