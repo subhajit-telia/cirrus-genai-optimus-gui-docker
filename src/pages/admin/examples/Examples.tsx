@@ -682,7 +682,7 @@ const Examples: React.FC = () => {
                         Filter
                       </IonButton>
                       <IonButton onClick={() => { reset(); getExamplesData() }} className='text-xs' size='small' type='reset' fill='outline' shape="round">
-                        Cancel
+                        Reset
                       </IonButton>
                     </IonCol>
                   </IonRow>
