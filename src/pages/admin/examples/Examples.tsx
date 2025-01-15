@@ -186,6 +186,7 @@ const Examples: React.FC = () => {
     console.log('sorted', sorted);
     setExampleList(sorted);
     setIsAscending(!isAscending); // Toggle the sorting direction
+    console.log('toggleSort:', filterExampleList);
   };
   /* Sorting end */
 
@@ -355,6 +356,7 @@ const Examples: React.FC = () => {
     setIsOpenModal(true);
     setIsEdit(true);
     setTargetIndex(_index);
+    console.log('toggleSort:', filterExampleList);
   }
   /* handle edit end */
 
@@ -426,7 +428,6 @@ const Examples: React.FC = () => {
   const handleFormSubmit = async (data: any) => {
     console.log('handleFormSubmit', data);
 
-
     let payLoad: any = {};
     payLoad.example = data.example;
     payLoad.example_type = data.example_type;
@@ -456,12 +457,16 @@ const Examples: React.FC = () => {
 
 
     let prevExampleList = filterExampleList;
-    let index: any = targetIndex;
+    let index: any = getExampleIdIndices(filterExampleList, payLoad.example_id);
 
     console.log('finalData', payLoad);
+    console.log('targetIndex', index[0]);
+    console.log('index@@', );
     if (isEdit === true) {
-      prevExampleList.splice(index, 1, payLoad);
+      console.log('edit')
+      prevExampleList.splice(index[0], 1, payLoad);
     } else {
+      console.log('no edit')
       payLoad.example_id = `ex${filterExampleList.length}`;
       prevExampleList = [...filterExampleList, payLoad];
     }
@@ -471,12 +476,37 @@ const Examples: React.FC = () => {
 
     handleExamplesUpdate(prevExampleList);
   }
+
+  const getExampleIdIndices = (arr: ExampleAddModel[], id: string): number[] => {
+    return arr
+      .map((item, index) => item.example_id === id ? index : -1)  // Return index if id matches
+      .filter(index => index !== -1);  // Remove -1 values (no match)
+  };
+
+  const getDuplicateExampleIds = (arr: ExampleAddModel[]): string[] => {
+    const exampleIds = arr.map(item => item.example_id);
+    const duplicates: string[] = [];
+    const seen: Set<string> = new Set();
+
+    exampleIds.forEach(id => {
+      if (seen.has(id) && !duplicates.includes(id)) {
+        duplicates.push(id); // Add duplicate only once
+      } else {
+        seen.add(id);
+      }
+    });
+
+    return duplicates;
+  };
+
   const handleExamplesUpdate = async (allExample: ExampleAddModel[]) => {
     setLoading(true);
     let formUrl = apiUrl + '/resource/put';
     console.log('payload', allExample);
 
     let updatedExamples = allExample;
+
+    console.log('Duplicates>>>>', getDuplicateExampleIds(allExample));
 
     let finalPayload = {
       table: "examples",
