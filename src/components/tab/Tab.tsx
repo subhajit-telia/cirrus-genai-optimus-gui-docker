@@ -701,7 +701,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
 
     let data:any = {
       qid: qid,
-      rating: rating,
+      rate: rating,
     };
     if (itemIndex !== '' && itemIndex !== null) {
       tabs[tabIndex].data[itemIndex].outputs[outputIndex].rating = rating;
@@ -755,7 +755,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
 
     let data:any = {
       qid: updatedItem.qid,
-      rating: updatedItem.rating,
+      rate: updatedItem.rating,
       format_rate: updatedItem.rating,
       integrity_rate: updatedItem.rating,
       communication_rate: updatedItem.rating,
