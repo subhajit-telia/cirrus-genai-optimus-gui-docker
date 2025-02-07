@@ -95,6 +95,9 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
   const [currentEditCopy, setCurrentEditCopy] = useState("");
   const [currentEditingCopy, setCurrentEditingCopy] = useState("");
 
+  const [highlightStartIndex, setHighlightStartIndex] = useState<number | null>(null);
+  const [highlightEndIndex, setHighlightEndIndex] = useState<number | null>(null);
+
   const containerRefs = useRef<HTMLDivElement[]>([]);
   const [charMaps, setCharMaps] = useState<{ renderedIndex: number; markdownIndex: number }[][]>([]);
   const changeTab = (segment_id: string) => {
@@ -277,7 +280,10 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
       // console.log('currentEditAnswer', currentEditAnswer);
       setCurrentEditingCopy(currentEditAnswer);
     }
-    
+
+    setHighlightStartIndex(null);
+    setHighlightEndIndex(null);
+    setIsRefineBox(false);
   }, [tabs]);
 
   // //////////
@@ -383,6 +389,8 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
     setIsRefineText(text);
     setSelectedText(selectedMarkdownText);
     setIsTextIndex(markdownStartIndex + 1);
+    setHighlightStartIndex(markdownStartIndex + 1);
+    setHighlightEndIndex(markdownEndIndex + 1);
   };
 
   const handleMouseClick = (event: React.MouseEvent, tabIndex:number, itemIndex:any, outputIndex:number) => {
@@ -543,8 +551,32 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
     processAnswer();
   }, [currentEditingCopy]);
   
+  const highlightHTMLText = (html: string, start: number | null, end: number | null) => {
+    if (start === null || end === null) return html;
   
+    let fullString = html.replace(/<span class="new_content">|<\/span>/g, '');
+
+    // If start and end are equal, insert a blinking cursor at that position
+    if (start === end) {
+      return `${fullString.slice(0, start)}<span class="cursor"></span>${fullString.slice(start)}`;
+    }
   
+    const preText = fullString.slice(0, start);
+    const highlightedText = fullString.slice(start, end);
+    const postText = fullString.slice(end);
+  
+    const highlightedWithSpans = highlightedText
+      .split("\n")
+      .map((line) => {
+        if (line.startsWith("#")) {
+          return `# <span class="highlighted">${line.slice(1)}</span>`;
+        }
+        return `<span class="highlighted">${line}</span>`;
+      })
+      .join("\n");
+  
+    return `${preText}${highlightedWithSpans}${postText}`;
+  };
 
   const findMatch = (
     original: string,
@@ -1165,7 +1197,12 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                                       onMouseUp={(e) => handleMouseUp(e, tabIndex, null, outputIndex)}
                                       onClick={(e) => handleMouseClick(e, tabIndex, null, outputIndex)}
                                       dangerouslySetInnerHTML={{
-                                        __html: marked(outputItem.answer) as string
+                                        __html: marked(
+                                          highlightHTMLText(
+                                            outputItem.answer,
+                                            highlightStartIndex,
+                                            highlightEndIndex
+                                          )) as string
                                       }}
                                     >
                                       {/* <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} children={outputItem.answer}/> */}
