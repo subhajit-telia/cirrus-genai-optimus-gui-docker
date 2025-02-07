@@ -40,9 +40,28 @@ h1, h2, h3, h4, h5, h6 {
     padding: 0px !important;
 }
 
-.highlighted, .new_content {
-    background-color: yellow;
+.new_content {
+    background-color: #ffff0073;
+    animation: blink 1s infinite;
+}
+
+.highlighted {
+    background-color: #990ae34a;
 }
 .editing-area {
     outline: none;
 }
+
+.cursor {
+    display: inline-block;
+    width: 4px;
+    height: 20px;
+    background-color: var(--color-primary);
+    animation: blink 1s infinite;
+}
+
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+}
+  
