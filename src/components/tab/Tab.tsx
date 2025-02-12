@@ -270,7 +270,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
     console.log('tabs>><<', tabs);
     setIsSaveChanges(false);
     setIsEditQid('');
-    if (editInputValues[0].length !== 0 && editInputValues[0][0].length !== 0 && editVisibility.outputIndex !== null) {
+    if (editInputValues[0].length !== 0 && editInputValues[0][0].length !== 0 && editVisibility.outputIndex !== null && tabs[0].answer) {
       let currentEditAnswer;
       if (editVisibility.itemIndex !== '' && editVisibility.itemIndex !== null && editVisibility.tabIndex !== null && editVisibility.outputIndex !== null) {
         currentEditAnswer = tabs[editVisibility.tabIndex].data[editVisibility.itemIndex].outputs[editVisibility.outputIndex].answer.replace(/<span class="new_content">|<\/span>/g, '');
@@ -284,6 +284,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
     setHighlightStartIndex(null);
     setHighlightEndIndex(null);
     setIsRefineBox(false);
+    setSelectedText(null);
   }, [tabs]);
 
   // //////////
@@ -354,6 +355,14 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
     const container = containerRefs.current[outputIndex];
     if (!container) return;
 
+    let fullString;
+    if (itemIndex !== '' && itemIndex !== null) {
+      fullString = tabs[tabIndex].data[itemIndex].outputs[outputIndex].answer.replace(/<span class="new_content">|<\/span>/g, '');
+    }else {
+      fullString =tabs[tabIndex].outputs[outputIndex].answer.replace(/<span class="new_content">|<\/span>/g, '');
+    }
+    console.log('fullString>>>>>>>>>>>>>', fullString)
+
     const selection = window.getSelection();
     if (!selection || selection.rangeCount === 0) return;
     const { text, index: exactIndex } = getExactIndexAndText(selection, container);
@@ -363,13 +372,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
     preSelectionRange.setEnd(range.startContainer, range.startOffset);
 
 
-    let fullString;
-    if (itemIndex !== '' && itemIndex !== null) {
-      fullString = tabs[tabIndex].data[itemIndex].outputs[outputIndex].answer.replace(/<span class="new_content">|<\/span>/g, '');
-    }else {
-      fullString =tabs[tabIndex].outputs[outputIndex].answer.replace(/<span class="new_content">|<\/span>/g, '');
-    }
-    console.log('fullString>>>>>>>>>>>>>', fullString)
+    
 
     // Get start and end indexes in the rendered text
     const startIndexRendered = preSelectionRange.toString().length;
@@ -385,6 +388,9 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
     console.log('Start Index in Markdown:', markdownStartIndex);
     console.log('End Index in Markdown:', markdownEndIndex);
     console.log('Selected Markdown Text:', selectedMarkdownText);
+
+    const extractedText = fullString.substring(markdownStartIndex + 1, markdownStartIndex + 30);
+    setClickedText(extractedText);
 
     setIsRefineText(text);
     setSelectedText(selectedMarkdownText);
@@ -558,23 +564,75 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
 
     // If start and end are equal, insert a blinking cursor at that position
     if (start === end) {
-      return `${fullString.slice(0, start)}<span class="cursor"></span>${fullString.slice(start)}`;
+      // Get the character at start index
+      const charAfterStart = html[start] || "";
+
+      // If the character is `#` or `-`, insert a new line before it and place cursor after `#` or `-` with a space
+      if (charAfterStart === "#" || charAfterStart === "-") {
+        return `${html.slice(0, start)}\n${charAfterStart} <span class="cursor"></span>${html.slice(start + 1)}`;
+      }
+
+      return `${html.slice(0, start)}<span class="cursor"></span>${html.slice(start)}`;
     }
   
     const preText = fullString.slice(0, start);
     const highlightedText = fullString.slice(start, end);
     const postText = fullString.slice(end);
-  
+    console.log('highlightHTMLText:', highlightedText);
+    // const highlightedWithSpans = highlightedText
+    //   .split("\n")
+    //   .map((line) => {
+    //     if (line.startsWith("#")) {
+    //       return `# <span class="highlighted">${line.slice(1)}</span>`;
+    //     }
+    //     console.log('line:', line);
+    //     return `<span class="highlighted">${line}</span>`;
+    //   })
+    //   .join("\n");
+
     const highlightedWithSpans = highlightedText
-      .split("\n")
-      .map((line) => {
-        if (line.startsWith("#")) {
-          return `# <span class="highlighted">${line.slice(1)}</span>`;
-        }
-        return `<span class="highlighted">${line}</span>`;
-      })
-      .join("\n");
+    .split("\n\n") // Split paragraphs first
+    .map((paragraph) =>
+      paragraph
+        .split("\n") // Split single newlines within paragraphs
+        .map((line) => {
+          // Handle headers: keep `#` outside
+          if (line.startsWith("#")) {
+            const firstSpace = line.indexOf(" ");
+            if (firstSpace !== -1) {
+              return `# <span class="highlighted">${line.slice(firstSpace + 1)}</span>`;
+            }
+            return line; // If no space after `#`, return as is
+          }
+
+          if (line.startsWith("-")) {
+            const firstSpace = line.indexOf(" ");
+            if (firstSpace !== -1) {
+              return `- <span class="highlighted">${line.slice(firstSpace + 1)}</span>`;
+            }
+            return line; // If no space after `#`, return as is
+          }
+
+          let insideBold = false; // Track bold state
+
+          const formattedLine = line
+            .split(/(\*\*)/) // Split but keep `**`
+            .map((part) => {
+              if (part === "**") {
+                insideBold = !insideBold;
+                return "**"; // Keep `**` outside of `<span>`
+              }
+              return `<span class="highlighted">${part.trim()}</span>`;
+            })
+            .join(""); // Maintain structure
+
+          return formattedLine;
+        })
+        .join("\n") // Preserve single newlines
+    )
+    .join("\n\n"); // Preserve paragraph breaks
   
+    console.log('highlightedWithSpans:', highlightedWithSpans);
     return `${preText}${highlightedWithSpans}${postText}`;
   };
 
@@ -966,7 +1024,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                                       {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === itemIndex && editVisibility.outputIndex === outputIndex && editVisibility.isEdit === false ?
                                         <div
                                           className='editing-area'
-                                          contentEditable
+                                          // contentEditable
                                           spellCheck="false"
                                           onKeyDown={handleKeyPress}
                                           key={outputIndex}
@@ -974,7 +1032,12 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                                           onMouseUp={(e) => handleMouseUp(e, tabIndex, itemIndex, outputIndex)}
                                           onClick={(e) => handleMouseClick(e, tabIndex, itemIndex, outputIndex)}
                                           dangerouslySetInnerHTML={{
-                                            __html: marked(outputItem.answer) as string
+                                            __html: marked(
+                                              highlightHTMLText(
+                                                outputItem.answer,
+                                                highlightStartIndex,
+                                                highlightEndIndex
+                                              )) as string
                                           }}
                                         >
                                           {/* <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} children={outputItem.answer}/> */}
@@ -1189,7 +1252,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                                   {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === null && editVisibility.outputIndex === outputIndex && editVisibility.isEdit === false ?
                                     <div
                                       className='editing-area'
-                                      contentEditable
+                                      // contentEditable
                                       spellCheck="false"
                                       onKeyDown={handleKeyPress}
                                       key={outputIndex}

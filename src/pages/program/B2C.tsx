@@ -701,6 +701,57 @@ const B2C: React.FC = () => {
           });
           setTabs(arrayNoSegment);
         }
+
+        if (responseData.responses[0].answer.includes('class="new_content"')) {
+          console.log('Trueeeeeeeeeeeeeeeeeee');
+          
+          setTimeout(() => {
+            let currentResponse = responseData.responses[0];
+            currentResponse.answer = responseData.responses[0].answer.replace(/<span class="new_content">|<\/span>/g, '');
+            if (arrayTab !== undefined) {
+              arrayTab = arrayTab.map((segment: { segment_id: any; segment_name: any; data: any[] }) => {
+                if (segment.segment_id === currentResponse.input_params.segment_id) {
+                  segment.data = segment.data.map((format: any) => {
+                    if (format.format_id === currentResponse.input_params.format_id) {
+                      let replaceOutput = format.outputs.map((output:innerOutput) => 
+                        output.input_params.qid === data.qid ? currentResponse : output
+                      );
+                      
+                      return {
+                        ...format,
+                        answer: DOMPurify.sanitize(currentResponse.answer),
+                        input_params: currentResponse.input_params,
+                        outputs: replaceOutput
+                      };
+                    }
+                    return format;
+                  });
+                }
+                return segment;
+              });
+              console.log('arrayTab>>>>>>>>>>>>>>>>>>>>>>', arrayTab);
+              setTabs(arrayTab);
+            } else {
+              arrayNoSegment = arrayNoSegment.map((format: { format_id: any; outputs: innerOutput[] }) => {
+                if (format.format_id === currentResponse.input_params.format_id || format.format_id === 'customPrompts') {
+                  let replaceOutput = format.outputs.map((output:innerOutput) => 
+                    output.input_params.qid === data.qid ? currentResponse : output
+                  );
+                  
+                  return {
+                    ...format,
+                    answer: DOMPurify.sanitize(currentResponse.answer.replace(/<span class="new_content">|<\/span>/g, '')),
+                    input_params: currentResponse.input_params,
+                    outputs: replaceOutput
+                  };
+                }
+                return format;
+              });
+              console.log('no arrayTab>>>>>>>>>>>>>>>>>>>>>>', arrayNoSegment);
+              setTabs(arrayNoSegment);
+            }
+          }, 3000);    
+        }
   
         setLoading(false);
         showLoadingIndicator(false);
