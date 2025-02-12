@@ -42,7 +42,18 @@ h1, h2, h3, h4, h5, h6 {
 
 .new_content {
     background-color: #ffff0073;
-    animation: blink 1s infinite;
+    /* animation: changeBackgroundColor 5s forwards; */
+}
+@keyframes changeBackgroundColor {
+    0% {
+      background-color: #ffff0073; /* initial color */
+    }
+    50% {
+      background-color: #ffff0073; /* color at the halfway point */
+    }
+    100% {
+      background-color: transparent; /* reset to the initial color */
+    }
 }
 
 .highlighted {
@@ -54,8 +65,8 @@ h1, h2, h3, h4, h5, h6 {
 
 .cursor {
     display: inline-block;
-    width: 4px;
-    height: 20px;
+    width: 3px;
+    height: 15px;
     background-color: var(--color-primary);
     animation: blink 1s infinite;
 }
