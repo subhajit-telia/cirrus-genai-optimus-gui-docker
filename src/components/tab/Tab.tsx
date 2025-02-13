@@ -357,9 +357,9 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
 
     let fullString;
     if (itemIndex !== '' && itemIndex !== null) {
-      fullString = tabs[tabIndex].data[itemIndex].outputs[outputIndex].answer.replace(/<span class="new_content">|<\/span>/g, '');
+      fullString = tabs[tabIndex].data[itemIndex].outputs[outputIndex].answer.replace(/<span class="new_content">|<\/span>/g, '').replace(/<span class="cursor">|<\/span>/g, '');
     }else {
-      fullString =tabs[tabIndex].outputs[outputIndex].answer.replace(/<span class="new_content">|<\/span>/g, '');
+      fullString =tabs[tabIndex].outputs[outputIndex].answer.replace(/<span class="new_content">|<\/span>/g, '').replace(/<span class="cursor">|<\/span>/g, '');
     }
     console.log('fullString>>>>>>>>>>>>>', fullString)
 
@@ -370,9 +370,6 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
     const preSelectionRange = range.cloneRange();
     preSelectionRange.selectNodeContents(container);
     preSelectionRange.setEnd(range.startContainer, range.startOffset);
-
-
-    
 
     // Get start and end indexes in the rendered text
     const startIndexRendered = preSelectionRange.toString().length;
@@ -389,8 +386,28 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
     console.log('End Index in Markdown:', markdownEndIndex);
     console.log('Selected Markdown Text:', selectedMarkdownText);
 
-    const extractedText = fullString.substring(markdownStartIndex + 1, markdownStartIndex + 30);
-    setClickedText(extractedText);
+    if (markdownStartIndex === markdownEndIndex) {
+      const extractedText = fullString.substring(markdownStartIndex + 2, markdownStartIndex + 31);
+      setClickedText(extractedText);
+      let clickedHtml;
+      // Get the character at start index
+      const charAfterStart = fullString[markdownStartIndex +1] || "";
+
+      // If the character is `#` or `-`, insert a new line before it and place cursor after `#` or `-` with a space
+      if (charAfterStart === "#" || charAfterStart === "-") {
+        clickedHtml = `${fullString.slice(0, markdownStartIndex +1)}\n${charAfterStart} <span class="cursor"></span>${fullString.slice(markdownStartIndex + 2)}`;
+      }
+
+      clickedHtml = `${fullString.slice(0, markdownStartIndex +1)}<span class="cursor"></span>${fullString.slice(markdownStartIndex +1)}`;
+
+      // console.log('clickedHtml', clickedHtml);
+
+      if (itemIndex !== '' && itemIndex !== null) {
+        tabs[tabIndex].data[itemIndex].outputs[outputIndex].answer = clickedHtml;
+      }else {
+        tabs[tabIndex].outputs[outputIndex].answer = clickedHtml;
+      }
+    }
 
     setIsRefineText(text);
     setSelectedText(selectedMarkdownText);
@@ -1032,12 +1049,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                                           onMouseUp={(e) => handleMouseUp(e, tabIndex, itemIndex, outputIndex)}
                                           onClick={(e) => handleMouseClick(e, tabIndex, itemIndex, outputIndex)}
                                           dangerouslySetInnerHTML={{
-                                            __html: marked(
-                                              highlightHTMLText(
-                                                outputItem.answer,
-                                                highlightStartIndex,
-                                                highlightEndIndex
-                                              )) as string
+                                            __html: marked(outputItem.answer) as string
                                           }}
                                         >
                                           {/* <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} children={outputItem.answer}/> */}
@@ -1260,12 +1272,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                                       onMouseUp={(e) => handleMouseUp(e, tabIndex, null, outputIndex)}
                                       onClick={(e) => handleMouseClick(e, tabIndex, null, outputIndex)}
                                       dangerouslySetInnerHTML={{
-                                        __html: marked(
-                                          highlightHTMLText(
-                                            outputItem.answer,
-                                            highlightStartIndex,
-                                            highlightEndIndex
-                                          )) as string
+                                        __html: marked(outputItem.answer) as string
                                       }}
                                     >
                                       {/* <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} children={outputItem.answer}/> */}
