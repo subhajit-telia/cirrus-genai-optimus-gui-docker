@@ -357,9 +357,9 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
 
     let fullString;
     if (itemIndex !== '' && itemIndex !== null) {
-      fullString = tabs[tabIndex].data[itemIndex].outputs[outputIndex].answer.replace(/<span class="new_content">|<\/span>/g, '').replace(/<span class="cursor">|<\/span>/g, '');
+      fullString = currentEditingCopy.replace(/<span class="new_content">|<\/span>/g, '').replace(/<span class="cursor">|<\/span>/g, '');
     }else {
-      fullString =tabs[tabIndex].outputs[outputIndex].answer.replace(/<span class="new_content">|<\/span>/g, '').replace(/<span class="cursor">|<\/span>/g, '');
+      fullString = currentEditingCopy.replace(/<span class="new_content">|<\/span>/g, '').replace(/<span class="cursor">|<\/span>/g, '');
     }
     console.log('fullString>>>>>>>>>>>>>', fullString)
 
@@ -389,16 +389,29 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
     if (markdownStartIndex === markdownEndIndex) {
       const extractedText = fullString.substring(markdownStartIndex + 2, markdownStartIndex + 31);
       setClickedText(extractedText);
+      console.log('extractedText', extractedText);
       let clickedHtml;
       // Get the character at start index
       const charAfterStart = fullString[markdownStartIndex +1] || "";
+      const charBeforeStart = fullString[markdownStartIndex] || "";
+      console.log('charAfterStart:', charAfterStart);
+      console.log('charBeforeStart:', charBeforeStart);
 
+      console.log('before text:',`${fullString.slice(0, markdownStartIndex +1)}`);
+      console.log('after text:',`${fullString.slice(markdownStartIndex + 2)}`);
       // If the character is `#` or `-`, insert a new line before it and place cursor after `#` or `-` with a space
       if (charAfterStart === "#" || charAfterStart === "-") {
-        clickedHtml = `${fullString.slice(0, markdownStartIndex +1)}\n${charAfterStart} <span class="cursor"></span>${fullString.slice(markdownStartIndex + 2)}`;
+        clickedHtml = `${fullString.slice(0, markdownStartIndex +1)}\n ${charAfterStart} <span class="cursor"></span>${fullString.slice(markdownStartIndex + 2)}`;
+      }else if (charBeforeStart === "#" || charBeforeStart === "-") {
+        if (charBeforeStart === fullString.slice(0, markdownStartIndex +1)) {
+          clickedHtml = `${fullString.slice(0, markdownStartIndex +1)} <span class="cursor"></span>${fullString.slice(markdownStartIndex + 2)}`;
+        }else {
+          clickedHtml = `${fullString.slice(0, markdownStartIndex +1)} <span class="cursor"></span>${fullString.slice(markdownStartIndex + 2)}`;
+        }
+      }else {
+        clickedHtml = `${fullString.slice(0, markdownStartIndex +1)}<span class="cursor"></span>${fullString.slice(markdownStartIndex +1)}`;
       }
 
-      clickedHtml = `${fullString.slice(0, markdownStartIndex +1)}<span class="cursor"></span>${fullString.slice(markdownStartIndex +1)}`;
 
       // console.log('clickedHtml', clickedHtml);
 
