@@ -42,7 +42,7 @@ h1, h2, h3, h4, h5, h6 {
 
 .new_content {
     background-color: #ecded4;
-    /* animation: changeBackgroundColor 5s forwards; */
+    animation: changeBackgroundColor 3s forwards;
 }
 @keyframes changeBackgroundColor {
     0% {
