@@ -387,6 +387,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
     console.log('Selected Markdown Text:', selectedMarkdownText);
 
     if (markdownStartIndex === markdownEndIndex) {
+      setIsRefineBox(false);
       const extractedText = fullString.substring(markdownStartIndex + 2, markdownStartIndex + 31);
       setClickedText(extractedText);
       console.log('extractedText', extractedText);
@@ -1036,12 +1037,12 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                     {tabItem.outputs.length > 0 ?
                       <>
                         {tabItem.outputs.map((outputItem:any, outputIndex) => (
-                          <div onClick={() => selectCopyQid(tabIndex, itemIndex, outputIndex, outputItem)} className='shadow-md rounded-md p-2 mb-1.5 relative' key={outputIndex}>
+                          <div onClick={() => selectCopyQid(tabIndex, itemIndex, outputIndex, outputItem)} className='shadow-md rounded-md mb-1.5 relative' key={outputIndex}>
                             {/* Show the output copy */}
                             {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === itemIndex && editVisibility.outputIndex === outputIndex ?
                               <></>
                               :
-                              <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} children={outputItem.answer}/>
+                              <ReactMarkdown className='p-2' remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} children={outputItem.answer}/>
                               
                             }
 
@@ -1053,7 +1054,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                                     <div className='relative'>
                                       {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === itemIndex && editVisibility.outputIndex === outputIndex && editVisibility.isEdit === false ?
                                         <div
-                                          className='editing-area'
+                                          className='editing-area p-2'
                                           // contentEditable
                                           spellCheck="false"
                                           onKeyDown={handleKeyPress}
@@ -1069,8 +1070,9 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                                         </div>
                                       :
                                         <MDXEditor 
+                                          className='p-2'
                                           ref={mdxEditorRef}
-                                          markdown={outputItem.answer.replace(/<span class="new_content">|<\/span>/g, '')}
+                                          markdown={outputItem.answer.replace(/<span class="new_content">|<\/span>/g, '').replace(/<span class="cursor">|<\/span>/g, '')}
                                           // markdown={editInputValues[tabIndex][itemIndex][outputIndex]}
                                           key={editInputValues[tabIndex][itemIndex][outputIndex]}
                                           onChange={handleChangeEditor}
@@ -1104,7 +1106,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                             }
 
                             {/* Action buttons for each output */}
-                            <div className='flex items-center justify-between'>
+                            <div className='flex p-2 items-center justify-between'>
                               <div>
                                 {/* <IonIcon data-tooltip-id='tooltip' data-tooltip-content='Positive' onClick={() => openFeedbackAlert(outputItem.input_params.session_id, 'positive')} className='mr-2.5 cursor-pointer hover:text-primary' slot="icon-only" icon={thumbsUpOutline}></IonIcon>
                                 <IonIcon data-tooltip-id='tooltip' data-tooltip-content='Negative' onClick={() => openFeedbackAlert(outputItem.input_params.session_id, 'negative')} className='mr-2.5 cursor-pointer hover:text-primary' slot="icon-only" icon={thumbsDownOutline}></IonIcon> */}
@@ -1260,12 +1262,12 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                     const containerRef = React.createRef<HTMLDivElement>();
                     const boxIndex = tabIndex * 10 + outputIndex;
                     return (
-                      <div key={boxIndex} onClick={() => selectCopyQid(tabIndex, null, outputIndex, outputItem)} className='shadow-md rounded-md p-2 mb-1.5 relative'>
+                      <div key={boxIndex} onClick={() => selectCopyQid(tabIndex, null, outputIndex, outputItem)} className='shadow-md rounded-md mb-1.5 relative'>
                         {/* Show the output copy */}
                         {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === null && editVisibility.outputIndex === outputIndex ?
                           <></>
                           :
-                          <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} children={outputItem.answer}/>
+                          <ReactMarkdown className='p-2' remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} children={outputItem.answer}/>
                         }
                         
                         {/* Edit answer for each output */}
@@ -1276,7 +1278,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                                 <div className='relative'>
                                   {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === null && editVisibility.outputIndex === outputIndex && editVisibility.isEdit === false ?
                                     <div
-                                      className='editing-area'
+                                      className='editing-area p-2'
                                       // contentEditable
                                       spellCheck="false"
                                       onKeyDown={handleKeyPress}
@@ -1292,8 +1294,9 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                                     </div>
                                   :
                                     <MDXEditor 
+                                      className='p-2'
                                       ref={mdxEditorRef}
-                                      markdown={outputItem.answer.replace(/<span class="new_content">|<\/span>/g, '')} 
+                                      markdown={outputItem.answer.replace(/<span class="new_content">|<\/span>/g, '').replace(/<span class="cursor">|<\/span>/g, '')} 
                                       // markdown={editInputValues[tabIndex][outputIndex] as string} 
                                       key={editInputValues[tabIndex][outputIndex] as string} 
                                       onChange={handleChangeEditor}
@@ -1327,7 +1330,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                         }
                         
                         {/* Action buttons for each output */}
-                        <div className='flex items-center justify-between'>
+                        <div className='p-2 flex items-center justify-between'>
                           <div>
                             <div style={{ display: "flex", gap: "5px" }}>
                               {[1, 2, 3, 4, 5].map((starValue) => (
