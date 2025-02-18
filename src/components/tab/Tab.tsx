@@ -270,7 +270,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
     console.log('tabs>><<', tabs);
     setIsSaveChanges(false);
     setIsEditQid('');
-    if (editInputValues[0].length !== 0 && editInputValues[0][0].length !== 0 && editVisibility.outputIndex !== null && tabs[0].answer) {
+    if (editInputValues[0].length !== 0 && editInputValues[0][0].length !== 0 && editVisibility.outputIndex !== null && (tabs[0].answer || tabs[0].data[0].answer)) {
       let currentEditAnswer;
       if (editVisibility.itemIndex !== '' && editVisibility.itemIndex !== null && editVisibility.tabIndex !== null && editVisibility.outputIndex !== null) {
         currentEditAnswer = tabs[editVisibility.tabIndex].data[editVisibility.itemIndex].outputs[editVisibility.outputIndex].answer.replace(/<span class="new_content">|<\/span>/g, '');
@@ -1042,7 +1042,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                             {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === itemIndex && editVisibility.outputIndex === outputIndex ?
                               <></>
                               :
-                              <ReactMarkdown className='p-2' remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} children={outputItem.answer}/>
+                              <ReactMarkdown className='py-2 px-6' remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} children={outputItem.answer}/>
                               
                             }
 
@@ -1054,7 +1054,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                                     <div className='relative'>
                                       {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === itemIndex && editVisibility.outputIndex === outputIndex && editVisibility.isEdit === false ?
                                         <div
-                                          className='editing-area p-2'
+                                          className='editing-area py-2 px-6'
                                           // contentEditable
                                           spellCheck="false"
                                           onKeyDown={handleKeyPress}
@@ -1070,7 +1070,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                                         </div>
                                       :
                                         <MDXEditor 
-                                          className='p-2'
+                                          className='py-2 px-6'
                                           ref={mdxEditorRef}
                                           markdown={outputItem.answer.replace(/<span class="new_content">|<\/span>/g, '').replace(/<span class="cursor">|<\/span>/g, '')}
                                           // markdown={editInputValues[tabIndex][itemIndex][outputIndex]}
@@ -1267,7 +1267,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                         {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === null && editVisibility.outputIndex === outputIndex ?
                           <></>
                           :
-                          <ReactMarkdown className='p-2' remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} children={outputItem.answer}/>
+                          <ReactMarkdown className='py-2 px-6' remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} children={outputItem.answer}/>
                         }
                         
                         {/* Edit answer for each output */}
@@ -1278,7 +1278,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                                 <div className='relative'>
                                   {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === null && editVisibility.outputIndex === outputIndex && editVisibility.isEdit === false ?
                                     <div
-                                      className='editing-area p-2'
+                                      className='editing-area py-2 px-6'
                                       // contentEditable
                                       spellCheck="false"
                                       onKeyDown={handleKeyPress}
@@ -1294,7 +1294,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                                     </div>
                                   :
                                     <MDXEditor 
-                                      className='p-2'
+                                      className='py-2 px-6'
                                       ref={mdxEditorRef}
                                       markdown={outputItem.answer.replace(/<span class="new_content">|<\/span>/g, '').replace(/<span class="cursor">|<\/span>/g, '')} 
                                       // markdown={editInputValues[tabIndex][outputIndex] as string} 
