@@ -208,17 +208,19 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
 
   /* ----------Save edit answer copy start---------- */
   const saveAnswerChange = async (value:any, qid:any) => {
-    console.log('saveAnswerChange', value.replace(/<span class="new_content">|<\/span>/g, ''));
+    console.log('editInputValues', editInputValues);
+    console.log('value', value);
     console.log('qid', qid);
     setIsRefineBox(false);
     setIsEditQid(qid);
     setIsSaveChanges(true);
     let data:any = {
       qid: qid,
-      text: value.replace(/<span class="new_content">|<\/span>/g, '')
+      text: value.replace(/<span class="new_content">|<\/span>/g, '').replace(/<span class="cursor">|<\/span>/g, '')
     }
     // setCurrentEditCopy('');
     saveEditedAnswer(data);
+    setEditorChangedText('');
   }
   /* Save edit answer copy end */
 
@@ -270,6 +272,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
     console.log('tabs>><<', tabs);
     setIsSaveChanges(false);
     setIsEditQid('');
+    setEditorChangedText('');
     if (editInputValues[0].length !== 0 && editInputValues[0][0].length !== 0 && editVisibility.outputIndex !== null && (tabs[0].answer || tabs[0].data[0].answer)) {
       let currentEditAnswer;
       if (editVisibility.itemIndex !== '' && editVisibility.itemIndex !== null && editVisibility.tabIndex !== null && editVisibility.outputIndex !== null) {
@@ -467,9 +470,9 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
 
     let fullString;
     if (itemIndex !== '' && itemIndex !== null) {
-      fullString = tabs[tabIndex].data[itemIndex].outputs[outputIndex].answer.replace(/<span class="new_content">|<\/span>/g, '');
+      fullString = tabs[tabIndex].data[itemIndex].outputs[outputIndex].answer.replace(/<span class="new_content">|<\/span>/g, '').replace(/<span class="cursor">|<\/span>/g, '');
     }else {
-      fullString =tabs[tabIndex].outputs[outputIndex].answer.replace(/<span class="new_content">|<\/span>/g, '');
+      fullString =tabs[tabIndex].outputs[outputIndex].answer.replace(/<span class="new_content">|<\/span>/g, '').replace(/<span class="cursor">|<\/span>/g, '');
     }
     const startIndex = fullString.indexOf(clickedWord, wordStart);
 
@@ -559,7 +562,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
 
   useEffect(() => {
     const processAnswer = async () => {
-      const answer = currentEditingCopy.replace(/<span class="new_content">|<\/span>/g, ''); // Replace this with the actual answer variable
+      const answer = currentEditingCopy.replace(/<span class="new_content">|<\/span>/g, '').replace(/<span class="cursor">|<\/span>/g, ''); // Replace this with the actual answer variable
       console.log('currentEditingCopy>>>>', answer);
   
       const tempMap: { renderedIndex: number; markdownIndex: number }[] = [];
@@ -1139,7 +1142,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                                 </IonButton>
                                 {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === itemIndex && editVisibility.outputIndex === outputIndex ? 
                                   <>
-                                    <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Save answer' className='text-xs' onClick={() => {saveAnswerChange(editorChangedText || editInputValues[tabIndex][itemIndex][outputIndex], outputItem.input_params.qid); handleEditingMode(tabIndex, itemIndex, outputIndex, false)}} shape="round">
+                                    <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Save answer' className='text-xs' onClick={() => {console.log('editorChangedText>>', editorChangedText); console.log('saveAnswerValue>>', editInputValues[tabIndex][itemIndex][outputIndex]), saveAnswerChange(editorChangedText || editInputValues[tabIndex][itemIndex][outputIndex], outputItem.input_params.qid); handleEditingMode(tabIndex, itemIndex, outputIndex, false)}} shape="round">
                                       <IonIcon className='' slot="icon-only" icon={saveOutline}></IonIcon>
                                     </IonButton>
 
