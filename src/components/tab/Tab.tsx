@@ -159,6 +159,25 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
   const handleEditingMode = (tabIndex:any, itemIndex:any, outputIndex:any, isEdit: boolean) => {
     // Check if the currently active input is the same as the one being clicked
     console.log('editVisibility', editVisibility);
+    console.log('inputVisibility>>', inputVisibility);
+
+    if (Array.isArray(inputVisibility[0])) {
+      console.log('innnnnn');
+      const clearedInputVisibility:any = inputVisibility.map(innerArray => {
+        if (Array.isArray(innerArray)) {
+          return innerArray.map(() => false); 
+        }
+        return []; 
+      });
+      setInputVisibility(clearedInputVisibility);
+    }else {
+      console.log('Onnnnnn');
+      const clearedInputVisibility:any = inputVisibility.map(() => false);
+      setInputVisibility(clearedInputVisibility);
+    }
+    setIsRefineBox(false);
+    setIsRefineText('');
+    setSelectedText(null);
     if (
       editVisibility.tabIndex === tabIndex &&
       editVisibility.itemIndex === itemIndex &&
@@ -284,6 +303,10 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
       setCurrentEditingCopy(currentEditAnswer);
     }
 
+    console.log('inputVisibility>>', inputVisibility);
+    
+    console.log('inputValues>>', inputValues);
+    
     setHighlightStartIndex(null);
     setHighlightEndIndex(null);
     setIsRefineBox(false);
@@ -1179,7 +1202,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                             autoGrow={true}
                             counter={true}
                             maxlength={2000}
-                            value={(inputValues[tabIndex] as string[])[itemIndex]}
+                            // value={(inputValues[tabIndex] as string[])[itemIndex]}
                             onIonInput={(event) => handleInputChange(tabIndex, event, itemIndex)}
                           >
                             <IonButton data-tooltip-id='tooltip' data-tooltip-content='Genarate' onClick={() => handleSubmitChatAnswer(tabIndex, itemIndex)} size="small" fill="clear" slot="end" >
