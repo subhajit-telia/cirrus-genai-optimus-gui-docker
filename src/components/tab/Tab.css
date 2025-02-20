@@ -40,9 +40,39 @@ h1, h2, h3, h4, h5, h6 {
     padding: 0px !important;
 }
 
-.highlighted, .new_content {
-    background-color: yellow;
+.new_content {
+    background-color: #ecded4;
+    animation: changeBackgroundColor 3s forwards;
+}
+@keyframes changeBackgroundColor {
+    0% {
+      background-color: #ffff0073; /* initial color */
+    }
+    50% {
+      background-color: #ffff0073; /* color at the halfway point */
+    }
+    100% {
+      background-color: transparent; /* reset to the initial color */
+    }
+}
+
+.highlighted {
+    background-color: #990ae34a;
 }
 .editing-area {
     outline: none;
 }
+
+.cursor {
+    display: inline-block;
+    width: 3px;
+    height: 15px;
+    background-color: var(--color-primary);
+    animation: blink 1s infinite;
+}
+
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+}
+  
