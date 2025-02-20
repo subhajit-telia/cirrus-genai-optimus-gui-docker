@@ -93,9 +93,13 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
   const [clickedText, setClickedText] = useState("");
   const [editorChangedText, setEditorChangedText] = useState('');
   const [currentEditCopy, setCurrentEditCopy] = useState("");
+  const [currentEditingCopy, setCurrentEditingCopy] = useState("");
+
+  const [highlightStartIndex, setHighlightStartIndex] = useState<number | null>(null);
+  const [highlightEndIndex, setHighlightEndIndex] = useState<number | null>(null);
 
   const containerRefs = useRef<HTMLDivElement[]>([]);
-
+  const [charMaps, setCharMaps] = useState<{ renderedIndex: number; markdownIndex: number }[][]>([]);
   const changeTab = (segment_id: string) => {
     setActiveTab(segment_id);
   };
@@ -155,6 +159,25 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
   const handleEditingMode = (tabIndex:any, itemIndex:any, outputIndex:any, isEdit: boolean) => {
     // Check if the currently active input is the same as the one being clicked
     console.log('editVisibility', editVisibility);
+    console.log('inputVisibility>>', inputVisibility);
+
+    if (Array.isArray(inputVisibility[0])) {
+      console.log('innnnnn');
+      const clearedInputVisibility:any = inputVisibility.map(innerArray => {
+        if (Array.isArray(innerArray)) {
+          return innerArray.map(() => false); 
+        }
+        return []; 
+      });
+      setInputVisibility(clearedInputVisibility);
+    }else {
+      console.log('Onnnnnn');
+      const clearedInputVisibility:any = inputVisibility.map(() => false);
+      setInputVisibility(clearedInputVisibility);
+    }
+    setIsRefineBox(false);
+    setIsRefineText('');
+    setSelectedText(null);
     if (
       editVisibility.tabIndex === tabIndex &&
       editVisibility.itemIndex === itemIndex &&
@@ -204,17 +227,19 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
 
   /* ----------Save edit answer copy start---------- */
   const saveAnswerChange = async (value:any, qid:any) => {
-    console.log('saveAnswerChange', value.replace(/<span class="new_content">|<\/span>/g, ''));
+    console.log('editInputValues', editInputValues);
+    console.log('value', value);
     console.log('qid', qid);
     setIsRefineBox(false);
     setIsEditQid(qid);
     setIsSaveChanges(true);
     let data:any = {
       qid: qid,
-      text: value.replace(/<span class="new_content">|<\/span>/g, '')
+      text: value.replace(/<span class="new_content">|<\/span>/g, '').replace(/<span class="cursor">|<\/span>/g, '')
     }
     // setCurrentEditCopy('');
     saveEditedAnswer(data);
+    setEditorChangedText('');
   }
   /* Save edit answer copy end */
 
@@ -235,6 +260,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
     }
     
     setCurrentEditCopy('');
+    setCurrentEditingCopy('');
   }
   /* Discard edit answer copy end */
 
@@ -254,6 +280,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
     })
     setEditInputValues(copyAnswer);
     console.log('editInputValues', editInputValues);
+    console.log('editVisibility:', editVisibility);
     if (editInputValues[0].length === 0) {
       setEditVisibility({ tabIndex: null, itemIndex: null, outputIndex: null, isEdit: false });
       setIsRefineBox(false);
@@ -264,8 +291,26 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
     console.log('tabs>><<', tabs);
     setIsSaveChanges(false);
     setIsEditQid('');
+    setEditorChangedText('');
+    if (editInputValues[0].length !== 0 && editInputValues[0][0].length !== 0 && editVisibility.outputIndex !== null && (tabs[0].answer || tabs[0].data[0].answer)) {
+      let currentEditAnswer;
+      if (editVisibility.itemIndex !== '' && editVisibility.itemIndex !== null && editVisibility.tabIndex !== null && editVisibility.outputIndex !== null) {
+        currentEditAnswer = tabs[editVisibility.tabIndex].data[editVisibility.itemIndex].outputs[editVisibility.outputIndex].answer.replace(/<span class="new_content">|<\/span>/g, '');
+      }else {
+        currentEditAnswer = tabs[editVisibility.tabIndex || 0].outputs[editVisibility.outputIndex || 0].answer.replace(/<span class="new_content">|<\/span>/g, '');
+      }
+      // console.log('currentEditAnswer', currentEditAnswer);
+      setCurrentEditingCopy(currentEditAnswer);
+    }
 
-    // console.log('selectedText', selectedText)
+    console.log('inputVisibility>>', inputVisibility);
+    
+    console.log('inputValues>>', inputValues);
+    
+    setHighlightStartIndex(null);
+    setHighlightEndIndex(null);
+    setIsRefineBox(false);
+    setSelectedText(null);
   }, [tabs]);
 
   // //////////
@@ -289,60 +334,133 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
     };
   };
 
-  const handleMouseUp = (event: React.MouseEvent, tabIndex:number, itemIndex:any, outputIndex:number) => {
+  // const handleMouseUp = (event: React.MouseEvent, tabIndex:number, itemIndex:any, outputIndex:number) => {
+  //   const container = containerRefs.current[outputIndex];
+  //   if (!container) return;
+
+  //   const selection = window.getSelection();
+  //   if (selection) {
+  //     const { text, index: exactIndex } = getExactIndexAndText(selection, container);
+
+  //     console.log('start Index', exactIndex);
+  //     console.log('end Index', exactIndex + text.length);
+  //     console.log('text', text);
+  //     setIsRefineText(text)
+  //     let fullString;
+  //     if (itemIndex !== '' && itemIndex !== null) {
+  //       fullString = tabs[tabIndex].data[itemIndex].outputs[outputIndex].answer.replace(/<span class="new_content">|<\/span>/g, '');
+  //     }else {
+  //       fullString =tabs[tabIndex].outputs[outputIndex].answer.replace(/<span class="new_content">|<\/span>/g, '');
+  //     }
+
+  //     const startIndex = fullString.indexOf(text, exactIndex);
+
+  //     const endIndex = startIndex + text.length;
+  //     console.log("Start index>>:", startIndex);
+  //     console.log("End index>>:", endIndex);
+  //     if (text) {
+        
+  //       const result:any = findMatch(fullString, text);
+        
+
+  //       if (result) {
+  //         console.log("Start >>:", result.startIndex);
+  //         console.log("End >>:", result.endIndex);
+  //         console.log("match >>:", result.match);
+  //         setSelectedText(result.match);
+  //         setIsTextIndex(result.startIndex);
+  //       }else {
+  //         setSelectedText(text);
+  //         setIsTextIndex(startIndex > 0 ? startIndex : exactIndex);
+  //       }
+  //     }
+  //   }
+  // };
+
+  const handleMouseUp = (event: React.MouseEvent, tabIndex: number, itemIndex: any, outputIndex: number) => {
     const container = containerRefs.current[outputIndex];
     if (!container) return;
 
-    const selection = window.getSelection();
-    if (selection) {
-      const { text, index: exactIndex } = getExactIndexAndText(selection, container);
+    let fullString;
+    if (itemIndex !== '' && itemIndex !== null) {
+      fullString = currentEditingCopy.replace(/<span class="new_content">|<\/span>/g, '').replace(/<span class="cursor">|<\/span>/g, '');
+    }else {
+      fullString = currentEditingCopy.replace(/<span class="new_content">|<\/span>/g, '').replace(/<span class="cursor">|<\/span>/g, '');
+    }
+    console.log('fullString>>>>>>>>>>>>>', fullString)
 
-      console.log('start Index', exactIndex);
-      console.log('end Index', exactIndex + text.length);
-      console.log('text', text);
-      setIsRefineText(text)
-      let fullString;
-      if (itemIndex !== '' && itemIndex !== null) {
-        fullString = tabs[tabIndex].data[itemIndex].outputs[outputIndex].answer.replace(/<span class="new_content">|<\/span>/g, '');
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) return;
+    const { text, index: exactIndex } = getExactIndexAndText(selection, container);
+    const range = selection.getRangeAt(0);
+    const preSelectionRange = range.cloneRange();
+    preSelectionRange.selectNodeContents(container);
+    preSelectionRange.setEnd(range.startContainer, range.startOffset);
+
+    // Get start and end indexes in the rendered text
+    const startIndexRendered = preSelectionRange.toString().length;
+    const endIndexRendered = startIndexRendered + range.toString().length;
+
+    // Convert to markdown indexes using charMaps
+    const markdownStartIndex = charMaps[outputIndex]?.find((map) => map.renderedIndex === startIndexRendered)?.markdownIndex ?? -1;
+    const markdownEndIndex = charMaps[outputIndex]?.find((map) => map.renderedIndex === endIndexRendered)?.markdownIndex ?? -1;
+
+    // Extract selected text from the original Markdown
+    const selectedMarkdownText = fullString.slice(markdownStartIndex + 1, markdownEndIndex + 1);
+
+    console.log('Start Index in Markdown:', markdownStartIndex);
+    console.log('End Index in Markdown:', markdownEndIndex);
+    console.log('Selected Markdown Text:', selectedMarkdownText);
+
+    if (markdownStartIndex === markdownEndIndex) {
+      setIsRefineBox(false);
+      const extractedText = fullString.substring(markdownStartIndex + 2, markdownStartIndex + 31);
+      setClickedText(extractedText);
+      console.log('extractedText', extractedText);
+      let clickedHtml;
+      // Get the character at start index
+      const charAfterStart = fullString[markdownStartIndex +1] || "";
+      const charBeforeStart = fullString[markdownStartIndex] || "";
+      console.log('charAfterStart:', charAfterStart);
+      console.log('charBeforeStart:', charBeforeStart);
+
+      console.log('before text:',`${fullString.slice(0, markdownStartIndex +1)}`);
+      console.log('after text:',`${fullString.slice(markdownStartIndex + 2)}`);
+      // If the character is `#` or `-`, insert a new line before it and place cursor after `#` or `-` with a space
+      if (charAfterStart === "#" || charAfterStart === "-") {
+        clickedHtml = `${fullString.slice(0, markdownStartIndex +1)}\n ${charAfterStart} <span class="cursor"></span>${fullString.slice(markdownStartIndex + 2)}`;
+      }else if (charBeforeStart === "#" || charBeforeStart === "-") {
+        if (charBeforeStart === fullString.slice(0, markdownStartIndex +1)) {
+          clickedHtml = `${fullString.slice(0, markdownStartIndex +1)} <span class="cursor"></span>${fullString.slice(markdownStartIndex + 2)}`;
+        }else {
+          clickedHtml = `${fullString.slice(0, markdownStartIndex +1)} <span class="cursor"></span>${fullString.slice(markdownStartIndex + 2)}`;
+        }
       }else {
-        fullString =tabs[tabIndex].outputs[outputIndex].answer.replace(/<span class="new_content">|<\/span>/g, '');
+        clickedHtml = `${fullString.slice(0, markdownStartIndex +1)}<span class="cursor"></span>${fullString.slice(markdownStartIndex +1)}`;
       }
 
-      const startIndex = fullString.indexOf(text, exactIndex);
 
-      // Find the end index
-      const endIndex = startIndex + text.length;
+      // console.log('clickedHtml', clickedHtml);
 
-      
-
-      console.log("Start index>>:", startIndex);
-      console.log("End index>>:", endIndex);
-      // console.log("fullString>>:", fullString);
-      if (text) {
-        
-        const result:any = findMatch(fullString, text);
-        
-
-        if (result) {
-          console.log("Start >>:", result.startIndex);
-          console.log("End >>:", result.endIndex);
-          console.log("match >>:", result.match);
-          setSelectedText(result.match);
-          setIsTextIndex(result.startIndex);
-        }else {
-          setSelectedText(text);
-          setIsTextIndex(startIndex > 0 ? startIndex : exactIndex);
-        }
-
-         // Reset clicked word highlighting
+      if (itemIndex !== '' && itemIndex !== null) {
+        tabs[tabIndex].data[itemIndex].outputs[outputIndex].answer = clickedHtml;
+      }else {
+        tabs[tabIndex].outputs[outputIndex].answer = clickedHtml;
       }
     }
+
+    setIsRefineText(text);
+    setSelectedText(selectedMarkdownText);
+    setIsTextIndex(markdownStartIndex + 1);
+    setHighlightStartIndex(markdownStartIndex + 1);
+    setHighlightEndIndex(markdownEndIndex + 1);
   };
 
   const handleMouseClick = (event: React.MouseEvent, tabIndex:number, itemIndex:any, outputIndex:number) => {
+    console.log('editInputValues 2:', editInputValues);
     const container = containerRefs.current[outputIndex];
     if (!container) return;
-
+    
     const selection = window.getSelection();
     if (selection && selection.toString()) return; // Ignore clicks when there's a selection
 
@@ -354,6 +472,16 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
     preCaretRange.setEnd(range.startContainer, range.startOffset);
 
     const caretIndex = preCaretRange.toString().length;
+
+    console.log('caretIndex>>>>>>>', caretIndex);
+    console.log('charMaps>>>>>>>', charMaps);
+    const markdownIndex = charMaps[outputIndex]?.find((map) => map.renderedIndex === caretIndex)?.markdownIndex ?? -1;
+    const extractedText = currentEditingCopy.substring(markdownIndex + 1, markdownIndex + 30);
+    console.log("Mapped index in markdown:>>>>>>>>", markdownIndex);
+    console.log("Mapped extractedText:>>>>>>>>", extractedText);
+    setClickedText(extractedText);
+    setIsTextIndex(markdownIndex + 1);
+
     const textContent = container.textContent || "";
     const wordStart = textContent.lastIndexOf(" ", caretIndex - 1) + 1;
     const wordEnd = textContent.indexOf(" ", caretIndex);
@@ -365,9 +493,9 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
 
     let fullString;
     if (itemIndex !== '' && itemIndex !== null) {
-      fullString = tabs[tabIndex].data[itemIndex].outputs[outputIndex].answer.replace(/<span class="new_content">|<\/span>/g, '');
+      fullString = tabs[tabIndex].data[itemIndex].outputs[outputIndex].answer.replace(/<span class="new_content">|<\/span>/g, '').replace(/<span class="cursor">|<\/span>/g, '');
     }else {
-      fullString =tabs[tabIndex].outputs[outputIndex].answer.replace(/<span class="new_content">|<\/span>/g, '');
+      fullString =tabs[tabIndex].outputs[outputIndex].answer.replace(/<span class="new_content">|<\/span>/g, '').replace(/<span class="cursor">|<\/span>/g, '');
     }
     const startIndex = fullString.indexOf(clickedWord, wordStart);
 
@@ -430,28 +558,139 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
           const startPos = firstIndex + beforeText.length; // Get the index after 'textB'
           const secondAfterText = noNewlineContent.slice(startPos, startPos + 20);
           console.log('secondAfterText', secondAfterText);
-          setClickedText(secondAfterText);
+          // setClickedText(secondAfterText);
         }else {
           console.log('afterText', afterText);
           if (result) {
-            setClickedText(afterText);
+            // setClickedText(afterText);
           }else {
-            setClickedText('');
+            // setClickedText('');
           }
           
         }
       }
     }
 
-    if ((startIndex + Math.round(clickedWord.length/2)) > wordStart) {
-      setIsTextIndex(startIndex + Math.round(clickedWord.length/2));
-    }else {
-      setIsTextIndex(wordStart);
-    }
+    // if ((startIndex + Math.round(clickedWord.length/2)) > wordStart) {
+    //   setIsTextIndex(startIndex + Math.round(clickedWord.length/2));
+    // }else {
+    //   setIsTextIndex(wordStart);
+    // }
 
     console.log('index>>', startIndex + Math.round(clickedWord.length/2))
     
     setSelectedText("");
+  };
+
+
+  useEffect(() => {
+    const processAnswer = async () => {
+      const answer = currentEditingCopy.replace(/<span class="new_content">|<\/span>/g, '').replace(/<span class="cursor">|<\/span>/g, ''); // Replace this with the actual answer variable
+      console.log('currentEditingCopy>>>>', answer);
+  
+      const tempMap: { renderedIndex: number; markdownIndex: number }[] = [];
+      let mdIndex = 0; // Index in the original markdown
+      let renderedIndex = 0; // Index in the rendered HTML
+  
+      // Convert markdown to HTML using marked (handling the promise)
+      const renderedHtml = await marked(answer); // Ensure this is awaited if it's a Promise
+      const tempDiv = document.createElement("div");
+      tempDiv.innerHTML = renderedHtml; // Now renderedHtml is a string
+  
+      const renderedText = tempDiv.textContent || "";
+  
+      for (const char of renderedText) {
+        // Map each rendered character to its original markdown index
+        tempMap.push({ renderedIndex, markdownIndex: mdIndex });
+  
+        // Move both indexes forward
+        mdIndex = answer.indexOf(char, mdIndex); // Find the next occurrence in markdown
+        renderedIndex++;
+      }
+  
+      setCharMaps([tempMap]); // Update state with the mapped results
+    };
+  
+    processAnswer();
+  }, [currentEditingCopy]);
+  
+  const highlightHTMLText = (html: string, start: number | null, end: number | null) => {
+    if (start === null || end === null) return html;
+  
+    let fullString = html.replace(/<span class="new_content">|<\/span>/g, '');
+
+    // If start and end are equal, insert a blinking cursor at that position
+    if (start === end) {
+      // Get the character at start index
+      const charAfterStart = html[start] || "";
+
+      // If the character is `#` or `-`, insert a new line before it and place cursor after `#` or `-` with a space
+      if (charAfterStart === "#" || charAfterStart === "-") {
+        return `${html.slice(0, start)}\n${charAfterStart} <span class="cursor"></span>${html.slice(start + 1)}`;
+      }
+
+      return `${html.slice(0, start)}<span class="cursor"></span>${html.slice(start)}`;
+    }
+  
+    const preText = fullString.slice(0, start);
+    const highlightedText = fullString.slice(start, end);
+    const postText = fullString.slice(end);
+    console.log('highlightHTMLText:', highlightedText);
+    // const highlightedWithSpans = highlightedText
+    //   .split("\n")
+    //   .map((line) => {
+    //     if (line.startsWith("#")) {
+    //       return `# <span class="highlighted">${line.slice(1)}</span>`;
+    //     }
+    //     console.log('line:', line);
+    //     return `<span class="highlighted">${line}</span>`;
+    //   })
+    //   .join("\n");
+
+    const highlightedWithSpans = highlightedText
+    .split("\n\n") // Split paragraphs first
+    .map((paragraph) =>
+      paragraph
+        .split("\n") // Split single newlines within paragraphs
+        .map((line) => {
+          // Handle headers: keep `#` outside
+          if (line.startsWith("#")) {
+            const firstSpace = line.indexOf(" ");
+            if (firstSpace !== -1) {
+              return `# <span class="highlighted">${line.slice(firstSpace + 1)}</span>`;
+            }
+            return line; // If no space after `#`, return as is
+          }
+
+          if (line.startsWith("-")) {
+            const firstSpace = line.indexOf(" ");
+            if (firstSpace !== -1) {
+              return `- <span class="highlighted">${line.slice(firstSpace + 1)}</span>`;
+            }
+            return line; // If no space after `#`, return as is
+          }
+
+          let insideBold = false; // Track bold state
+
+          const formattedLine = line
+            .split(/(\*\*)/) // Split but keep `**`
+            .map((part) => {
+              if (part === "**") {
+                insideBold = !insideBold;
+                return "**"; // Keep `**` outside of `<span>`
+              }
+              return `<span class="highlighted">${part.trim()}</span>`;
+            })
+            .join(""); // Maintain structure
+
+          return formattedLine;
+        })
+        .join("\n") // Preserve single newlines
+    )
+    .join("\n\n"); // Preserve paragraph breaks
+  
+    console.log('highlightedWithSpans:', highlightedWithSpans);
+    return `${preText}${highlightedWithSpans}${postText}`;
   };
 
   const findMatch = (
@@ -553,7 +792,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
       refineData = {
         qid: isRefineDetails.outputItem.input_params.qid,
         action: identifier,
-        text: selecteText || selectedText,
+        text: selectedText,
         text_index: isTextIndex,
         question: data
       }
@@ -824,12 +1063,12 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                     {tabItem.outputs.length > 0 ?
                       <>
                         {tabItem.outputs.map((outputItem:any, outputIndex) => (
-                          <div onClick={() => selectCopyQid(tabIndex, itemIndex, outputIndex, outputItem)} className='shadow-md rounded-md p-2 mb-1.5 relative' key={outputIndex}>
+                          <div onClick={() => selectCopyQid(tabIndex, itemIndex, outputIndex, outputItem)} className='shadow-md rounded-md mb-1.5 relative' key={outputIndex}>
                             {/* Show the output copy */}
                             {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === itemIndex && editVisibility.outputIndex === outputIndex ?
                               <></>
                               :
-                              <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} children={outputItem.answer}/>
+                              <ReactMarkdown className='py-2 px-6' remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} children={outputItem.answer}/>
                               
                             }
 
@@ -841,8 +1080,8 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                                     <div className='relative'>
                                       {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === itemIndex && editVisibility.outputIndex === outputIndex && editVisibility.isEdit === false ?
                                         <div
-                                          className='editing-area'
-                                          contentEditable
+                                          className='editing-area py-2 px-6'
+                                          // contentEditable
                                           spellCheck="false"
                                           onKeyDown={handleKeyPress}
                                           key={outputIndex}
@@ -857,8 +1096,9 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                                         </div>
                                       :
                                         <MDXEditor 
+                                          className='py-2 px-6'
                                           ref={mdxEditorRef}
-                                          markdown={outputItem.answer.replace(/<span class="new_content">|<\/span>/g, '')}
+                                          markdown={outputItem.answer.replace(/<span class="new_content">|<\/span>/g, '').replace(/<span class="cursor">|<\/span>/g, '')}
                                           // markdown={editInputValues[tabIndex][itemIndex][outputIndex]}
                                           key={editInputValues[tabIndex][itemIndex][outputIndex]}
                                           onChange={handleChangeEditor}
@@ -892,7 +1132,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                             }
 
                             {/* Action buttons for each output */}
-                            <div className='flex items-center justify-between'>
+                            <div className='flex p-2 items-center justify-between'>
                               <div>
                                 {/* <IonIcon data-tooltip-id='tooltip' data-tooltip-content='Positive' onClick={() => openFeedbackAlert(outputItem.input_params.session_id, 'positive')} className='mr-2.5 cursor-pointer hover:text-primary' slot="icon-only" icon={thumbsUpOutline}></IonIcon>
                                 <IonIcon data-tooltip-id='tooltip' data-tooltip-content='Negative' onClick={() => openFeedbackAlert(outputItem.input_params.session_id, 'negative')} className='mr-2.5 cursor-pointer hover:text-primary' slot="icon-only" icon={thumbsDownOutline}></IonIcon> */}
@@ -923,9 +1163,9 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                                 <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Copy text' className='text-xs' onClick={() => copyToClipboard('single', outputItem.answer)} shape="round">
                                   <IonIcon className='' slot="icon-only" icon={copyOutline}></IonIcon>
                                 </IonButton>
-                                {/* {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === itemIndex && editVisibility.outputIndex === outputIndex ? 
+                                {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === itemIndex && editVisibility.outputIndex === outputIndex ? 
                                   <>
-                                    <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Save answer' className='text-xs' onClick={() => {saveAnswerChange(editorChangedText || editInputValues[tabIndex][itemIndex][outputIndex], outputItem.input_params.qid); handleEditingMode(tabIndex, itemIndex, outputIndex, false)}} shape="round">
+                                    <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Save answer' className='text-xs' onClick={() => {console.log('editorChangedText>>', editorChangedText); console.log('saveAnswerValue>>', editInputValues[tabIndex][itemIndex][outputIndex]), saveAnswerChange(editorChangedText || editInputValues[tabIndex][itemIndex][outputIndex], outputItem.input_params.qid); handleEditingMode(tabIndex, itemIndex, outputIndex, false)}} shape="round">
                                       <IonIcon className='' slot="icon-only" icon={saveOutline}></IonIcon>
                                     </IonButton>
 
@@ -934,14 +1174,14 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                                     </IonButton>
                                   </>
                                 :
-                                  <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Edit answer' className='text-xs' onClick={() => {handleEditingMode(tabIndex, itemIndex, outputIndex, false), setCurrentEditCopy(outputItem.answer)}} shape="round">
+                                  <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Edit answer' className='text-xs' onClick={() => {handleEditingMode(tabIndex, itemIndex, outputIndex, false), setCurrentEditCopy(outputItem.answer), setCurrentEditingCopy(outputItem.answer)}} shape="round">
                                     {isSaveChanges && outputItem.input_params.qid === isEditQid ?
                                       <IonIcon className='animate-spin' slot="icon-only" icon={refreshOutline}></IonIcon>
                                     :
                                       <IonIcon className='' slot="icon-only" icon={createOutline}></IonIcon>
                                     }
                                   </IonButton>
-                                } */}
+                                }
                                 
                                 <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Download as .doc' className='text-xs' onClick={() => exportToDoc('single', outputItem.answer)} shape="round">
                                   <IonIcon className='' slot="icon-only" icon={documentTextOutline}></IonIcon>
@@ -962,7 +1202,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                             autoGrow={true}
                             counter={true}
                             maxlength={2000}
-                            value={(inputValues[tabIndex] as string[])[itemIndex]}
+                            // value={(inputValues[tabIndex] as string[])[itemIndex]}
                             onIonInput={(event) => handleInputChange(tabIndex, event, itemIndex)}
                           >
                             <IonButton data-tooltip-id='tooltip' data-tooltip-content='Genarate' onClick={() => handleSubmitChatAnswer(tabIndex, itemIndex)} size="small" fill="clear" slot="end" >
@@ -1048,12 +1288,12 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                     const containerRef = React.createRef<HTMLDivElement>();
                     const boxIndex = tabIndex * 10 + outputIndex;
                     return (
-                      <div key={boxIndex} onClick={() => selectCopyQid(tabIndex, null, outputIndex, outputItem)} className='shadow-md rounded-md p-2 mb-1.5 relative'>
+                      <div key={boxIndex} onClick={() => selectCopyQid(tabIndex, null, outputIndex, outputItem)} className='shadow-md rounded-md mb-1.5 relative'>
                         {/* Show the output copy */}
                         {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === null && editVisibility.outputIndex === outputIndex ?
                           <></>
                           :
-                          <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} children={outputItem.answer}/>
+                          <ReactMarkdown className='py-2 px-6' remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} children={outputItem.answer}/>
                         }
                         
                         {/* Edit answer for each output */}
@@ -1064,8 +1304,8 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                                 <div className='relative'>
                                   {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === null && editVisibility.outputIndex === outputIndex && editVisibility.isEdit === false ?
                                     <div
-                                      className='editing-area'
-                                      contentEditable
+                                      className='editing-area py-2 px-6'
+                                      // contentEditable
                                       spellCheck="false"
                                       onKeyDown={handleKeyPress}
                                       key={outputIndex}
@@ -1080,8 +1320,9 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                                     </div>
                                   :
                                     <MDXEditor 
+                                      className='py-2 px-6'
                                       ref={mdxEditorRef}
-                                      markdown={outputItem.answer.replace(/<span class="new_content">|<\/span>/g, '')} 
+                                      markdown={outputItem.answer.replace(/<span class="new_content">|<\/span>/g, '').replace(/<span class="cursor">|<\/span>/g, '')} 
                                       // markdown={editInputValues[tabIndex][outputIndex] as string} 
                                       key={editInputValues[tabIndex][outputIndex] as string} 
                                       onChange={handleChangeEditor}
@@ -1115,7 +1356,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                         }
                         
                         {/* Action buttons for each output */}
-                        <div className='flex items-center justify-between'>
+                        <div className='p-2 flex items-center justify-between'>
                           <div>
                             <div style={{ display: "flex", gap: "5px" }}>
                               {[1, 2, 3, 4, 5].map((starValue) => (
@@ -1146,7 +1387,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                               <IonIcon className='' slot="icon-only" icon={copyOutline}></IonIcon>
                             </IonButton>
 
-                            {/* {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === null && editVisibility.outputIndex === outputIndex ? 
+                            {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === null && editVisibility.outputIndex === outputIndex ? 
                               <>
                                 <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Save answer' className='text-xs' onClick={() => {saveAnswerChange(editorChangedText || editInputValues[tabIndex][outputIndex] as string, outputItem.input_params.qid); handleEditingMode(tabIndex, null, outputIndex, false)}} shape="round">
                                   <IonIcon className='' slot="icon-only" icon={saveOutline}></IonIcon>
@@ -1157,14 +1398,14 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                                 </IonButton>
                               </>
                             :
-                              <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Edit answer' className='text-xs' onClick={() => {handleEditingMode(tabIndex, null, outputIndex, false), setCurrentEditCopy(outputItem.answer)}} shape="round">
+                              <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Edit answer' className='text-xs' onClick={() => {handleEditingMode(tabIndex, null, outputIndex, false), setCurrentEditCopy(outputItem.answer), setCurrentEditingCopy(outputItem.answer)}} shape="round">
                                 {isSaveChanges && outputItem.input_params.qid === isEditQid ?
                                   <IonIcon className='animate-spin' slot="icon-only" icon={refreshOutline}></IonIcon>
                                 :
                                   <IonIcon className='' slot="icon-only" icon={createOutline}></IonIcon>
                                 }
                               </IonButton>
-                            } */}
+                            }
                             <IonButton data-tooltip-id='tooltip' data-tooltip-content='Download as .doc' fill="clear" className='text-xs' onClick={() => exportToDoc('single', outputItem.answer)} shape="round">
                               <IonIcon className='' slot="icon-only" icon={documentTextOutline}></IonIcon>
                             </IonButton>
