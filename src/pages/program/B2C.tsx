@@ -1005,7 +1005,7 @@ const B2C: React.FC = () => {
                     placeholder="Write your own prompt."
                     autoGrow={true}
                     counter={true}
-                    maxlength={2000}
+                    maxlength={6000}
                     {...register("question", {
                       validate: {},
                     })}

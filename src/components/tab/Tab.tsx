@@ -381,13 +381,17 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
     const container = containerRefs.current[outputIndex];
     if (!container) return;
 
+    console.log('tabs!!!!!!!!!>>>', tabs);
+    console.log('tabIndex!!!!!!!!!>>>', tabIndex);
+    console.log('itemIndex!!!!!!!!!>>>', itemIndex);
+    console.log('outputIndex!!!!!!!!!>>>', outputIndex);
     let fullString;
     if (itemIndex !== '' && itemIndex !== null) {
       fullString = currentEditingCopy.replace(/<span class="new_content">|<\/span>/g, '').replace(/<span class="cursor">|<\/span>/g, '');
     }else {
       fullString = currentEditingCopy.replace(/<span class="new_content">|<\/span>/g, '').replace(/<span class="cursor">|<\/span>/g, '');
     }
-    console.log('fullString>>>>>>>>>>>>>', fullString)
+    console.log('fullString>>>>>>>>>>>>>', fullString);
 
     const selection = window.getSelection();
     if (!selection || selection.rangeCount === 0) return;
@@ -399,8 +403,9 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
 
     // Get start and end indexes in the rendered text
     const startIndexRendered = preSelectionRange.toString().length;
+    console.log('startIndexRendered:', startIndexRendered);
     const endIndexRendered = startIndexRendered + range.toString().length;
-
+    console.log('charMaps:', charMaps);
     // Convert to markdown indexes using charMaps
     const markdownStartIndex = charMaps[outputIndex]?.find((map) => map.renderedIndex === startIndexRendered)?.markdownIndex ?? -1;
     const markdownEndIndex = charMaps[outputIndex]?.find((map) => map.renderedIndex === endIndexRendered)?.markdownIndex ?? -1;
@@ -1163,7 +1168,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                                 <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Copy text' className='text-xs' onClick={() => copyToClipboard('single', outputItem.answer)} shape="round">
                                   <IonIcon className='' slot="icon-only" icon={copyOutline}></IonIcon>
                                 </IonButton>
-                                {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === itemIndex && editVisibility.outputIndex === outputIndex ? 
+                                {/* {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === itemIndex && editVisibility.outputIndex === outputIndex ? 
                                   <>
                                     <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Save answer' className='text-xs' onClick={() => {console.log('editorChangedText>>', editorChangedText); console.log('saveAnswerValue>>', editInputValues[tabIndex][itemIndex][outputIndex]), saveAnswerChange(editorChangedText || editInputValues[tabIndex][itemIndex][outputIndex], outputItem.input_params.qid); handleEditingMode(tabIndex, itemIndex, outputIndex, false)}} shape="round">
                                       <IonIcon className='' slot="icon-only" icon={saveOutline}></IonIcon>
@@ -1181,7 +1186,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                                       <IonIcon className='' slot="icon-only" icon={createOutline}></IonIcon>
                                     }
                                   </IonButton>
-                                }
+                                } */}
                                 
                                 <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Download as .doc' className='text-xs' onClick={() => exportToDoc('single', outputItem.answer)} shape="round">
                                   <IonIcon className='' slot="icon-only" icon={documentTextOutline}></IonIcon>
@@ -1201,7 +1206,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                             placeholder="Write your question."
                             autoGrow={true}
                             counter={true}
-                            maxlength={2000}
+                            maxlength={6000}
                             // value={(inputValues[tabIndex] as string[])[itemIndex]}
                             onIonInput={(event) => handleInputChange(tabIndex, event, itemIndex)}
                           >
@@ -1229,7 +1234,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                               placeholder="Write your question."
                               autoGrow={true}
                               counter={true}
-                              maxlength={2000}
+                              maxlength={6000}
                               // value={(inputValues[tabIndex] as string[])[itemIndex]}
                               onIonInput={(event) =>  handleInputChange(tabIndex, event, itemIndex)}
                             >
@@ -1387,7 +1392,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                               <IonIcon className='' slot="icon-only" icon={copyOutline}></IonIcon>
                             </IonButton>
 
-                            {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === null && editVisibility.outputIndex === outputIndex ? 
+                            {/* {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === null && editVisibility.outputIndex === outputIndex ? 
                               <>
                                 <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Save answer' className='text-xs' onClick={() => {saveAnswerChange(editorChangedText || editInputValues[tabIndex][outputIndex] as string, outputItem.input_params.qid); handleEditingMode(tabIndex, null, outputIndex, false)}} shape="round">
                                   <IonIcon className='' slot="icon-only" icon={saveOutline}></IonIcon>
@@ -1405,7 +1410,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                                   <IonIcon className='' slot="icon-only" icon={createOutline}></IonIcon>
                                 }
                               </IonButton>
-                            }
+                            } */}
                             <IonButton data-tooltip-id='tooltip' data-tooltip-content='Download as .doc' fill="clear" className='text-xs' onClick={() => exportToDoc('single', outputItem.answer)} shape="round">
                               <IonIcon className='' slot="icon-only" icon={documentTextOutline}></IonIcon>
                             </IonButton>
@@ -1426,7 +1431,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                       placeholder="Write your question."
                       autoGrow={true}
                       counter={true}
-                      maxlength={2000}
+                      maxlength={6000}
                       value={inputValues[tabIndex] as string}
                       onIonInput={(event) => handleInputChange(tabIndex, event, '')}
                     >
@@ -1454,7 +1459,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                         placeholder="Write your question."
                         autoGrow={true}
                         counter={true}
-                        maxlength={2000}
+                        maxlength={6000}
                         // value={inputValues[tabIndex] as string}
                         onIonInput={(event) => handleInputChange(tabIndex, event, '')}
                       >
