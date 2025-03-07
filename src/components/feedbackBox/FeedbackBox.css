@@ -7,3 +7,6 @@ ion-popover.rating-popover {
     font-size: 12px;
     --width: 300px;
 }
+ion-modal.feedback-box ion-textarea {
+    margin-top: 6px;
+}
