@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
-import { IonApp, IonRouterOutlet, setupIonicReact } from '@ionic/react';
+import { IonApp, IonRouterOutlet, IonToast, setupIonicReact } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
 
 /* Core CSS required for Ionic components to work properly */
@@ -47,7 +47,18 @@ import B2B from './pages/program/B2B';
 import Examples from './pages/admin/examples/Examples';
 import Config from './pages/admin/configuration/Config';
 import NotFoundPage from './pages/NotFoundPage';
+import packageJson from '../package.json';
+const storedVersion = localStorage.getItem("app_version");
 
+if (storedVersion === null || storedVersion !== packageJson.version) {
+  console.log('version', packageJson.version);
+  console.log('storedVersion', storedVersion);
+  // alert('This is an alert!');
+  localStorage.setItem("app_version", packageJson.version);
+  window.location.reload();
+}else {
+  console.log('version', packageJson.version);
+}
 
 const App: React.FC = () => (
   <IonApp>
@@ -72,7 +83,6 @@ const App: React.FC = () => (
               <Route path="/" component={Login} />
             </Switch>
         </AuthProvider>
-        
       </IonRouterOutlet>
     </IonReactRouter>
   </IonApp>
