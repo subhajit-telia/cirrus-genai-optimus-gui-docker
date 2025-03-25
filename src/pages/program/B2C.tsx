@@ -16,6 +16,7 @@ import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import ProductDropdown from '../../components/dropdown/productDropdown/ProductDropdown';
 
+
 type Tab = {
   answer: string;
   segment_id: string;
@@ -91,6 +92,7 @@ const B2C: React.FC = () => {
   const [selectedDiv, setSelectedDiv] = useState<number | null>(null);
   const [feedbackCopy, setFeedbackCopy] = useState<any[]>([]);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
+  const storedVersion = localStorage.getItem("app_version");
 
   useEffect(() => {
     let userLocalData:any = localStorage.getItem('user');
@@ -102,6 +104,17 @@ const B2C: React.FC = () => {
     getPurposesData();
     getFormatsData();
     getProductsData();
+
+
+    if (storedVersion === null || storedVersion !== packageJson.version) {
+      console.log('version', packageJson.version);
+      console.log('storedVersion', storedVersion);
+      // alert('This is an alert!');
+      localStorage.setItem("app_version", packageJson.version);
+      window.location.reload();
+    }else {
+      console.log('version', packageJson.version);
+    }
 
   }, [setSegments, setTabs]);
 
