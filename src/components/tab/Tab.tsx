@@ -1003,9 +1003,9 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
     let data:any = {
       qid: updatedItem.qid,
       rate: updatedItem.rating,
-      format_rate: updatedItem.rating,
-      integrity_rate: updatedItem.rating,
-      communication_rate: updatedItem.rating,
+      format_rate: updatedItem.format_rate,
+      integrity_rate: updatedItem.integrity_rate,
+      communication_rate: updatedItem.communication_rate,
       comment: updatedItem.comment,
     };
     
