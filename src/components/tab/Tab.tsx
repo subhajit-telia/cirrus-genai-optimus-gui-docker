@@ -121,6 +121,8 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
   const handleButtonClick = (identifier:any, tabIndex:any, itemIndex:any, data:any) => {
     console.log(tabIndex+'/'+itemIndex+'/'+data);
     if (identifier === 'regenarate') {
+      console.log('regenarate:', data);
+      data.session_id = generateDateTimeString();
       if (itemIndex !== '') {
         tabs[tabIndex].data[itemIndex].answer = '';
         regenarateItem(data); 
