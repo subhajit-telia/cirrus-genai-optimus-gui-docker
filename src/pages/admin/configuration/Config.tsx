@@ -21,6 +21,7 @@ interface ConfigAddModel {
     test_example_chance: number;
     example_acceptance_threshold: number;
     example_automatic_approval: boolean;
+    automatic_feedback_enabled: boolean;
     edit_max_attempts: number;
 }
 
@@ -72,6 +73,7 @@ const Config: React.FC = () => {
         setValue("example_validation_steps", responseData.example_validation.example_validation_steps);
         setValue("example_acceptance_threshold", responseData.example_validation.example_acceptance_threshold);
         setValue("example_automatic_approval", responseData.example_validation.example_automatic_approval);
+        setValue("automatic_feedback_enabled", responseData.automatic_feedback_enabled);
         
         setConfigList(responseData);
         setLoading(false);
@@ -108,6 +110,7 @@ const Config: React.FC = () => {
     payLoad.example_validation.example_validation_steps = data.example_validation_steps;
     payLoad.example_validation.example_acceptance_threshold = data.example_acceptance_threshold;
     payLoad.example_validation.example_automatic_approval = data.example_automatic_approval;
+    payLoad.automatic_feedback_enabled = data.automatic_feedback_enabled;
     
 
     console.log('payLoad', payLoad)
@@ -158,6 +161,7 @@ const Config: React.FC = () => {
   const isQualityGates = watch('quality_check_enabled');
   const isHistoryUnitTest = watch('history_unit_test');
   const isExampleAutomaticApproval = watch('example_automatic_approval');
+  const isAutomaticFeedbackEnabled = watch('automatic_feedback_enabled');
   /* Handle form input field changes end */
 
   return (
@@ -201,6 +205,23 @@ const Config: React.FC = () => {
                                 <IonPopover className="rating-popover" size="auto" trigger="temperature" triggerAction="hover">
                                     <IonContent class="ion-padding">
                                         Temperature is used to control the randomness of the output. When you set it higher, you'll get more random outputs. When you set it lower, towards 0, the values are more deterministic.
+                                    </IonContent>
+                                </IonPopover>
+                            </IonCol>
+                            <IonCol size="4" className='flex items-center'>
+                                <IonCheckbox 
+                                {...register("automatic_feedback_enabled", {
+                                    validate: {},
+                                })}
+                                checked={isAutomaticFeedbackEnabled as boolean}
+                                onIonChange={(event: any) => {
+                                    console.log('event', event.detail.checked);
+                                    setValue("automatic_feedback_enabled", event.detail.checked);
+                                }}
+                                className='mb-4 text-sm' labelPlacement="start"><IonIcon id="automatic-feedback" className=" z-10 cursor-pointer" icon={informationCircle}></IonIcon> Automatic Feedback</IonCheckbox>
+                                <IonPopover className="rating-popover" size="auto" trigger="automatic-feedback" triggerAction="hover">
+                                    <IonContent class="ion-padding">
+                                        Whether automatic feedback generation is enabled. When enabled, the system evaluates the generated copy using an LLM and produces structured feedback automatically.
                                     </IonContent>
                                 </IonPopover>
                             </IonCol>
@@ -261,10 +282,10 @@ const Config: React.FC = () => {
                                     console.log('event', event.detail.checked);
                                     setValue("history_unit_test", event.detail.checked);
                                 }}
-                                className='mb-4 text-sm' labelPlacement="start"><IonIcon id="save-user-history" className=" z-10 cursor-pointer" icon={informationCircle}></IonIcon> Save user history and feedback</IonCheckbox>
+                                className='mb-4 text-sm' labelPlacement="start"><IonIcon id="save-user-history" className=" z-10 cursor-pointer" icon={informationCircle}></IonIcon> Do not save user history and feedback</IonCheckbox>
                                 <IonPopover className="rating-popover" size="auto" trigger="save-user-history" triggerAction="hover">
                                     <IonContent class="ion-padding">
-                                        If unchecked, then interactions with the tool will not be saved in the database.
+                                        If checked, then interactions with the tool will not be saved to the database.
                                     </IonContent>
                                 </IonPopover>
                             </IonCol>
@@ -379,6 +400,7 @@ const Config: React.FC = () => {
                                     </IonContent>
                                 </IonPopover>
                             </IonCol>
+                            
                         </IonRow>
                     </IonGrid>
                     <div className='flex justify-end'>
