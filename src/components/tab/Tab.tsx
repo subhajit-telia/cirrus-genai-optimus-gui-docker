@@ -41,6 +41,7 @@ interface TabsProps {
   regenarateItem: (data: string) => void;
   saveEditedAnswer: (data: string) => void;
   genarateRefineCopy: (data: string) => void;
+  contentfulData: (data: string) => void;
 }
 
 interface Position {
@@ -64,7 +65,7 @@ interface FeedbackBox {
   comment: string
 }
 
-const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, genarateRefineCopy }) => {
+const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, genarateRefineCopy, contentfulData }) => {
   const [activeTab, setActiveTab] = useState(tabs[0].segment_id); // Set the first tab as active initially
   
   const [isSaveChanges, setIsSaveChanges] = useState(false);
@@ -291,6 +292,47 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
       setIsRefineBox(false);
     }
     console.log('tabs>><<', tabs);
+
+    /* initialize the array for contentful start */
+    const resultArray:any = [];
+
+    // tabs.forEach((segment: Tab) => {
+    //   segment.data.forEach((dataItem: innerTab) => {
+    //     dataItem.outputs.forEach((output: innerOutput) => {
+    //       const { rating, ...outputWithoutRating } = output;
+    //       resultArray.push(outputWithoutRating);
+    //     });
+    //   });
+    // });
+
+    // console.log(resultArray);
+
+    tabs.forEach((segment: any) => {
+      // If 'data' exists, handle nested structure
+      if (Array.isArray(segment.data)) {
+        segment.data.forEach((dataItem: any) => {
+          if (Array.isArray(dataItem.outputs)) {
+            dataItem.outputs.forEach((output: any) => {
+              const { rating, ...outputWithoutRating } = output;
+              resultArray.push(outputWithoutRating);
+            });
+          }
+        });
+      }
+    
+      // Handle flat structure (if 'outputs' is directly under segment)
+      if (Array.isArray(segment.outputs)) {
+        segment.outputs.forEach((output: any) => {
+          const { rating, ...outputWithoutRating } = output;
+          resultArray.push(outputWithoutRating);
+        });
+      }
+    });
+
+    contentfulData(resultArray)
+    console.log(resultArray);
+    /* initialize the array for contentful end */
+
     setIsSaveChanges(false);
     setIsEditQid('');
     setEditorChangedText('');

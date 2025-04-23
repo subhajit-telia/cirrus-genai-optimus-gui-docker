@@ -140,6 +140,10 @@ ion-modal.self-learning-modal {
     --width: 90%;
     --height: auto;
 }
+ion-modal.contentful-modal {
+    --width: 450px;
+    --height: auto;
+}
 ion-modal#example-modal {
     --width: fit-content;
   --min-width: 450px;
@@ -153,7 +157,7 @@ ion-modal#example-modal::part(content) {
     display: block;
     contain: content;
 }
-ion-modal#example-modal .inner-content, ion-modal.self-learning-modal .inner-content{
+ion-modal#example-modal .inner-content, ion-modal.self-learning-modal .inner-content, ion-modal.contentful-modal .inner-content {
     max-height: 80vh;
     overflow: auto;
 }
