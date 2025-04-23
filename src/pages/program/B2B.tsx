@@ -1,6 +1,6 @@
-import { IonButton, IonButtons, IonChip, IonCol, IonContent, IonFab, IonFabButton, IonFabList, IonFooter, IonGrid, IonHeader, IonIcon, IonModal, IonPage, IonProgressBar, IonRow, IonSkeletonText, IonSpinner, IonTextarea, IonTitle, IonToast, IonToolbar } from '@ionic/react';
+import { IonButton, IonButtons, IonChip, IonCol, IonContent, IonFab, IonFabButton, IonFabList, IonFooter, IonGrid, IonHeader, IonIcon, IonInput, IonModal, IonPage, IonProgressBar, IonRow, IonSkeletonText, IonSpinner, IonTextarea, IonTitle, IonToast, IonToolbar } from '@ionic/react';
 import AppHeader from '../../components/header/Header';
-import { globe, information, link } from 'ionicons/icons';
+import { closeOutline, globe, information, link } from 'ionicons/icons';
 import { useEffect, useState } from 'react';
 import Tabs from '../../components/tab/Tab';
 import { useForm } from "react-hook-form";
@@ -42,6 +42,7 @@ interface UserAddModel {
   purpose: string;
   products: string;
   question: string;
+  internalName: string;
 }
 
 interface Segment {
@@ -91,6 +92,10 @@ const B2B: React.FC = () => {
   const [selectedDiv, setSelectedDiv] = useState<number | null>(null);
   const [feedbackCopy, setFeedbackCopy] = useState<any[]>([]);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
+  const storedVersion = localStorage.getItem("app_version");
+  const [isContentfulModal, setIsContentfulModal] = useState(false);
+  const [contentfulCopy, setContentfulCopy] = useState<any[]>([]);
+
 
   useEffect(() => {
     let userLocalData:any = localStorage.getItem('user');
@@ -774,6 +779,57 @@ const B2B: React.FC = () => {
   };
   /* genarate Refine Copy end */
 
+  /* send To contentful start */
+  const sendTocontentful = async (data: any): Promise<void> => {
+    console.log('contentfulData', data);
+    setContentfulCopy(data)
+  }
+
+  const handleContentfulFormSubmit = async (data:any) => {
+    
+    console.log('contentfulCopy', data);
+
+    let payload = {
+      user: userName,
+      contentName: data.internalName,
+      responses: contentfulCopy
+    };
+    let formUrl = apiUrl + '/contentful/push';
+    try {
+      const response = await fetch(formUrl, {
+        method: HTTPMethod.POST,
+        headers: {
+          '"removed"': `${NetworkInfo.ACCESSTOKEN}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload),
+      });
+  
+      const responseData = await response.json();
+      console.log('Success:', responseData);
+  
+      if (response.ok && !responseData.ErrorMessage) {
+        reset;
+        setIsContentfulModal(false);
+        setIsShowError(true);
+        setIsErrorMsg('Contentful submited successfully!');
+      } else {
+        setIsShowError(true);
+        setIsErrorMsg(responseData.ErrorMessage || 'Something went wrong!');
+      }
+    } catch (error: any) {
+      console.error('Login failed:', error);
+      if (error.response) {
+        setIsShowError(true);
+        setIsErrorMsg(error.response || 'Something went wrong!');
+      }else {
+        setIsShowError(true);
+        setIsErrorMsg(error.response || 'Please generate again!');
+      }
+    }
+  };
+  /* send To contentful end */
+
   /* ---------------Export to doc start--------------- */
   const exportToDoc = (data:any) => {
     console.log('data', data);
@@ -1038,10 +1094,10 @@ const B2B: React.FC = () => {
               <IonRow>
                 <IonCol>
                   <div className="mx-2.5 mt-7">
-                    <Tabs tabs={tabs} regenarateItem={regenarateItem} saveEditedAnswer={saveEditedAnswer} genarateRefineCopy={genarateRefineCopy}/>
+                    <Tabs tabs={tabs} regenarateItem={regenarateItem} saveEditedAnswer={saveEditedAnswer} genarateRefineCopy={genarateRefineCopy} contentfulData={sendTocontentful}/>
                     <div className="text-right mt-3">
                       <IonChip onClick={() => handleFormSubmit(requestData)} className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Rewrite all suggestions</IonChip>
-                      <IonChip disabled className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Send to contentful</IonChip>
+                      <IonChip onClick={() => setIsContentfulModal(true)} className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Send to contentful</IonChip>
                       <IonChip onClick={() => exportToDoc(tabs)} className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Save all suggestions to word.doc</IonChip>
                       {/* <IonChip onClick={handleReset} className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Create new task</IonChip> */}
                     </div>
@@ -1125,6 +1181,42 @@ const B2B: React.FC = () => {
           }
         </IonModal>
         {/* self learning modal end */}
+
+        {/* send to contentful start */}
+        <IonModal id="example-modal" isOpen={isContentfulModal} onWillDismiss={() => setIsContentfulModal(false)}>
+          <IonHeader>
+            <IonToolbar>
+              <IonTitle className='text-sm font-bold'>Send to Contentful</IonTitle>
+              <IonButtons slot="end">
+                <IonButton size="small" shape="round" onClick={() => setIsContentfulModal(false)}>
+                  <IonIcon slot="icon-only" icon={closeOutline}></IonIcon>
+                </IonButton>
+              </IonButtons>
+            </IonToolbar>
+          </IonHeader>
+          <div className="ion-padding inner-content">
+            <p className='text-sm text-center pb-8 tex'>Send all generated copies to contentful. Add an internal name that will be added to the copies.</p>
+            <form onSubmit={handleSubmit(handleContentfulFormSubmit)} className="w-full">
+              <IonInput className='mb-4 text-sm' label="Internal Name" labelPlacement="floating" fill="outline" placeholder="Please add an Internal name"
+                {...register("internalName", {
+                  validate: {},
+                })}
+                helperText={`A total ${contentfulCopy.length} copies will be sent to contentful.`}
+                required
+              ></IonInput>
+              <div className='text-center mt-4'>
+                <IonButton size='small' type='submit' className='btn-primary' shape="round">
+                  {loading && <IonSpinner className='mr-2' name="bubbles"></IonSpinner>}
+                  Save
+                </IonButton>
+                <IonButton onClick={() => setIsContentfulModal(false)} size='small' type='reset' fill='outline' shape="round">
+                  Cancel
+                </IonButton>
+              </div>
+            </form>
+          </div>
+        </IonModal>
+        {/* send to contentful end */}
       </IonContent>
     </IonPage>
   );
