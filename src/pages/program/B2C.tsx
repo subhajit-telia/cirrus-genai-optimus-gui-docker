@@ -90,6 +90,7 @@ const B2C: React.FC = () => {
   const [userName, setUserName] = useState('');
   const apiUrl = window.RUNTIME_ENV?.REACT_APP_API_URL || NetworkInfo.URL;
   const [isOpenModal, setIsOpenModal] = useState(false);
+  const [isOpenEditing, setIsOpenEditing] = useState(false);
   const [selectedDiv, setSelectedDiv] = useState<number | null>(null);
   const [feedbackCopy, setFeedbackCopy] = useState<any[]>([]);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
@@ -458,7 +459,8 @@ const B2C: React.FC = () => {
                         { 
                           answer: DOMPurify.sanitize(responseData.responses[0].answer), 
                           input_params: responseData.responses[0].input_params ,
-                          rating: null
+                          rating: null,
+                          timestamp: Date.now()
                         }
                       ]
                     };
@@ -482,7 +484,8 @@ const B2C: React.FC = () => {
                     { 
                       answer: DOMPurify.sanitize(responseData.responses[0].answer), 
                       input_params: responseData.responses[0].input_params ,
-                      rating: null
+                      rating: null,
+                      timestamp: Date.now()
                     }
                   ]
                 };
@@ -600,7 +603,12 @@ const B2C: React.FC = () => {
               segment.data = segment.data.map((format: any) => {
                 if (format.format_id === responseData.responses[0].input_params.format_id) {
                   let replaceOutput = format.outputs.map((output:innerOutput) => 
-                    output.input_params.qid === data.qid ? responseData.responses[0] : output
+                    output.input_params.qid === data.qid 
+                    ? { 
+                        ...responseData.responses[0], 
+                        timestamp: Date.now() 
+                      }
+                    : output
                   );
                   return {
                     ...format,
@@ -619,7 +627,12 @@ const B2C: React.FC = () => {
           arrayNoSegment = arrayNoSegment.map((format: { format_id: any; outputs: innerOutput[] }) => {
             if (format.format_id === responseData.responses[0].input_params.format_id || format.format_id === 'customPrompts') {
               let replaceOutput = format.outputs.map((output:innerOutput) => 
-                output.input_params.qid === data.qid ? responseData.responses[0] : output
+                output.input_params.qid === data.qid 
+                ? { 
+                    ...responseData.responses[0], 
+                    timestamp: Date.now() 
+                  }
+                : output
               );
               return {
                 ...format,
@@ -799,11 +812,11 @@ const B2C: React.FC = () => {
   const handleContentfulFormSubmit = async (data:any) => {
     
     console.log('contentfulCopy', data);
-
+    let allQids: string[] = contentfulCopy.map(item => item.input_params.qid);
+    console.log('qids', allQids);
     let payload = {
-      user: userName,
       contentName: data.internalName,
-      responses: contentfulCopy
+      qids: allQids
     };
     let formUrl = apiUrl + '/contentful/push';
     try {
@@ -840,6 +853,13 @@ const B2C: React.FC = () => {
     }
   };
   /* send To contentful end */
+
+  /* -------------handleEditingMode start------------- */
+  const handleEditingMode = async (data: boolean): Promise<void> => {
+    setIsOpenEditing(data);
+    console.log('isOpenEditing', data);
+  }
+  /* handleEditingMode end */
 
   /* ---------------Export to doc start--------------- */
   const exportToDoc = (data:any) => {
@@ -903,7 +923,8 @@ const B2C: React.FC = () => {
                   { 
                     answer: DOMPurify.sanitize(selectItem.answer), 
                     input_params: selectItem.input_params ,
-                    rating: null
+                    rating: null,
+                    timestamp: Date.now()
                   }
                 ]
               };
@@ -927,7 +948,8 @@ const B2C: React.FC = () => {
               { 
                 answer: DOMPurify.sanitize(selectItem.answer), 
                 input_params: selectItem.input_params ,
-                rating: null
+                rating: null,
+                timestamp: Date.now()
               }
             ]
           };
@@ -1105,10 +1127,10 @@ const B2C: React.FC = () => {
               <IonRow>
                 <IonCol>
                   <div className="mx-2.5 mt-7">
-                    <Tabs tabs={tabs} regenarateItem={regenarateItem} saveEditedAnswer={saveEditedAnswer} genarateRefineCopy={genarateRefineCopy} contentfulData={sendTocontentful}/>
+                    <Tabs tabs={tabs} regenarateItem={regenarateItem} saveEditedAnswer={saveEditedAnswer} genarateRefineCopy={genarateRefineCopy} contentfulData={sendTocontentful} isEditingMode={handleEditingMode}/>
                     <div className="text-right mt-3">
                       <IonChip onClick={() => handleFormSubmit(requestData)} className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Rewrite all suggestions</IonChip>
-                      <IonChip onClick={() => setIsContentfulModal(true)} className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Send to contentful</IonChip>
+                      <IonChip disabled={isOpenEditing} onClick={() => setIsContentfulModal(true)} className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Send to contentful</IonChip>
                       <IonChip onClick={() => exportToDoc(tabs)} className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Save all suggestions to word.doc</IonChip>
                       {/* <IonChip onClick={handleReset} className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Create new task</IonChip> */}
                     </div>
@@ -1206,7 +1228,7 @@ const B2C: React.FC = () => {
             </IonToolbar>
           </IonHeader>
           <div className="ion-padding inner-content">
-            <p className='text-sm text-center pb-8 tex'>Send all generated copies to contentful. Add an internal name that will be added to the copies.</p>
+            <p className='text-sm text-center pb-8 tex'>Send all generated copies to Contentful. Add an internal name that will be added to the copies (Optimus will automatically add format and other attributes after the internal name).</p>
             <form onSubmit={handleSubmit(handleContentfulFormSubmit)} className="w-full">
               <IonInput className='mb-4 text-sm' label="Internal Name" labelPlacement="floating" fill="outline" placeholder="Please add an Internal name"
                 {...register("internalName", {
