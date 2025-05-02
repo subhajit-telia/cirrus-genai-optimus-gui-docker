@@ -42,6 +42,7 @@ interface TabsProps {
   saveEditedAnswer: (data: string) => void;
   genarateRefineCopy: (data: string) => void;
   contentfulData: (data: string) => void;
+  isEditingMode: (data: boolean) => void;
 }
 
 interface Position {
@@ -65,7 +66,7 @@ interface FeedbackBox {
   comment: string
 }
 
-const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, genarateRefineCopy, contentfulData }) => {
+const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, genarateRefineCopy, contentfulData, isEditingMode }) => {
   const [activeTab, setActiveTab] = useState(tabs[0].segment_id); // Set the first tab as active initially
   
   const [isSaveChanges, setIsSaveChanges] = useState(false);
@@ -242,6 +243,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
     }
     // setCurrentEditCopy('');
     saveEditedAnswer(data);
+    isEditingMode(false)
     setEditorChangedText('');
   }
   /* Save edit answer copy end */
@@ -264,6 +266,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
     
     setCurrentEditCopy('');
     setCurrentEditingCopy('');
+    isEditingMode(false);
   }
   /* Discard edit answer copy end */
 
@@ -307,26 +310,52 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
 
     // console.log(resultArray);
 
+    // tabs.forEach((segment: any) => {
+    //   if (Array.isArray(segment.data)) {
+    //     segment.data.forEach((dataItem: any) => {
+    //       if (Array.isArray(dataItem.outputs)) {
+    //         dataItem.outputs.forEach((output: any) => {
+    //           const { rating, ...outputWithoutRating } = output;
+    //           resultArray.push(outputWithoutRating);
+    //         });
+    //       }
+    //     });
+    //   }
+    
+    //   if (Array.isArray(segment.outputs)) {
+    //     segment.outputs.forEach((output: any) => {
+    //       const { rating, ...outputWithoutRating } = output;
+    //       resultArray.push(outputWithoutRating);
+    //     });
+    //   }
+    // });
+
     tabs.forEach((segment: any) => {
       // If 'data' exists, handle nested structure
       if (Array.isArray(segment.data)) {
         segment.data.forEach((dataItem: any) => {
-          if (Array.isArray(dataItem.outputs)) {
-            dataItem.outputs.forEach((output: any) => {
-              const { rating, ...outputWithoutRating } = output;
-              resultArray.push(outputWithoutRating);
-            });
+
+          if (Array.isArray(dataItem.outputs) && dataItem.outputs.length > 0) {
+            const latestOutput = dataItem.outputs.reduce((latest: any, current: any) =>
+              current.timestamp > latest.timestamp ? current : latest
+            );
+          
+            const { rating, ...outputWithoutRating } = latestOutput;
+            resultArray.push(outputWithoutRating);
           }
         });
       }
     
       // Handle flat structure (if 'outputs' is directly under segment)
-      if (Array.isArray(segment.outputs)) {
-        segment.outputs.forEach((output: any) => {
-          const { rating, ...outputWithoutRating } = output;
-          resultArray.push(outputWithoutRating);
-        });
+      if (Array.isArray(segment.outputs) && segment.outputs.length > 0) {
+        const latestOutput = segment.outputs.reduce((latest: any, current: any) =>
+          current.timestamp > latest.timestamp ? current : latest
+        );
+      
+        const { rating, ...outputWithoutRating } = latestOutput;
+        resultArray.push(outputWithoutRating);
       }
+      
     });
 
     contentfulData(resultArray)
@@ -345,6 +374,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
       }
       // console.log('currentEditAnswer', currentEditAnswer);
       setCurrentEditingCopy(currentEditAnswer);
+      isEditingMode(true);
     }
 
     console.log('inputVisibility>>', inputVisibility);
@@ -1242,7 +1272,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                                     </IonButton>
                                   </>
                                 :
-                                  <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Edit answer' className='text-xs' onClick={() => {handleEditingMode(tabIndex, itemIndex, outputIndex, false), setCurrentEditCopy(outputItem.answer), setCurrentEditingCopy(outputItem.answer)}} shape="round">
+                                  <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Edit answer' className='text-xs' onClick={() => {handleEditingMode(tabIndex, itemIndex, outputIndex, false), setCurrentEditCopy(outputItem.answer), setCurrentEditingCopy(outputItem.answer), isEditingMode(true)}} shape="round">
                                     {isSaveChanges && outputItem.input_params.qid === isEditQid ?
                                       <IonIcon className='animate-spin' slot="icon-only" icon={refreshOutline}></IonIcon>
                                     :
@@ -1481,7 +1511,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                                 </IonButton>
                               </>
                             :
-                              <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Edit answer' className='text-xs' onClick={() => {handleEditingMode(tabIndex, null, outputIndex, false), setCurrentEditCopy(outputItem.answer), setCurrentEditingCopy(outputItem.answer)}} shape="round">
+                              <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Edit answer' className='text-xs' onClick={() => {handleEditingMode(tabIndex, null, outputIndex, false), setCurrentEditCopy(outputItem.answer), setCurrentEditingCopy(outputItem.answer), isEditingMode(true)}} shape="round">
                                 {isSaveChanges && outputItem.input_params.qid === isEditQid ?
                                   <IonIcon className='animate-spin' slot="icon-only" icon={refreshOutline}></IonIcon>
                                 :
