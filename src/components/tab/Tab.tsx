@@ -813,7 +813,9 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
     document.querySelectorAll('._contentEditable_uazmk_379').forEach(element => {
       element.setAttribute('spellcheck', 'false');
     });
-    setEditorChangedText(updatedMarkdown);
+    const cleanedText = updatedMarkdown.replace(/\\_/g, "_");
+    console.log('cleanedText', cleanedText);
+    setEditorChangedText(cleanedText);
   }
   
   /* ----------select Copy Qid start---------- */
