@@ -98,6 +98,7 @@ const B2B: React.FC = () => {
   const storedVersion = localStorage.getItem("app_version");
   const [isContentfulModal, setIsContentfulModal] = useState(false);
   const [contentfulCopy, setContentfulCopy] = useState<any[]>([]);
+  const [sessionId, setSessionId] = useState<string>('');
 
   useEffect(() => {
     let userLocalData:any = localStorage.getItem('user');
@@ -122,6 +123,11 @@ const B2B: React.FC = () => {
     }
 
   }, [setSegments, setTabs]);
+
+  useEffect(() => {
+    console.log('loading......');
+    setSessionId(generateDateTimeString());
+  }, []);
 
   const onSelect = (selectedList:any, selectedItem:any) => {
     setSelectedProducts(selectedList);
@@ -334,7 +340,7 @@ const B2B: React.FC = () => {
         let eachItem = {
           user: userName,
           session_id: generateDateTimeString(),
-          session_family_id: generateDateTimeString(),
+          session_family_id: sessionId,
           use_case: 'content_creation_b2b',
           product_ids: productIds,
           question: data.question,
@@ -354,7 +360,7 @@ const B2B: React.FC = () => {
         let eachItem = {
           user: userName,
           session_id: generateDateTimeString(),
-          session_family_id: generateDateTimeString(),
+          session_family_id: sessionId,
           use_case: 'content_creation_b2b',
           product_ids: productIds,
           question: data.question,
@@ -383,7 +389,7 @@ const B2B: React.FC = () => {
           let eachItem = {
             user: userName,
             session_id: generateDateTimeString(),
-            session_family_id: generateDateTimeString(),
+            session_family_id: sessionId,
             use_case: 'content_creation_b2b',
             product_ids: productIds,
             question: data.question,
@@ -401,7 +407,7 @@ const B2B: React.FC = () => {
         let eachItem = {
           user: userName,
           session_id: generateDateTimeString(),
-          session_family_id: generateDateTimeString(),
+          session_family_id: sessionId,
           use_case: 'content_creation_b2b',
           product_ids: productIds,
           question: data.question,
@@ -540,7 +546,7 @@ const B2B: React.FC = () => {
   /* ---------------Reset form start--------------- */
   const handleReset = () => {
     reset();
-
+    setSessionId(generateDateTimeString());
     const updatedSegments = segments.map(segment => ({
       ...segment,
       isActive: false
