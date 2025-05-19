@@ -254,13 +254,17 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
     console.log('isRefineDetails', isRefineDetails);
     if (currentEditCopy) {
       if (isRefineDetails.itemIndex !== '' && isRefineDetails.itemIndex !== null) {
-        tabs[isRefineDetails.tabIndex].data[isRefineDetails.itemIndex].outputs[isRefineDetails.outputIndex].answer = currentEditCopy;
-        saveAnswerChange(currentEditCopy, tabs[isRefineDetails.tabIndex].data[isRefineDetails.itemIndex].outputs[isRefineDetails.outputIndex].input_params.qid);
-        console.log('tabs@@@@', tabs)
+        if (tabs[isRefineDetails.tabIndex].data[isRefineDetails.itemIndex].outputs[isRefineDetails.outputIndex].answer !== currentEditCopy) {
+          tabs[isRefineDetails.tabIndex].data[isRefineDetails.itemIndex].outputs[isRefineDetails.outputIndex].answer = currentEditCopy;
+          saveAnswerChange(currentEditCopy, tabs[isRefineDetails.tabIndex].data[isRefineDetails.itemIndex].outputs[isRefineDetails.outputIndex].input_params.qid);
+          console.log('tabs@@@@', tabs);
+        }
       }else {
-        tabs[isRefineDetails.tabIndex].outputs[isRefineDetails.outputIndex].answer = currentEditCopy;
-        saveAnswerChange(currentEditCopy, tabs[isRefineDetails.tabIndex].outputs[isRefineDetails.outputIndex].input_params.qid);
-        console.log('tabs####', tabs)
+        if (tabs[isRefineDetails.tabIndex].outputs[isRefineDetails.outputIndex].answer !== currentEditCopy) {
+          tabs[isRefineDetails.tabIndex].outputs[isRefineDetails.outputIndex].answer = currentEditCopy;
+          saveAnswerChange(currentEditCopy, tabs[isRefineDetails.tabIndex].outputs[isRefineDetails.outputIndex].input_params.qid);
+          console.log('tabs####', tabs)
+        }
       }
     }
     
