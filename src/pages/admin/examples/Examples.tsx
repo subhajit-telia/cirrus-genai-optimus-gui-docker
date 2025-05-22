@@ -467,7 +467,7 @@ const Examples: React.FC = () => {
       prevExampleList.splice(index[0], 1, payLoad);
     } else {
       console.log('no edit')
-      payLoad.example_id = `ex${filterExampleList.length}`;
+      payLoad.example_id = `ex${generateDateTimeString()}`;
       prevExampleList = [...filterExampleList, payLoad];
     }
 
@@ -551,6 +551,20 @@ const Examples: React.FC = () => {
     }
   };
   /* Handle form submit end */
+
+  /* Function to generate dynamic string using current date and time */
+  const generateDateTimeString = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0'); // Months are zero-indexed
+    const date = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+    const milliseconds = String(now.getMilliseconds()).padStart(3, '0');
+
+    return `${year}${month}${date}${hours}${minutes}${seconds}${milliseconds}`;
+  };
 
   /* ------Handle form input field changes start------ */
   const {
