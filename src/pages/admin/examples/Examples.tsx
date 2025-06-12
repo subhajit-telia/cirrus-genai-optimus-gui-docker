@@ -468,6 +468,7 @@ const Examples: React.FC = () => {
     } else {
       console.log('no edit')
       payLoad.example_id = `ex${generateDateTimeString()}`;
+      payLoad.test_results = [];
       prevExampleList = [...filterExampleList, payLoad];
     }
 
