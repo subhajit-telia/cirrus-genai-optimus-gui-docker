@@ -1030,13 +1030,18 @@ const B2C: React.FC = () => {
 
   // Upload function - send binary
   const uploadFile = async (file: File) => {
+    console.log('Uploading file:', file);
+    const formData = new FormData();
+    formData.append('file', file);
+
+
     try {
       const response = await fetch(apiUrl+'/attachments/upload', {
         method: 'POST',
         headers: {
-          'Content-Type': file.type, // e.g., application/pdf, image/png, etc.
+          '"removed"': `${NetworkInfo.ACCESSTOKEN}`,
         },
-        body: file, // sending raw binary
+        body: formData, // sending raw binary
       });
 
       if (!response.ok) throw new Error('Upload failed');
