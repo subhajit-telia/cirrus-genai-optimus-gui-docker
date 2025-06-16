@@ -1,7 +1,7 @@
 import { IonButton, IonButtons, IonChip, IonCol, IonContent, IonFab, IonFabButton, IonFabList, IonFooter, IonGrid, IonHeader, IonIcon, IonInput, IonModal, IonPage, IonProgressBar, IonRow, IonSkeletonText, IonSpinner, IonTextarea, IonTitle, IonToast, IonToolbar } from '@ionic/react';
 import AppHeader from '../../components/header/Header';
-import { closeOutline, globe, information, link } from 'ionicons/icons';
-import { useEffect, useState } from 'react';
+import { attach, closeCircleOutline, closeOutline, documentAttachOutline, globe, information, link } from 'ionicons/icons';
+import { useEffect, useRef, useState } from 'react';
 import Tabs from '../../components/tab/Tab';
 import { useForm } from "react-hook-form";
 import { HTTPMethod, NetworkInfo } from '../../routes/network';
@@ -99,6 +99,10 @@ const B2C: React.FC = () => {
   const [isContentfulModal, setIsContentfulModal] = useState(false);
   const [contentfulCopy, setContentfulCopy] = useState<any[]>([]);
   const [sessionId, setSessionId] = useState<string>('');
+
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [attachments, setAttachments] = useState<string>('');
 
   useEffect(() => {
     let userLocalData:any = localStorage.getItem('user');
@@ -432,7 +436,7 @@ const B2C: React.FC = () => {
     console.log('payload', data);
     console.log('arrayTab>>>', arrayTab);
     console.log('arrayNoSegment', arrayNoSegment);
-  
+    data.attached_text = attachments;
     try {
       const response = await fetch(formUrl, {
         method: HTTPMethod.POST,
@@ -994,6 +998,67 @@ const B2C: React.FC = () => {
     
   };
 
+
+  /* -------------handle file upload start------------- */
+  // Trigger file select dialog
+  const handleIconClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  // Handle drag & drop
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (file) {
+      setSelectedFile(file);
+      uploadFile(file);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+  };
+
+  // Handle file selection from dialog
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      uploadFile(file);
+    }
+  };
+
+  // Upload function - send binary
+  const uploadFile = async (file: File) => {
+    try {
+      const response = await fetch(apiUrl+'/attachments/upload', {
+        method: 'POST',
+        headers: {
+          'Content-Type': file.type, // e.g., application/pdf, image/png, etc.
+        },
+        body: file, // sending raw binary
+      });
+
+      if (!response.ok) throw new Error('Upload failed');
+
+      const responseData = await response.json();
+      setAttachments(responseData.data.attached_text);
+      if (responseData.messages.type === 'warning') {
+        setIsShowError(true);
+        setIsErrorMsg(responseData.messages.text);
+        
+      }
+      console.log('Upload success:', responseData);
+    } catch (err) {
+      console.error('Error uploading file:', err);
+    }
+  };
+
+  const handleRemoveFile = () => {
+    setSelectedFile(null);
+    fileInputRef.current!.value = ''; // Clear input value
+  };
+
   return (
     <IonPage>
       <AppHeader/>
@@ -1103,19 +1168,39 @@ const B2C: React.FC = () => {
             <IonGrid className='mt-7'>
               <IonRow>
                 <IonCol>
-                  <IonTextarea
-                    className='bottom-textarea rounded-xl text-black'
-                    aria-label="Custom textarea"
-                    placeholder="Write your own prompt."
-                    autoGrow={true}
-                    counter={true}
-                    maxlength={6000}
-                    {...register("question", {
-                      validate: {},
-                    })}
-                  >
-                    
-                  </IonTextarea>
+                  <div className='relative' onDrop={handleDrop} onDragOver={handleDragOver}>
+                    <IonTextarea
+                      className='bottom-textarea rounded-xl text-black'
+                      aria-label="Custom textarea"
+                      placeholder="Write your own prompt."
+                      autoGrow={true}
+                      counter={true}
+                      maxlength={6000}
+                      {...register("question", {
+                        validate: {},
+                      })}
+                    >
+                      
+                    </IonTextarea>
+                    {/* <div className='flex items-center absolute bottom-0 left-0 z-10 w-full px-4 py-1'>
+                      <IonIcon onClick={handleIconClick} data-tooltip-id="attachment" data-tooltip-content="All text in the uploaded file will be processed." className='text-[20px]' icon={attach}></IonIcon>
+                      <Tooltip id="attachment" />
+                      {selectedFile ? (
+                        <div className='flex items-center px-4 text-[14px]'>
+                          <span>{selectedFile.name}</span>
+                          <IonIcon onClick={handleRemoveFile} className='text-[20px] cursor-pointer' icon={closeCircleOutline}></IonIcon>
+                        </div>
+                      )
+                      : 
+                        <input
+                          className='opacity-0'
+                          type="file"
+                          ref={fileInputRef}
+                          onChange={handleFileChange}
+                        />
+                      }
+                    </div> */}
+                  </div>
                 </IonCol>
               </IonRow>
             </IonGrid>
@@ -1145,7 +1230,7 @@ const B2C: React.FC = () => {
                     <Tabs tabs={tabs} regenarateItem={regenarateItem} saveEditedAnswer={saveEditedAnswer} genarateRefineCopy={genarateRefineCopy} contentfulData={sendTocontentful} isEditingMode={handleEditingMode}/>
                     <div className="text-right mt-3">
                       <IonChip onClick={() => handleFormSubmit(requestData)} className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Rewrite all suggestions</IonChip>
-                      <IonChip data-tooltip-id="contentful" data-tooltip-content="Save all content before sending it to Contentful." disabled onClick={ handleClickContentful } className='!pointer-events-auto text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Send to contentful</IonChip>
+                      <IonChip data-tooltip-id="contentful" data-tooltip-content="Save all content before sending it to Contentful." disabled={isOpenEditing} onClick={ handleClickContentful } className='!pointer-events-auto text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Send to contentful</IonChip>
                       <IonChip onClick={() => exportToDoc(tabs)} className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Save all suggestions to word.doc</IonChip>
                       {/* <IonChip onClick={handleReset} className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Create new task</IonChip> */}
                       <Tooltip className={`${!isOpenEditing ? 'hidden' : ''}`} id="contentful" />
