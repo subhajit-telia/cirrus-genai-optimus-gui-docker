@@ -1182,7 +1182,7 @@ const B2C: React.FC = () => {
                     >
                       
                     </IonTextarea>
-                    {/* <div className='flex items-center absolute bottom-0 left-0 z-10 w-full px-4 py-1'>
+                    <div className='flex items-center absolute bottom-0 left-0 z-10 w-full px-4 py-1'>
                       <IonIcon onClick={handleIconClick} data-tooltip-id="attachment" data-tooltip-content="All text in the uploaded file will be processed." className='text-[20px]' icon={attach}></IonIcon>
                       <Tooltip id="attachment" />
                       {selectedFile ? (
@@ -1199,7 +1199,7 @@ const B2C: React.FC = () => {
                           onChange={handleFileChange}
                         />
                       }
-                    </div> */}
+                    </div>
                   </div>
                 </IonCol>
               </IonRow>
