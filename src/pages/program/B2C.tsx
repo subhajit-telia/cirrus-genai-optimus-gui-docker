@@ -1044,23 +1044,34 @@ const B2C: React.FC = () => {
         body: formData, // sending raw binary
       });
 
-      if (!response.ok) throw new Error('Upload failed');
-
       const responseData = await response.json();
-      setAttachments(responseData.data.attached_text);
-      if (responseData.messages.type === 'warning') {
+
+      if (response.ok) {
+        console.log('File uploaded successfully:', responseData);
+      }else {
+        console.error('File upload failed:', responseData);
         setIsShowError(true);
-        setIsErrorMsg(responseData.messages.text);
+        setIsErrorMsg(responseData.detail);
+      }
+
+
+      setAttachments(responseData.data.attached_text);
+      if (responseData.messages[0].type === 'warning') {
+        setIsShowError(true);
+        setIsErrorMsg(responseData.messages[0].text);
         
       }
       console.log('Upload success:', responseData);
     } catch (err) {
       console.error('Error uploading file:', err);
+      setIsShowError(true);
+      setIsErrorMsg('Something went wrong! Maybe the file is too large or corrupted.');
     }
   };
 
   const handleRemoveFile = () => {
     setSelectedFile(null);
+    setAttachments('');
     fileInputRef.current!.value = ''; // Clear input value
   };
 
