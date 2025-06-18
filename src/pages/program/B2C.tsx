@@ -85,6 +85,7 @@ const B2C: React.FC = () => {
   const [loadingProducts, setLoadingProducts] = useState<boolean>(false);
   const [isShowError, setIsShowError] = useState(false);
   const [isErrorMsg, setIsErrorMsg] = useState('');
+  const [isErrorType, setIsErrorType] = useState('');
   const [requestData, setRequestData] = useState('');
   const [selectedFormats, setSelectedFormats] = useState<typeof formats[0][]>([]);
   const [selectedPurpose, setSelectedPurpose] = useState<typeof purposes[0][]>([]);
@@ -567,6 +568,7 @@ const B2C: React.FC = () => {
     setValue("purpose", '');
     setValue("products", '');
     setValue("question", '');
+    handleRemoveFile();
   };
   /*  Reset form end */
 
@@ -1048,24 +1050,33 @@ const B2C: React.FC = () => {
 
       if (response.ok) {
         console.log('File uploaded successfully:', responseData);
+        setAttachments(responseData.data.attached_text);
+        if (responseData.messages.length > 0) {
+          console.log('File warning');
+          setIsShowError(true);
+          setIsErrorMsg(responseData.messages[0].text);
+          setIsErrorType('warning');
+        }else {
+          console.log('File success');
+          setIsShowError(true);
+          setIsErrorMsg('File uploaded successfully!');
+          setIsErrorType('success');
+        }
       }else {
         console.error('File upload failed:', responseData);
         setIsShowError(true);
         setIsErrorMsg(responseData.detail);
+        setIsErrorType('error');
+        handleRemoveFile();
       }
 
 
-      setAttachments(responseData.data.attached_text);
-      if (responseData.messages[0].type === 'warning') {
-        setIsShowError(true);
-        setIsErrorMsg(responseData.messages[0].text);
-        
-      }
+      
       console.log('Upload success:', responseData);
     } catch (err) {
       console.error('Error uploading file:', err);
-      setIsShowError(true);
-      setIsErrorMsg('Something went wrong! Maybe the file is too large or corrupted.');
+      // setIsShowError(true);
+      // setIsErrorMsg('Something went wrong! Maybe the file is too large or corrupted.');
     }
   };
 
@@ -1199,17 +1210,17 @@ const B2C: React.FC = () => {
                       
                     </IonTextarea>
                     <div className='flex items-center absolute bottom-0 left-0 z-10 w-full px-4 py-1'>
-                      <IonIcon onClick={handleIconClick} data-tooltip-id="attachment" data-tooltip-content="All text in the uploaded file will be processed." className='text-[20px]' icon={attach}></IonIcon>
+                      <IonIcon onClick={handleIconClick} data-tooltip-id="attachment" data-tooltip-content="All text in the uploaded file will be processed." className='text-[20px] cursor-pointer' icon={attach}></IonIcon>
                       <Tooltip id="attachment" />
                       {selectedFile ? (
-                        <div className='flex items-center px-4 text-[14px]'>
+                        <div className='flex items-center px-4 text-[14px] cursor-pointer'>
                           <span>{selectedFile.name}</span>
                           <IonIcon onClick={handleRemoveFile} className='text-[20px] cursor-pointer' icon={closeCircleOutline}></IonIcon>
                         </div>
                       )
                       : 
                         <input
-                          className='opacity-0'
+                          className='opacity-0 cursor-pointer'
                           type="file"
                           ref={fileInputRef}
                           onChange={handleFileChange}
@@ -1282,11 +1293,11 @@ const B2C: React.FC = () => {
           },
         ]} duration={3000}></IonToast>
         <IonToast
-          className='custom-toast'
+          className={`custom-toast ${isErrorType}`}
           isOpen={isShowError}
           message={isErrorMsg}
           duration={3000}
-          onDidDismiss={() => setIsShowError(false)}
+          onDidDismiss={() => {setIsErrorType(''), setIsShowError(false)}}
         ></IonToast>
 
         {/* self learning modal start */}

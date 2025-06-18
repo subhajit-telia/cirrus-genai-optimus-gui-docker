@@ -1,7 +1,7 @@
 import { IonButton, IonButtons, IonChip, IonCol, IonContent, IonFab, IonFabButton, IonFabList, IonFooter, IonGrid, IonHeader, IonIcon, IonInput, IonModal, IonPage, IonProgressBar, IonRow, IonSkeletonText, IonSpinner, IonTextarea, IonTitle, IonToast, IonToolbar } from '@ionic/react';
 import AppHeader from '../../components/header/Header';
-import { closeOutline, globe, information, link } from 'ionicons/icons';
-import { useEffect, useState } from 'react';
+import { attach, closeCircleOutline, closeOutline, documentAttachOutline, globe, information, link } from 'ionicons/icons';
+import { useEffect, useRef, useState } from 'react';
 import Tabs from '../../components/tab/Tab';
 import { useForm } from "react-hook-form";
 import { HTTPMethod, NetworkInfo } from '../../routes/network';
@@ -85,6 +85,7 @@ const B2B: React.FC = () => {
   const [loadingProducts, setLoadingProducts] = useState<boolean>(false);
   const [isShowError, setIsShowError] = useState(false);
   const [isErrorMsg, setIsErrorMsg] = useState('');
+  const [isErrorType, setIsErrorType] = useState('');
   const [requestData, setRequestData] = useState('');
   const [selectedFormats, setSelectedFormats] = useState<typeof formats[0][]>([]);
   const [selectedPurpose, setSelectedPurpose] = useState<typeof purposes[0][]>([]);
@@ -99,6 +100,10 @@ const B2B: React.FC = () => {
   const [isContentfulModal, setIsContentfulModal] = useState(false);
   const [contentfulCopy, setContentfulCopy] = useState<any[]>([]);
   const [sessionId, setSessionId] = useState<string>('');
+
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [attachments, setAttachments] = useState<string>('');
 
   useEffect(() => {
     let userLocalData:any = localStorage.getItem('user');
@@ -432,7 +437,7 @@ const B2B: React.FC = () => {
     console.log('payload', data);
     console.log('arrayTab>>>', arrayTab);
     console.log('arrayNoSegment', arrayNoSegment);
-  
+    data.attached_text = attachments;
     try {
       const response = await fetch(formUrl, {
         method: HTTPMethod.POST,
@@ -563,6 +568,7 @@ const B2B: React.FC = () => {
     setValue("purpose", '');
     setValue("products", '');
     setValue("question", '');
+    handleRemoveFile();
   };
   /*  Reset form end */
 
@@ -994,6 +1000,92 @@ const B2B: React.FC = () => {
     
   };
 
+
+  /* -------------handle file upload start------------- */
+  // Trigger file select dialog
+  const handleIconClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  // Handle drag & drop
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (file) {
+      setSelectedFile(file);
+      uploadFile(file);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+  };
+
+  // Handle file selection from dialog
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      uploadFile(file);
+    }
+  };
+
+  // Upload function - send binary
+  const uploadFile = async (file: File) => {
+    console.log('Uploading file:', file);
+    const formData = new FormData();
+    formData.append('file', file);
+
+
+    try {
+      const response = await fetch(apiUrl+'/attachments/upload', {
+        method: 'POST',
+        headers: {
+          '"removed"': `${NetworkInfo.ACCESSTOKEN}`,
+        },
+        body: formData, // sending raw binary
+      });
+
+      const responseData = await response.json();
+
+      if (response.ok) {
+        console.log('File uploaded successfully:', responseData);
+        setAttachments(responseData.data.attached_text);
+        if (responseData.messages.length > 0) {
+          console.log('File warning');
+          setIsShowError(true);
+          setIsErrorMsg(responseData.messages[0].text);
+          setIsErrorType('warning');
+        }else {
+          console.log('File success');
+          setIsShowError(true);
+          setIsErrorMsg('File uploaded successfully!');
+          setIsErrorType('success');
+        }
+      }else {
+        console.error('File upload failed:', responseData);
+        setIsShowError(true);
+        setIsErrorMsg(responseData.detail);
+        setIsErrorType('error');
+        handleRemoveFile();
+      }
+
+
+      
+      console.log('Upload success:', responseData);
+    } catch (err) {
+      console.error('Error uploading file:', err);
+      // setIsShowError(true);
+      // setIsErrorMsg('Something went wrong! Maybe the file is too large or corrupted.');
+    }
+  };
+
+  const handleRemoveFile = () => {
+    setSelectedFile(null);
+    setAttachments('');
+    fileInputRef.current!.value = ''; // Clear input value
+  };
+
   return (
     <IonPage>
       <AppHeader/>
@@ -1103,19 +1195,39 @@ const B2B: React.FC = () => {
             <IonGrid className='mt-7'>
               <IonRow>
                 <IonCol>
-                  <IonTextarea
-                    className='bottom-textarea rounded-xl text-black'
-                    aria-label="Custom textarea"
-                    placeholder="Write your own prompt."
-                    autoGrow={true}
-                    counter={true}
-                    maxlength={6000}
-                    {...register("question", {
-                      validate: {},
-                    })}
-                  >
-                    
-                  </IonTextarea>
+                  <div className='relative' onDrop={handleDrop} onDragOver={handleDragOver}>
+                    <IonTextarea
+                      className='bottom-textarea rounded-xl text-black'
+                      aria-label="Custom textarea"
+                      placeholder="Write your own prompt."
+                      autoGrow={true}
+                      counter={true}
+                      maxlength={6000}
+                      {...register("question", {
+                        validate: {},
+                      })}
+                    >
+                      
+                    </IonTextarea>
+                    <div className='flex items-center absolute bottom-0 left-0 z-10 w-full px-4 py-1'>
+                      <IonIcon onClick={handleIconClick} data-tooltip-id="attachment" data-tooltip-content="All text in the uploaded file will be processed." className='text-[20px] cursor-pointer' icon={attach}></IonIcon>
+                      <Tooltip id="attachment" />
+                      {selectedFile ? (
+                        <div className='flex items-center px-4 text-[14px] cursor-pointer'>
+                          <span>{selectedFile.name}</span>
+                          <IonIcon onClick={handleRemoveFile} className='text-[20px] cursor-pointer' icon={closeCircleOutline}></IonIcon>
+                        </div>
+                      )
+                      : 
+                        <input
+                          className='opacity-0 cursor-pointer'
+                          type="file"
+                          ref={fileInputRef}
+                          onChange={handleFileChange}
+                        />
+                      }
+                    </div>
+                  </div>
                 </IonCol>
               </IonRow>
             </IonGrid>
@@ -1181,11 +1293,11 @@ const B2B: React.FC = () => {
           },
         ]} duration={3000}></IonToast>
         <IonToast
-          className='custom-toast'
+          className={`custom-toast ${isErrorType}`}
           isOpen={isShowError}
           message={isErrorMsg}
           duration={3000}
-          onDidDismiss={() => setIsShowError(false)}
+          onDidDismiss={() => {setIsErrorType(''), setIsShowError(false)}}
         ></IonToast>
 
         {/* self learning modal start */}
