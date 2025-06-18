@@ -28,7 +28,7 @@ http {
     # Server configuration for the frontend application and API proxying
     server {
         listen 80;
-
+        client_max_body_size 100M;
         # Serve static files for the frontend application
         location /api/ {
             # Use environment variable for API endpoint (configured via envsubst)
