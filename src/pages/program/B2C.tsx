@@ -1,6 +1,6 @@
 import { IonButton, IonButtons, IonChip, IonCol, IonContent, IonFab, IonFabButton, IonFabList, IonFooter, IonGrid, IonHeader, IonIcon, IonInput, IonModal, IonPage, IonProgressBar, IonRow, IonSkeletonText, IonSpinner, IonTextarea, IonTitle, IonToast, IonToolbar } from '@ionic/react';
 import AppHeader from '../../components/header/Header';
-import { attach, closeCircleOutline, closeOutline, documentAttachOutline, globe, information, link } from 'ionicons/icons';
+import { attach, closeCircleOutline, closeOutline, documentAttach, documentAttachOutline, globe, information, link } from 'ionicons/icons';
 import { useEffect, useRef, useState } from 'react';
 import Tabs from '../../components/tab/Tab';
 import { useForm } from "react-hook-form";
@@ -104,6 +104,7 @@ const B2C: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [attachments, setAttachments] = useState<string>('');
+  const [isUploadAttachement, setIsUploadAttachement] = useState(false);
 
   useEffect(() => {
     let userLocalData:any = localStorage.getItem('user');
@@ -1032,6 +1033,7 @@ const B2C: React.FC = () => {
 
   // Upload function - send binary
   const uploadFile = async (file: File) => {
+    setIsUploadAttachement(true);
     console.log('Uploading file:', file);
     const formData = new FormData();
     formData.append('file', file);
@@ -1047,7 +1049,7 @@ const B2C: React.FC = () => {
       });
 
       const responseData = await response.json();
-
+      setIsUploadAttachement(false);
       if (response.ok) {
         console.log('File uploaded successfully:', responseData);
         setAttachments(responseData.data.attached_text);
@@ -1075,6 +1077,8 @@ const B2C: React.FC = () => {
       console.log('Upload success:', responseData);
     } catch (err) {
       console.error('Error uploading file:', err);
+      setIsUploadAttachement(false);
+
       // setIsShowError(true);
       // setIsErrorMsg('Something went wrong! Maybe the file is too large or corrupted.');
     }
@@ -1210,7 +1214,16 @@ const B2C: React.FC = () => {
                       
                     </IonTextarea>
                     <div className='flex items-center absolute bottom-0 left-0 z-10 w-full px-4 py-1'>
-                      <IonIcon onClick={handleIconClick} data-tooltip-id="attachment" data-tooltip-content="All text in the uploaded file will be processed." className='text-[20px] cursor-pointer' icon={attach}></IonIcon>
+                      {isUploadAttachement &&
+                        <IonSpinner name="lines-small" color="primary"></IonSpinner>
+                      }
+                      {isUploadAttachement === false && attachments ?
+                        <IonIcon onClick={handleIconClick} data-tooltip-id="attachment" data-tooltip-content="All text in the uploaded file will be processed." className='text-[20px] cursor-pointer' icon={documentAttach}></IonIcon>
+                      : (isUploadAttachement === false && !attachments) &&
+                        <IonIcon onClick={handleIconClick} data-tooltip-id="attachment" data-tooltip-content="All text in the uploaded file will be processed." className='text-[20px] cursor-pointer' icon={attach}></IonIcon>
+                      }
+                      
+                      
                       <Tooltip id="attachment" />
                       {selectedFile ? (
                         <div className='flex items-center px-4 text-[14px] cursor-pointer'>
@@ -1296,7 +1309,7 @@ const B2C: React.FC = () => {
           className={`custom-toast ${isErrorType}`}
           isOpen={isShowError}
           message={isErrorMsg}
-          duration={3000}
+          duration={5000}
           onDidDismiss={() => {setIsErrorType(''), setIsShowError(false)}}
         ></IonToast>
 
