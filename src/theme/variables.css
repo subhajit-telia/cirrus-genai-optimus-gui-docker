@@ -21,6 +21,9 @@ http://ionicframework.com/docs/theming/ */
 @layer base {
     :root {
       --color-primary: #990AE3;
+      --color-danger: #ff0000;
+      --color-success: #00ff00;
+      --color-warning: #ffcc00;
       --color-white: #fff;
       --color-black: #000;
       --ion-color-primary: #990AE3;
@@ -111,6 +114,17 @@ ion-toast.custom-toast {
     --width: auto !important;
     --min-width: 200px;
     --max-width: 400px;
+}
+ion-toast.custom-toast.error {
+    --background: var(--color-danger);
+}
+ion-toast.custom-toast.success {
+    --background: var(--color-success);
+    color: var(--color-black);
+}
+ion-toast.custom-toast.warning {
+    --background: var(--color-warning);
+    color: var(--color-black);
 }
 .custom-search p {
     font-size: 0.675rem;

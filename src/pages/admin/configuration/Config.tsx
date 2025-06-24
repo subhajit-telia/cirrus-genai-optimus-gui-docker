@@ -18,6 +18,8 @@ interface ConfigAddModel {
     generation_max_"removed"s: number;
     temperature: number;
     example_validation_steps: number;
+    max_file_size_mb: number;
+    max_"removed"_length: number;
     test_example_chance: number;
     example_acceptance_threshold: number;
     example_automatic_approval: boolean;
@@ -71,6 +73,8 @@ const Config: React.FC = () => {
         setValue("edit_max_attempts", responseData.retry.edit_max_attempts);
         setValue("test_example_chance", responseData.example_validation.test_example_chance);
         setValue("example_validation_steps", responseData.example_validation.example_validation_steps);
+        setValue("max_file_size_mb", responseData.attachment.max_file_size_mb);
+        setValue("max_"removed"_length", responseData.attachment.max_"removed"_length);
         setValue("example_acceptance_threshold", responseData.example_validation.example_acceptance_threshold);
         setValue("example_automatic_approval", responseData.example_validation.example_automatic_approval);
         setValue("automatic_feedback_enabled", responseData.automatic_feedback_enabled);
@@ -108,6 +112,8 @@ const Config: React.FC = () => {
     payLoad.retry.edit_max_attempts = data.edit_max_attempts;
     payLoad.example_validation.test_example_chance = data.test_example_chance;
     payLoad.example_validation.example_validation_steps = data.example_validation_steps;
+    payLoad.attachment.max_file_size_mb = data.max_file_size_mb;
+    payLoad.attachment.max_"removed"_length = data.max_"removed"_length;
     payLoad.example_validation.example_acceptance_threshold = data.example_acceptance_threshold;
     payLoad.example_validation.example_automatic_approval = data.example_automatic_approval;
     payLoad.automatic_feedback_enabled = data.automatic_feedback_enabled;
@@ -401,6 +407,35 @@ const Config: React.FC = () => {
                                 </IonPopover>
                             </IonCol>
                             
+                        </IonRow>
+                        <p className='font-bold text-lg text-black mb-2.5'>Attachment Settings:</p>
+                        <IonRow>
+                            <IonCol size="4">
+                                <IonInput type='number' step="0.1" className='mb-4 text-sm' label="Max File Size (MB)" labelPlacement="floating" fill="outline" placeholder="Enter Max File Size"
+                                    {...register("max_file_size_mb", {
+                                        validate: {},
+                                    })}
+                                    ><IonIcon id="max-file-size" className="block absolute left-0 -top-1.5 z-10 cursor-pointer" slot="icon-only" icon={informationCircle}></IonIcon>
+                                </IonInput>
+                                <IonPopover className="rating-popover" size="auto" trigger="max-file-size" triggerAction="hover">
+                                    <IonContent class="ion-padding">
+                                        Maximum allowed file size for the attachment, measured in megabytes (MB). This value restricts the size of the document that can be uploaded or processed. If the file exceeds this limit, it will be rejected.
+                                    </IonContent>
+                                </IonPopover>
+                            </IonCol>
+                            <IonCol size="4">
+                                <IonInput type='number' step="0.1" className='mb-4 text-sm' label="Max Token Length" labelPlacement="floating" fill="outline" placeholder="Enter Max Token Length"
+                                    {...register("max_"removed"_length", {
+                                        validate: {},
+                                    })}
+                                    ><IonIcon id="max-"removed"-length" className="block absolute left-0 -top-1.5 z-10 cursor-pointer" slot="icon-only" icon={informationCircle}></IonIcon>
+                                </IonInput>
+                                <IonPopover className="rating-popover" size="auto" trigger="max-"removed"-length" triggerAction="hover">
+                                    <IonContent class="ion-padding">
+                                        Maximum number of "removed"s allowed for the attachment. This value limits the length of the attached document in terms of "removed"s, where a "removed" is a single unit of text (such as a word, punctuation mark, or part of a word) as used by the language model (LLM). If the document exceeds this limit, it will be truncated.
+                                    </IonContent>
+                                </IonPopover>
+                            </IonCol>
                         </IonRow>
                     </IonGrid>
                     <div className='flex justify-end'>
