@@ -49,7 +49,7 @@ Serving this application in production is based on building it as docker contain
 The `API_KEY` value is stored in AWS Secrets Manager in the stallions/optimus_prime_se/webapp secret. Replace it in the command below:
 ```bash
 docker build -t optimus:local .
-docker run -ti -p 8000:80 -e API_ENDPOINT="genai-optimus-api.cirrus-dev.teliacompany.net/api/v1" -e API_KEY="XXXX" optimus:local
+docker run -ti -p 8000:80 -e API_ENDPOINT="genai-optimus-api.cirrus-dev.teliacompany.net/api/v1/" -e API_KEY="XXXX" optimus:local
 ```
 
 
