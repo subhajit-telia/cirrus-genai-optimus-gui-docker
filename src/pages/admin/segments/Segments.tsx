@@ -105,7 +105,7 @@ const Segments: React.FC = () => {
     if (_value.b2c === 1) {
       setValue("b2c", true);
     }else {
-      setValue("b2b", false);
+      setValue("b2c", false);
     }
 
     setIsOpenModal(true);
