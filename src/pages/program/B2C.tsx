@@ -1,6 +1,6 @@
-import { IonButton, IonButtons, IonChip, IonCol, IonContent, IonFab, IonFabButton, IonFabList, IonFooter, IonGrid, IonHeader, IonIcon, IonInput, IonModal, IonPage, IonProgressBar, IonRow, IonSkeletonText, IonSpinner, IonTextarea, IonTitle, IonToast, IonToolbar } from '@ionic/react';
+import { IonButton, IonButtons, IonChip, IonCol, IonContent, IonFab, IonFabButton, IonFabList, IonFooter, IonGrid, IonHeader, IonIcon, IonInput, IonLabel, IonModal, IonPage, IonProgressBar, IonRow, IonSkeletonText, IonSpinner, IonTextarea, IonTitle, IonToast, IonToggle, IonToolbar, ToggleCustomEvent } from '@ionic/react';
 import AppHeader from '../../components/header/Header';
-import { attach, closeCircleOutline, closeOutline, documentAttach, documentAttachOutline, globe, information, link } from 'ionicons/icons';
+import { attach, closeCircle, closeCircleOutline, closeOutline, documentAttach, documentAttachOutline, globe, information, link } from 'ionicons/icons';
 import { useEffect, useRef, useState } from 'react';
 import Tabs from '../../components/tab/Tab';
 import { useForm } from "react-hook-form";
@@ -45,6 +45,7 @@ interface UserAddModel {
   products: string;
   question: string;
   internalName: string;
+  kb_number: string;
 }
 
 interface Segment {
@@ -90,6 +91,7 @@ const B2C: React.FC = () => {
   const [selectedFormats, setSelectedFormats] = useState<typeof formats[0][]>([]);
   const [selectedPurpose, setSelectedPurpose] = useState<typeof purposes[0][]>([]);
   const [userName, setUserName] = useState('');
+  const [tigaRoles, setTigaRoles] = useState([]);
   const apiUrl = window.RUNTIME_ENV?.REACT_APP_API_URL || NetworkInfo.URL;
   const [isOpenModal, setIsOpenModal] = useState(false);
   const [isOpenEditing, setIsOpenEditing] = useState(false);
@@ -105,12 +107,16 @@ const B2C: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [attachments, setAttachments] = useState<string>('');
   const [isUploadAttachement, setIsUploadAttachement] = useState(false);
+  const [knowledgeBaseEnabled, setKnowledgeBaseEnabled] = useState<boolean>(false);
+  const [isKnowledgeBaseModal, setIsKnowledgeBaseModal] = useState(false);
+  const [isKnowledgeBaseData, setKnowledgeBaseData] = useState<any[]>([]);
 
   useEffect(() => {
     let userLocalData:any = localStorage.getItem('user');
-    let user_name = JSON.parse(userLocalData);
-    setUserName(user_name.username);
-    console.log('userData', user_name);
+    let userData = JSON.parse(userLocalData);
+    setUserName(userData.username);
+    setTigaRoles(userData.tiga_roles || []);
+    console.log('userData', userData);
     
     getSegmentsData();
     getPurposesData();
@@ -439,6 +445,7 @@ const B2C: React.FC = () => {
     console.log('arrayTab>>>', arrayTab);
     console.log('arrayNoSegment', arrayNoSegment);
     data.attached_text = attachments;
+    data.kb_pages = isKnowledgeBaseData;
     try {
       const response = await fetch(formUrl, {
         method: HTTPMethod.POST,
@@ -560,6 +567,7 @@ const B2C: React.FC = () => {
     arrayTab = [];
     arrayNoSegment = [];
     setFeedbackCopy([]);
+    setKnowledgeBaseData([]);
     setSegments(updatedSegments);
     setTabs([]);
     setSelectedProducts([]);
@@ -1090,6 +1098,96 @@ const B2C: React.FC = () => {
     fileInputRef.current!.value = ''; // Clear input value
   };
 
+  /* Set Knowledge Base Enabled start */
+  const changeKnowledgeBase = (event: ToggleCustomEvent<{ checked: boolean }>) => {
+    setKnowledgeBaseEnabled(event.detail.checked);
+    setKnowledgeBaseData([]);
+  };
+  // Knowledge base modal start
+  const handleClickKnowledgeBase = (e: React.MouseEvent<HTMLIonChipElement>) => {
+    if (!(e.target as HTMLIonChipElement).disabled) {
+      if (isKnowledgeBaseData.length === 3) {
+        setIsShowError(true);
+        setIsErrorMsg('You can only add 3 Knowledge Base at a time.');
+        setIsErrorType('warning');
+        return;
+        
+      }else {
+        setIsKnowledgeBaseModal(true);
+      }
+      
+    }
+    
+  };
+  // Knowledge base remove start
+  const handleRemoveKnowledgeBase = (kb_number:string) => {
+    console.log('kb_number', kb_number);
+    setKnowledgeBaseData(prevArray => prevArray.filter(item => item.kb_number !== kb_number));
+    setIsShowError(true);
+    setIsErrorMsg('Knowledge Base removed successfully!');
+    setIsErrorType('success');
+  };
+  // Submit Knowledge Base modal start
+  const handleKnowledgeBaseForm = async (data:any) => {
+    console.log('KnowledgeBase', data);
+    if (
+      !data.kb_number ||
+      isKnowledgeBaseData.some(item => item.kb_number === data.kb_number)
+    ) {
+      setIsShowError(true);
+      setIsErrorMsg(
+      !data.kb_number
+        ? 'Please enter Knowledge Base number.'
+        : 'This Knowledge Base number is already added.'
+      );
+      setIsErrorType('error');
+      return;
+    }else {
+      let payload = {
+        kb_number: data.kb_number,
+        use_case: "b2c",
+        tiga_roles: tigaRoles
+      };
+      let formUrl = apiUrl + '/kb/fetch';
+      try {
+        const response = await fetch(formUrl, {
+          method: HTTPMethod.POST,
+          headers: {
+            '"removed"': `${NetworkInfo.ACCESSTOKEN}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload),
+        });
+    
+        const responseData = await response.json();
+        console.log('Success:', responseData);
+    
+        if (response.ok && responseData.title) {
+          reset;
+          setValue("kb_number", '');
+          setIsKnowledgeBaseModal(false);
+          setIsShowError(true);
+          setIsErrorMsg('Knowledge Base added successfully!');
+          setKnowledgeBaseData(prevArray => [...prevArray, responseData]);
+          setIsErrorType('success');
+        } else {
+          setIsShowError(true);
+          setIsErrorMsg(responseData.ErrorMessage || responseData.detail || 'Something went wrong!');
+          setIsErrorType('error');
+        }
+      } catch (error: any) {
+        console.error('Login failed:', error);
+        if (error.response) {
+          setIsShowError(true);
+          setIsErrorMsg(error.response || 'Something went wrong!');
+          setIsErrorType('error');
+        }
+      }
+    }
+    
+  };
+  /* Set Knowledge Base Enabled end */
+
   return (
     <IonPage>
       <AppHeader/>
@@ -1106,51 +1204,74 @@ const B2C: React.FC = () => {
             
             <IonGrid>
               <IonRow>
-                <IonCol size="12" size-lg="4" size-md="4" size-sm="12">
+                <IonCol size="6" offset="6">
+                  <IonToggle
+                    class='float-right text-sm'
+                    enableOnOffLabels={true}
+                    checked={knowledgeBaseEnabled}
+                    onIonChange={(event) => changeKnowledgeBase(event)}
+                  >
+                    Connect to Knowledge Base
+                  </IonToggle>
+                </IonCol>
+                <IonCol
+                  size="12"
+                  size-lg={knowledgeBaseEnabled ? "3" : "4"}
+                  size-md={knowledgeBaseEnabled ? "3" : "4"}
+                  size-sm="12"
+                >
                   <div className='rounded-xl text-[#000] bg-white shadow-md'>
                     <div className='font-bold p-4 text-sm'>I want to create a...</div>
-                    
                     <div className='px-4 pb-3.5'>
-                        <SelectDropdown
-                          options={formats}
-                          selectedOptions={selectedFormats}
-                          setSelectedOptions={setSelectedFormats}
-                          multiSelect={true} // Multi-select mode
-                          idKey="format_id"
-                          nameKey="format_name"
-                          tooltipKey="format_written_description"
-                          placeHolder='Select formats'
-                          label='Select desired format below'
-                        />
-                        { loadingFormats &&
-                          <IonProgressBar className='mt-0.5' type="indeterminate"></IonProgressBar>
-                        }
-                        
+                      <SelectDropdown
+                        options={formats}
+                        selectedOptions={selectedFormats}
+                        setSelectedOptions={setSelectedFormats}
+                        multiSelect={true}
+                        idKey="format_id"
+                        nameKey="format_name"
+                        tooltipKey="format_written_description"
+                        placeHolder='Select formats'
+                        label='Select desired format below'
+                      />
+                      {loadingFormats && (
+                        <IonProgressBar className='mt-0.5' type="indeterminate"></IonProgressBar>
+                      )}
                     </div>
                   </div>
                 </IonCol>
-                <IonCol size="12" size-lg="4" size-md="4" size-sm="12">
+                <IonCol
+                  size="12"
+                  size-lg={knowledgeBaseEnabled ? "3" : "4"}
+                  size-md={knowledgeBaseEnabled ? "3" : "4"}
+                  size-sm="12"
+                >
                   <div className='rounded-xl text-[#000] bg-white shadow-md'>
                     <div className='font-bold p-4 text-sm'>With the purpose...</div>
                     <div className='px-4 pb-3.5'>
-                        <SelectDropdown
-                          options={purposes}
-                          selectedOptions={selectedPurpose}
-                          setSelectedOptions={setSelectedPurpose}
-                          multiSelect={false} // Multi-select mode
-                          idKey="purpose_id"
-                          nameKey="purpose_name"
-                          tooltipKey="purpose_written_description"
-                          placeHolder='Select purpose'
-                          label='Select desired purpose below'
-                        />
-                        { loadingPurposes &&
-                          <IonProgressBar className='mt-0.5' type="indeterminate"></IonProgressBar>
-                        }
+                      <SelectDropdown
+                        options={purposes}
+                        selectedOptions={selectedPurpose}
+                        setSelectedOptions={setSelectedPurpose}
+                        multiSelect={false}
+                        idKey="purpose_id"
+                        nameKey="purpose_name"
+                        tooltipKey="purpose_written_description"
+                        placeHolder='Select purpose'
+                        label='Select desired purpose below'
+                      />
+                      {loadingPurposes && (
+                        <IonProgressBar className='mt-0.5' type="indeterminate"></IonProgressBar>
+                      )}
                     </div>
                   </div>
                 </IonCol>
-                <IonCol size="12" size-lg="4" size-md="4" size-sm="12">
+                <IonCol
+                  size="12"
+                  size-lg={knowledgeBaseEnabled ? "3" : "4"}
+                  size-md={knowledgeBaseEnabled ? "3" : "4"}
+                  size-sm="12"
+                >
                   <div className='rounded-xl text-[#000] bg-white shadow-md'>
                     <div className='font-bold p-4 text-sm'>About...</div>
                     <div className='px-4 pb-3.5'>
@@ -1158,7 +1279,7 @@ const B2C: React.FC = () => {
                         options={products}
                         selectedOptions={selectedProducts}
                         setSelectedOptions={setSelectedProducts}
-                        multiSelect={true} // Multi-select mode
+                        multiSelect={true}
                         idKey="product_id"
                         nameKey="product_name"
                         categoryKey="category"
@@ -1166,19 +1287,42 @@ const B2C: React.FC = () => {
                         placeHolder='Select products'
                         label='Which product/offer do you want to report on?'
                       />
-                      { loadingPurposes &&
+                      {loadingPurposes && (
                         <IonProgressBar className='mt-0.5' type="indeterminate"></IonProgressBar>
-                      }
+                      )}
                     </div>
                   </div>
                 </IonCol>
+                {knowledgeBaseEnabled && (
+                  <IonCol
+                    size="12"
+                    size-lg="3"
+                    size-md="3"
+                    size-sm="12"
+                  >
+                    <div className='rounded-xl text-[#000] bg-white shadow-md pb-px'>
+                      <div className='font-bold p-4 pb-1 text-sm'>Using information form...</div>
+                      <div className='mx-4 mb-3.5 border border-[#ccc] rounded'>
+                        {isKnowledgeBaseData.map((item, index) => (
+                          <IonChip key={index} onClick={() => handleRemoveKnowledgeBase(item.kb_number)} className='py-1 px-2 text-[10px] min-h-5'>
+                            <IonLabel>{item.title}</IonLabel>
+                            <IonIcon icon={closeCircle}></IonIcon>
+                          </IonChip>
+                        ))}
+                        <IonChip onClick={ handleClickKnowledgeBase } className='py-1 px-2 text-[10px] min-h-5 bg-primary'>
+                          <IonLabel className='!text-white'>ADD</IonLabel>
+                        </IonChip>
+                      </div>
+                    </div>
+                  </IonCol>
+                )}
               </IonRow>
             </IonGrid>
             {
               segments.length !== 0 &&
               <div>
                 <p className='text-center mt-2.5 text-black'>I want to create versions for the following segments:</p>
-                <div className='segments flex max-sm:flex-col max-md:flex-col items-center justify-center mt-2.5'>
+                <div className='segments text-center mt-2.5'>
                   {segments.map((item, index) => (
                     <IonChip key={index} onClick={() => onClickSegment(index)} className={`${item.isActive} text-center mx-2.5 min-h-6 py-0 bg-[#f5e0ff] text-[#4a2a59]`}>{item.segment_name}</IonChip>
                   ))}
@@ -1270,7 +1414,7 @@ const B2C: React.FC = () => {
                     <Tabs tabs={tabs} regenarateItem={regenarateItem} saveEditedAnswer={saveEditedAnswer} genarateRefineCopy={genarateRefineCopy} contentfulData={sendTocontentful} isEditingMode={handleEditingMode}/>
                     <div className="text-right mt-3">
                       <IonChip onClick={() => handleFormSubmit(requestData)} className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Rewrite all suggestions</IonChip>
-                      <IonChip data-tooltip-id="contentful" data-tooltip-content="Save all content before sending it to Contentful." disabled onClick={ handleClickContentful } className='!pointer-events-auto text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Send to contentful</IonChip>
+                      <IonChip data-tooltip-id="contentful" data-tooltip-content="Save all content before sending it to Contentful." disabled={isOpenEditing} onClick={ handleClickContentful } className='!pointer-events-auto text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Send to contentful</IonChip>
                       <IonChip onClick={() => exportToDoc(tabs)} className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Save all suggestions to word.doc</IonChip>
                       {/* <IonChip onClick={handleReset} className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Create new task</IonChip> */}
                       <Tooltip className={`${!isOpenEditing ? 'hidden' : ''}`} id="contentful" />
@@ -1391,6 +1535,41 @@ const B2C: React.FC = () => {
           </div>
         </IonModal>
         {/* send to contentful end */}
+
+        {/* Knowledge Base start */}
+        <IonModal id="example-modal" isOpen={isKnowledgeBaseModal} onWillDismiss={() => setIsKnowledgeBaseModal(false)}>
+          <IonHeader>
+            <IonToolbar>
+              <IonTitle className='text-sm font-bold'>Add Knowledge Base page to Optimus</IonTitle>
+              <IonButtons slot="end">
+                <IonButton size="small" shape="round" onClick={() => setIsKnowledgeBaseModal(false)}>
+                  <IonIcon slot="icon-only" icon={closeOutline}></IonIcon>
+                </IonButton>
+              </IonButtons>
+            </IonToolbar>
+          </IonHeader>
+          <div className="ion-padding inner-content">
+            
+            <form onSubmit={handleSubmit(handleKnowledgeBaseForm)} className="w-full">
+              <IonInput className='mb-4 text-sm' label="Page Number" labelPlacement="floating" fill="outline" placeholder="Please add Page Number"
+                {...register("kb_number", {
+                  validate: {},
+                })}
+                required
+              ></IonInput>
+              <div className='text-center mt-4'>
+                <IonButton size='small' type='submit' className='btn-primary' shape="round">
+                  {loading && <IonSpinner className='mr-2' name="bubbles"></IonSpinner>}
+                  Add
+                </IonButton>
+                <IonButton onClick={() => setIsKnowledgeBaseModal(false)} size='small' type='reset' fill='outline' shape="round">
+                  Cancel
+                </IonButton>
+              </div>
+            </form>
+          </div>
+        </IonModal>
+        {/* Knowledge Base end */}
       </IonContent>
     </IonPage>
   );
