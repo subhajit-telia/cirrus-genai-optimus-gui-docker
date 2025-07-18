@@ -1301,8 +1301,8 @@ const B2B: React.FC = () => {
                     size-sm="12"
                   >
                     <div className='rounded-xl text-[#000] bg-white shadow-md pb-px'>
-                      <div className='font-bold p-4 pb-1 text-sm'>Using information form...</div>
-                      <div className='mx-4 mb-3.5 border border-[#ccc] rounded'>
+                      <div className='font-bold p-4 text-sm'>Using information from...</div>
+                      <div className='mx-4 mb-3.5 p-1.5 border border-[#ccc] rounded'>
                         {isKnowledgeBaseData.map((item, index) => (
                           <IonChip key={index} onClick={() => handleRemoveKnowledgeBase(item.kb_number)} className='py-1 px-2 text-[10px] min-h-5'>
                             <IonLabel>{item.title}</IonLabel>
@@ -1551,7 +1551,7 @@ const B2B: React.FC = () => {
           <div className="ion-padding inner-content">
             
             <form onSubmit={handleSubmit(handleKnowledgeBaseForm)} className="w-full">
-              <IonInput className='mb-4 text-sm' label="Page Number" labelPlacement="floating" fill="outline" placeholder="Please add Page Number"
+              <IonInput className='mb-4 text-sm' label="Page Number" labelPlacement="floating" fill="outline" placeholder="e.g. KB0123456"
                 {...register("kb_number", {
                   validate: {},
                 })}
