@@ -1,4 +1,4 @@
-import { IonButton, IonButtons, IonChip, IonCol, IonContent, IonFab, IonFabButton, IonFabList, IonFooter, IonGrid, IonHeader, IonIcon, IonInput, IonLabel, IonModal, IonPage, IonProgressBar, IonRow, IonSkeletonText, IonSpinner, IonTextarea, IonTitle, IonToast, IonToggle, IonToolbar, ToggleCustomEvent } from '@ionic/react';
+import { IonButton, IonButtons, IonCheckbox, IonChip, IonCol, IonContent, IonFab, IonFabButton, IonFabList, IonFooter, IonGrid, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonModal, IonPage, IonProgressBar, IonRow, IonSkeletonText, IonSpinner, IonText, IonTextarea, IonTitle, IonToast, IonToggle, IonToolbar, ToggleCustomEvent } from '@ionic/react';
 import AppHeader from '../../components/header/Header';
 import { attach, closeCircle, closeCircleOutline, closeOutline, documentAttach, documentAttachOutline, globe, information, link } from 'ionicons/icons';
 import { useEffect, useRef, useState } from 'react';
@@ -16,6 +16,7 @@ import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import ProductDropdown from '../../components/dropdown/productDropdown/ProductDropdown';
 import { Tooltip } from 'react-tooltip';
+import { i } from 'vite/dist/node/types.d-aGj9QkWt';
 
 
 type Tab = {
@@ -44,7 +45,8 @@ interface UserAddModel {
   purpose: string;
   products: string;
   question: string;
-  internalName: string;
+  contentName: string;
+  createAssembly:boolean
   kb_number: string;
 }
 
@@ -101,6 +103,7 @@ const B2C: React.FC = () => {
   const storedVersion = localStorage.getItem("app_version");
   const [isContentfulModal, setIsContentfulModal] = useState(false);
   const [contentfulCopy, setContentfulCopy] = useState<any[]>([]);
+  const [qidHistory, setQidHistory] = useState<{ id: string; parent_id: string }[]>([]);
   const [sessionId, setSessionId] = useState<string>('');
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -110,6 +113,8 @@ const B2C: React.FC = () => {
   const [knowledgeBaseEnabled, setKnowledgeBaseEnabled] = useState<boolean>(false);
   const [isKnowledgeBaseModal, setIsKnowledgeBaseModal] = useState(false);
   const [isKnowledgeBaseData, setKnowledgeBaseData] = useState<any[]>([]);
+  const [isPersonalized, setIsPersonalized] = useState(false);
+  const [isCreateAssembly, setIsCreateAssembly] = useState(false);
 
   useEffect(() => {
     let userLocalData:any = localStorage.getItem('user');
@@ -552,6 +557,7 @@ const B2C: React.FC = () => {
     formState: { errors }
   } = useForm<UserAddModel>({
     defaultValues: {
+      createAssembly: false
     },
   });
   /* Handle form input field changes end */
@@ -833,12 +839,40 @@ const B2C: React.FC = () => {
 
   const handleContentfulFormSubmit = async (data:any) => {
     
-    console.log('contentfulCopy', data);
-    let allQids: string[] = contentfulCopy.map(item => item.input_params.qid);
+    console.log('handleContentfulFormSubmit', data);
+    console.log('contentfulCopy', contentfulCopy);
+    let contentAction = 'NEW'
+
+    // Build new qid array with parent_id logic
+    let allQids: { id: string; parent_id: string }[] = contentfulCopy.map(item => {
+      const newId = item.input_params.qid;
+      // Find if this qid existed before
+      const prev = qidHistory.find(q => q.id === newId);
+      if (prev) {
+        contentAction = 'Update'
+        // No change, keep parent_id
+        return { id: newId, parent_id: prev.parent_id };
+      } else {
+        // Try to find if this is a changed qid (by matching other fields, e.g. format_id)
+        // For simplicity, assume order is preserved and match by index
+        const idx = contentfulCopy.indexOf(item);
+        const prevQidObj = qidHistory[idx];
+        return {
+          id: newId,
+          parent_id: prevQidObj ? prevQidObj.id : ""
+        };
+      }
+    });
+
+    // Update the qidHistory for next time
+    setQidHistory(allQids);
     console.log('qids', allQids);
     let payload = {
-      contentName: data.internalName,
-      qids: allQids
+      contentName: data.contentName,
+      action: contentAction,
+      qids: allQids,
+      typeOfContent: isPersonalized ? 'personalized' : 'generic',
+      createAssembly: data.createAssembly,
     };
     let formUrl = apiUrl + '/contentful/push';
     try {
@@ -856,6 +890,7 @@ const B2C: React.FC = () => {
   
       if (response.ok && !responseData.ErrorMessage) {
         reset;
+        setValue("contentName", '');
         setIsContentfulModal(false);
         setIsShowError(true);
         setIsErrorMsg('Contentful submited successfully!');
@@ -1006,7 +1041,16 @@ const B2C: React.FC = () => {
     if (!(e.target as HTMLIonChipElement).disabled) {
       setIsContentfulModal(true);
     }
-    
+    console.log('Contentful modal opened', contentfulCopy);
+    // Loop through the array and check format_name
+    contentfulCopy .forEach((item) => {
+      const format = item.input_params.format_name;
+      if (format.startsWith('Sms') || format.startsWith('Email')) {
+        console.log('Matches:', format);
+        setIsCreateAssembly(true);
+        setIsPersonalized(true);
+      } 
+    });
   };
 
 
@@ -1501,7 +1545,7 @@ const B2C: React.FC = () => {
         {/* self learning modal end */}
 
         {/* send to contentful start */}
-        <IonModal id="example-modal" isOpen={isContentfulModal} onWillDismiss={() => setIsContentfulModal(false)}>
+        <IonModal id="example-modal" isOpen={isContentfulModal} onWillDismiss={() => {setIsContentfulModal(false); setIsCreateAssembly(false);}}>
           <IonHeader>
             <IonToolbar>
               <IonTitle className='text-sm font-bold'>Send to Contentful</IonTitle>
@@ -1516,13 +1560,26 @@ const B2C: React.FC = () => {
             <p className='text-sm text-center pb-8 tex'>Send all generated copies to Contentful. Add an internal name that will be added to the copies (Optimus will automatically add format and other attributes after the internal name).</p>
             <form onSubmit={handleSubmit(handleContentfulFormSubmit)} className="w-full">
               <IonInput className='mb-4 text-sm' label="Internal Name" labelPlacement="floating" fill="outline" placeholder="Please add an Internal name"
-                {...register("internalName", {
+                {...register("contentName", {
                   validate: {},
                 })}
-                helperText={`A total ${contentfulCopy.length} copies will be sent to contentful.`}
                 required
               ></IonInput>
+              <div className={`flex ${isCreateAssembly ? 'justify-between' : 'justify-end'}`}>
+                {isCreateAssembly &&
+                  <IonCheckbox className='text-sm' labelPlacement="end"
+                    onIonChange={(event) => setValue("createAssembly", event.detail.checked)}
+                  >Create an Assembly</IonCheckbox>
+              }
+                <IonToggle 
+                  className='text-sm'
+                  checked={isPersonalized}
+                  onIonChange={(e) => setIsPersonalized(e.detail.checked)}
+                >{isPersonalized ? 'Personalized' : 'Generic'}</IonToggle>
+              </div>
+              
               <div className='text-center mt-4'>
+                <IonText className='block text-sm mb-4'>{`A total ${contentfulCopy.length} copies will be sent to contentful.`}</IonText>
                 <IonButton size='small' type='submit' className='btn-primary' shape="round">
                   {loading && <IonSpinner className='mr-2' name="bubbles"></IonSpinner>}
                   Save
