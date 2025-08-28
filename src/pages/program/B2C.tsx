@@ -98,6 +98,7 @@ const B2C: React.FC = () => {
   const [isOpenModal, setIsOpenModal] = useState(false);
   const [isOpenEditing, setIsOpenEditing] = useState(false);
   const [selectedDiv, setSelectedDiv] = useState<number | null>(null);
+  const [selfLearningData, setSelfLearningData] = useState<any>('');
   const [feedbackCopy, setFeedbackCopy] = useState<any[]>([]);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   const storedVersion = localStorage.getItem("app_version");
@@ -843,35 +844,57 @@ const B2C: React.FC = () => {
     console.log('contentfulCopy', contentfulCopy);
     let contentAction = 'NEW'
 
-    // Build new qid array with parent_id logic
-    let allQids: { id: string; parent_id: string }[] = contentfulCopy.map(item => {
+    // Build qid arrays for Generic and Personalized
+    let genericQids: { id: string; parent_id: string }[] = [];
+    let personalizedQids: { id: string; parent_id: string }[] = [];
+
+    contentfulCopy.forEach((item, idx) => {
+      const formatName = item.input_params.format_name || "";
       const newId = item.input_params.qid;
-      // Find if this qid existed before
       const prev = qidHistory.find(q => q.id === newId);
+      let parent_id = "";
       if (prev) {
-        contentAction = 'Update'
-        // No change, keep parent_id
-        return { id: newId, parent_id: prev.parent_id };
+      contentAction = 'Update';
+      parent_id = prev.parent_id;
       } else {
-        // Try to find if this is a changed qid (by matching other fields, e.g. format_id)
-        // For simplicity, assume order is preserved and match by index
-        const idx = contentfulCopy.indexOf(item);
-        const prevQidObj = qidHistory[idx];
-        return {
-          id: newId,
-          parent_id: prevQidObj ? prevQidObj.id : ""
-        };
+      const prevQidObj = qidHistory[idx];
+      parent_id = prevQidObj ? prevQidObj.id : "";
+      }
+      const qidObj = { id: newId, parent_id };
+
+      if (
+      formatName === "Sms" ||
+      formatName.startsWith("Email")
+      ) {
+        personalizedQids.push(qidObj);
+      } else {
+        genericQids.push(qidObj);
       }
     });
 
-    // Update the qidHistory for next time
-    setQidHistory(allQids);
+    // Final qid object
+    let allQids = {
+      Generic: genericQids,
+      Personalized: personalizedQids
+    };
+
+    // Update the qidHistory for next time (flatten both arrays)
+    setQidHistory([...genericQids, ...personalizedQids]);
     console.log('qids', allQids);
+    // Determine which types to include in the array
+    let types: string[] = [];
+    if (genericQids.length > 0) {
+      types.push("Generic");
+    }
+    if (personalizedQids.length > 0 && isPersonalized) {
+      types.push("Personalized");
+    }
+
     let payload = {
       contentName: data.contentName,
       action: contentAction,
       qids: allQids,
-      typeOfContent: isPersonalized ? 'personalized' : 'generic',
+      typeOfContent: types,
       createAssembly: data.createAssembly,
     };
     let formUrl = apiUrl + '/contentful/push';
@@ -948,14 +971,14 @@ const B2C: React.FC = () => {
   /* Export to doc end */
 
   /* ---------------Self learning start--------------- */
-  const handleDivClick = async (selectItem:any, tabIndex:number) => {
-    console.log('selectItem', selectItem);
-    setSelectedDiv(tabIndex); // Set the clicked div's ID as selected
+  const submitSelfLearning = async () => {
+    console.log('selfLearningData', selfLearningData);
+     // Set the clicked div's ID as selected
     setIsOpenModal(false);
     setIsShowError(true);
     setIsErrorMsg('Testing submitted!');
     console.log('feedbackCopy', feedbackCopy);
-    if (currentIndex < feedbackCopy.length - 1) {
+    if (selectedDiv !== null && selectedDiv < feedbackCopy.length - 1) {
       // Move to the next response
       setSelectedDiv(null);
       setCurrentIndex((prev) => prev + 1);
@@ -968,18 +991,18 @@ const B2C: React.FC = () => {
     let currentNoSegmentArray:any = noSegmentArray;
     if (currentArrayTab !== undefined) {
       currentArrayTab = currentArrayTab.map((segment: { segment_id: any; segment_name: any; data: any[] }) => {
-        if (segment.segment_id === selectItem.input_params.segment_id) {
+        if (segment.segment_id === selfLearningData.input_params.segment_id) {
           segment.data = segment.data.map((format: any) => {
-            if (format.format_id === selectItem.input_params.format_id) {
+            if (format.format_id === selfLearningData.input_params.format_id) {
               return {
                 ...format,
-                answer: DOMPurify.sanitize(selectItem.answer),
-                input_params: selectItem.input_params,
+                answer: DOMPurify.sanitize(selfLearningData.answer),
+                input_params: selfLearningData.input_params,
                 outputs: [
                   ...(format.outputs || []),
                   { 
-                    answer: DOMPurify.sanitize(selectItem.answer), 
-                    input_params: selectItem.input_params ,
+                    answer: DOMPurify.sanitize(selfLearningData.answer), 
+                    input_params: selfLearningData.input_params ,
                     rating: null,
                     timestamp: Date.now()
                   }
@@ -994,17 +1017,17 @@ const B2C: React.FC = () => {
       setTabs(currentArrayTab);
     } else {
       currentNoSegmentArray = currentNoSegmentArray.map((format: { format_id: any; outputs?: any[] }) => {
-        if (format.format_id === selectItem.input_params.format_id || format.format_id === 'customPrompts') {
+        if (format.format_id === selfLearningData.input_params.format_id || format.format_id === 'customPrompts') {
           const currentOutputs = format.outputs || [];
           return {
             ...format,
-            answer: DOMPurify.sanitize(selectItem.answer),
-            input_params: selectItem.input_params,
+            answer: DOMPurify.sanitize(selfLearningData.answer),
+            input_params: selfLearningData.input_params,
             outputs: [
               ...currentOutputs,
               { 
-                answer: DOMPurify.sanitize(selectItem.answer), 
-                input_params: selectItem.input_params ,
+                answer: DOMPurify.sanitize(selfLearningData.answer), 
+                input_params: selfLearningData.input_params ,
                 rating: null,
                 timestamp: Date.now()
               }
@@ -1018,7 +1041,7 @@ const B2C: React.FC = () => {
     setLoading(false);
     showLoadingIndicator(false);
 
-    let formUrl = apiUrl + '/self_learning/select_answer?qid='+selectItem.input_params.qid;
+    let formUrl = apiUrl + '/self_learning/select_answer?qid='+selfLearningData.input_params.qid;
     try {
       const response = await fetch(formUrl, {
         method: HTTPMethod.PUT,
@@ -1458,7 +1481,7 @@ const B2C: React.FC = () => {
                     <Tabs tabs={tabs} regenarateItem={regenarateItem} saveEditedAnswer={saveEditedAnswer} genarateRefineCopy={genarateRefineCopy} contentfulData={sendTocontentful} isEditingMode={handleEditingMode}/>
                     <div className="text-right mt-3">
                       <IonChip onClick={() => handleFormSubmit(requestData)} className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Rewrite all suggestions</IonChip>
-                      <IonChip data-tooltip-id="contentful" data-tooltip-content="Save all content before sending it to Contentful." disabled={isOpenEditing} onClick={ handleClickContentful } className='!pointer-events-auto text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Send to contentful</IonChip>
+                      <IonChip data-tooltip-id="contentful" data-tooltip-content="Save all content before sending it to Contentful." disabled onClick={ handleClickContentful } className='!pointer-events-auto text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Send to contentful</IonChip>
                       <IonChip onClick={() => exportToDoc(tabs)} className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Save all suggestions to word.doc</IonChip>
                       {/* <IonChip onClick={handleReset} className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Create new task</IonChip> */}
                       <Tooltip className={`${!isOpenEditing ? 'hidden' : ''}`} id="contentful" />
@@ -1527,7 +1550,7 @@ const B2C: React.FC = () => {
                   <IonRow>
                     {feedbackCopy[currentIndex].responses.map((feedbackItem:any, tabIndex:number) => (
                       <IonCol size="6">
-                        <div onClick={() => handleDivClick(feedbackItem, tabIndex)} className={`${selectedDiv === tabIndex ? 'border-primary' : ''} hover:border-primary bg-white mb-5 tab-body border-2 p-2 rounded-md relative`}>
+                        <div onClick={() =>{setSelectedDiv(tabIndex); setSelfLearningData(feedbackItem)}} className={`${selectedDiv === tabIndex ? 'border-primary border-2' : ''} hover:border-primary bg-white mb-5 tab-body rounded-md relative`}>
                           {/* <h3 className='capitalize'>{feedbackItem.input_params.format_name}</h3> */}
                           
                           <div className='shadow-md rounded-md p-2 mb-1.5 relative'>
@@ -1536,6 +1559,10 @@ const B2C: React.FC = () => {
                         </div>
                       </IonCol>
                     ))}
+                    <IonCol size="12" className="text-center">
+                      <IonButton disabled={selectedDiv === null} data-tooltip-id="feedbackCopy" data-tooltip-content="Please select the copy." onClick={() => submitSelfLearning()}>Submit Copy</IonButton>
+                      <Tooltip id="feedbackCopy" />
+                    </IonCol>
                   </IonRow>
                 </IonGrid>
               </div>
