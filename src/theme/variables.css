@@ -239,6 +239,9 @@ ion-textarea .textarea-wrapper-inner .native-wrapper .native-textarea {
 .search-input {
     background: transparent;
 }
+ion-toggle .label-text-wrapper {
+    margin-right: 10px;
+}
 @media (prefers-color-scheme: dark) {
     :root.md {
         --checkbox-background: #fff;
