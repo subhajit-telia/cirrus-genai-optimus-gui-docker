@@ -308,6 +308,7 @@ const B2C: React.FC = () => {
 
   const handleFormSubmit = (data: any) => {
     console.log('selectedPurpose', selectedPurpose);
+    setQidHistory([]);
     setFeedbackCopy([]);
     data.format = selectedFormats.map(format => format.format_id);
     data.purpose = selectedPurpose.length > 0 && selectedPurpose[0].purpose_id 
@@ -585,6 +586,7 @@ const B2C: React.FC = () => {
     setValue("products", '');
     setValue("question", '');
     handleRemoveFile();
+    setQidHistory([])
   };
   /*  Reset form end */
 
