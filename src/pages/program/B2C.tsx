@@ -310,6 +310,7 @@ const B2C: React.FC = () => {
   const handleFormSubmit = (data: any) => {
     console.log('selectedPurpose', selectedPurpose);
     setQidHistory([]);
+    setIsTroubleshooting(false);
     setFeedbackCopy([]);
     data.format = selectedFormats.map(format => format.format_id);
     data.purpose = selectedPurpose.length > 0 && selectedPurpose[0].purpose_id 
@@ -587,7 +588,8 @@ const B2C: React.FC = () => {
     setValue("products", '');
     setValue("question", '');
     handleRemoveFile();
-    setQidHistory([])
+    setQidHistory([]);
+    setIsTroubleshooting(false);
   };
   /*  Reset form end */
 
@@ -920,6 +922,8 @@ const B2C: React.FC = () => {
         setIsContentfulModal(false);
         setIsShowError(true);
         setIsErrorMsg('Contentful submited successfully!');
+        setIsPersonalized(false);
+        setIsTroubleshooting(false);
       } else {
         setIsShowError(true);
         setIsErrorMsg(responseData.ErrorMessage || 'Something went wrong!');
@@ -1578,7 +1582,7 @@ const B2C: React.FC = () => {
         {/* self learning modal end */}
 
         {/* send to contentful start */}
-        <IonModal id="example-modal" isOpen={isContentfulModal} onWillDismiss={() => {setIsContentfulModal(false); setIsCreateAssembly(false);}}>
+        <IonModal id="example-modal" isOpen={isContentfulModal} onWillDismiss={() => {setIsContentfulModal(false); setIsCreateAssembly(false); setIsTroubleshooting(false);}}>
           <IonHeader>
             <IonToolbar>
               <IonTitle className='text-sm font-bold'>Send to Contentful</IonTitle>
