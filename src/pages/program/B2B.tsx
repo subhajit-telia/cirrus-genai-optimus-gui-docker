@@ -1,6 +1,6 @@
 import { IonButton, IonButtons, IonCheckbox, IonChip, IonCol, IonContent, IonFab, IonFabButton, IonFabList, IonFooter, IonGrid, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonModal, IonPage, IonProgressBar, IonRow, IonSkeletonText, IonSpinner, IonText, IonTextarea, IonTitle, IonToast, IonToggle, IonToolbar, ToggleCustomEvent } from '@ionic/react';
 import AppHeader from '../../components/header/Header';
-import { attach, closeCircle, closeCircleOutline, closeOutline, documentAttach, documentAttachOutline, globe, information, link } from 'ionicons/icons';
+import { attach, closeCircle, closeCircleOutline, closeOutline, documentAttach, documentAttachOutline, globe, information, informationCircle, link } from 'ionicons/icons';
 import { useEffect, useRef, useState } from 'react';
 import Tabs from '../../components/tab/Tab';
 import { useForm } from "react-hook-form";
@@ -115,6 +115,7 @@ const B2B: React.FC = () => {
   const [isKnowledgeBaseModal, setIsKnowledgeBaseModal] = useState(false);
   const [isKnowledgeBaseData, setKnowledgeBaseData] = useState<any[]>([]);
   const [isPersonalized, setIsPersonalized] = useState(false);
+  const [isTroubleshooting, setIsTroubleshooting] = useState(false);
   const [isCreateAssembly, setIsCreateAssembly] = useState(false);
 
   useEffect(() => {
@@ -856,17 +857,17 @@ const B2B: React.FC = () => {
       const prev = qidHistory.find(q => q.id === newId);
       let parent_id = "";
       if (prev) {
-      contentAction = 'Update';
-      parent_id = prev.parent_id;
+        contentAction = 'Update';
+        parent_id = prev.parent_id;
       } else {
-      const prevQidObj = qidHistory[idx];
-      parent_id = prevQidObj ? prevQidObj.id : "";
+        const prevQidObj = qidHistory[idx];
+        parent_id = prevQidObj ? prevQidObj.id : "";
       }
       const qidObj = { id: newId, parent_id };
-
+      console.log('formatName', formatName);
       if (
-      formatName === "Sms" ||
-      formatName.startsWith("Email")
+        formatName === "Sms" ||
+        formatName.startsWith("Email")
       ) {
         personalizedQids.push(qidObj);
       } else {
@@ -1074,7 +1075,10 @@ const B2B: React.FC = () => {
         console.log('Matches:', format);
         setIsCreateAssembly(true);
         setIsPersonalized(true);
-      } 
+      }
+      if (format.startsWith('Trouble')) {
+        setIsTroubleshooting(true);
+      }
     });
   };
 
@@ -1214,7 +1218,7 @@ const B2B: React.FC = () => {
     }else {
       let payload = {
         kb_number: data.kb_number,
-        use_case: "B2B",
+        use_case: "b2b",
         tiga_roles: tigaRoles
       };
       let formUrl = apiUrl + '/kb/fetch';
@@ -1586,9 +1590,22 @@ const B2B: React.FC = () => {
             </IonToolbar>
           </IonHeader>
           <div className="ion-padding inner-content">
-            <p className='text-sm text-center pb-8 tex'>Send all generated copies to Contentful. Add an internal name that will be added to the copies (Optimus will automatically add format and other attributes after the internal name).</p>
+            {!isTroubleshooting &&
+              <p className='text-sm text-center pb-8 tex'>Add an internal name to be added to the copies. Optimus will automatically apply the correct attributes based on the format. 
+                {isPersonalized ? 
+                  <IonIcon data-tooltip-id="contentfulInfo" data-tooltip-content="Example: If you enter 'Black Week 25 BB 100/100', Optimus might generate 'B2B - Xsell - Black Week 25 BB 100/100 - Seniors - SMS', depending on the format." icon={informationCircle}></IonIcon>
+                : 
+                  <IonIcon data-tooltip-id="contentfulInfo" data-tooltip-content="Example: If you enter 'mobilabonnemang', Optimus might generate 'B2B - Mobilabonnmemang - FAQ', depending on the format." icon={informationCircle}></IonIcon> 
+                }
+              </p>
+            }
+            {isTroubleshooting &&
+              <p className='text-sm text-center pb-8 tex'>Add the specific readableID to be added to the copies. <IonIcon data-tooltip-id="contentfulInfo" data-tooltip-content="Example: 'b2x-tsf-common-installationGuideForSpecificRouter'" icon={informationCircle}></IonIcon></p>
+            }
+            
+            <Tooltip id="contentfulInfo" />
             <form onSubmit={handleSubmit(handleContentfulFormSubmit)} className="w-full">
-              <IonInput className='mb-4 text-sm' label="Internal Name" labelPlacement="floating" fill="outline" placeholder="Please add an Internal name"
+              <IonInput className='mb-4 text-sm' label={` ${isTroubleshooting ? "Readable ID" : "Internal Name"}`} labelPlacement="floating" fill="outline" placeholder={`Please add an ${isTroubleshooting ? "Readable ID" : "Internal name"}`}
                 {...register("contentName", {
                   validate: {},
                 })}
