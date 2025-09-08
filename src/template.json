@@ -51,6 +51,297 @@
         { "email": "alejandro.garcia@teliacompany.com"},
         { "email": "calogero.cascio@accenture.com"},
         { "email": "fabrizio.sparapani@accenture.com"}
+    ],
+    "B2B": [
+        {
+            "format_id": "SmsB2B",
+            "format_name": "Sms",
+            "format_written_description": "Short message conveying information for mobile phones, limited to approx. 100-250 characters. ",
+            "type_of_content": "personalized"
+        },
+        {
+            "format_id": "EmailSmallB2B",
+            "format_name": "Email S",
+            "format_written_description": "A short email that contains two (2) to three (3) block of content. Approx. 200-300 characters. ",
+            "type_of_content":  "personalized"
+        },
+        {
+            "format_id": "EmailMediumB2B",
+            "format_name": "Email M",
+            "format_written_description": "A medium sized email that contains three (3) to four (4) blocks.  Approx. 350-600 characters.",
+            "type_of_content": "personalized"
+        },
+        {
+            "format_id": "EmailLargeB2B",
+            "format_name": "Email L",
+            "format_written_description": "A large email that contains four (4) to six (6) blocks of content. Approx. 650-1200 characters. ",
+            "type_of_content": "personalized"
+        },
+        {
+            "format_id": "ArticleB2B",
+            "format_name": "Article",
+            "format_written_description": "Article for the website, explaining a subject or news pertaining to products and services. ",
+            "type_of_content": "generic"
+        },
+        {
+            "format_id": "BannerWebB2B",
+            "format_name": "Banner (Web)",
+            "format_written_description": "Often a catchy headline followed by a short description of the subject. May include price point and terms and conditions in some cases, which should be specified in free text prompt.",
+            "type_of_content": ["generic", "personalized"]
+        },
+        {
+            "format_id": "SEOMetaData",
+            "format_name": "SEO Meta data",
+            "format_written_description": "SEO Meta data, consisting of a headline and a meta description to the product, service or subject in question, with the purpose of boosting visibility in search engines using important keywords. ",
+            "type_of_content": "generic"
+        },
+        {
+            "format_id": "Pitch",
+            "format_name": "Pitch",
+            "format_written_description": "A catchy headline referring to the product, with a short description that explains the product and it's benefits for businesses.",
+            "type_of_content": ["generic", "personalized"]
+        },
+        {
+            "format_id": "USPB2B",
+            "format_name": "USP",
+            "format_written_description": "Unique selling points regarding product or service, up to 4 features.",
+            "type_of_content": "generic"
+        },
+        {
+            "format_id": "Standalone",
+            "format_name": "Standalone",
+            "format_written_description": "A compact text about the product and what it offers. Presents a light version of the problem the customer might have and how our product or service will provide a solution.",
+            "type_of_content": ["generic", "personalized"]
+        },
+        {
+            "format_id": "Campaign",
+            "format_name": "Campaign",
+            "format_written_description": "A block of content, consisting of a catchy headline, short description ending with a clear call to action.",
+            "type_of_content": ["generic", "personalized"]
+        },
+        {
+            "format_id": "KeyFeature",
+            "format_name": "Key Feature",
+            "format_written_description": "Longer description of a key feature in running text, including general areas of applicability. ",
+            "type_of_content": ["generic", "personalized"]
+        },
+        {
+            "format_id": "FactBox",
+            "format_name": "Fact Box",
+            "format_written_description": "Box with a bullet list of functions, explaining the features more short and concrete. ",
+            "type_of_content": "generic"
+        },
+        {
+            "format_id": "FAQ",
+            "format_name": "FAQ",
+            "format_written_description": "Frequently-asked questions about products or services, including answer. ",
+            "type_of_content": "generic"
+        },
+        {
+            "format_id": "GuideStepper",
+            "format_name": "Guide stepper",
+            "format_written_description": "A pedagogical guide on setting products or service up, structured in several steps that includes illustrations as visual guidance (not attached in the model).",
+            "type_of_content": "generic"
+        },
+        {
+            "format_id": "GuideArticle",
+            "format_name": "Guide article",
+            "format_written_description": "Longer guide in running text as well as steps on how to setup or navigate through product, services and features. No limitations on characters. ",
+            "type_of_content": "generic"
+        },
+        {
+            "format_id": "Tips",
+            "format_name": "Tips",
+            "format_written_description": "Additional tips that may be relevant to a guide article or stepper. ",
+            "type_of_content": "generic"
+        },
+        {
+            "format_id": "TeaserCards",
+            "format_name": "Teaser cards",
+            "format_written_description": "A way to promote a certain product, service or section within the support. Usually with a short headline, description and CTA.  Approx. 160 characters.",
+            "type_of_content": ["generic", "personalized"]
+        },
+        {
+            "format_id": "BannerSupport",
+            "format_name": "Banner (Support)",
+            "format_written_description": "An introduction to a guide or section of the support, or web, that explains briefly what kind of content will be presented in the following content blocks. Approx. 200-350 characters.",
+            "type_of_content": null
+        },
+        {
+            "format_id": "PostalB2BB2C",
+            "format_name": "Postal",
+            "format_written_description": "For postal sendouts, e.g. when informing of price hikes. Contains headline with content incl. 350-600 characters. ",
+            "type_of_content": null
+        }
+    ],
+    "B2C": [
+        {
+            "format_id": "SmsB2C",
+            "format_name": "Sms",
+            "format_written_description": "Short message conveying information for mobile phones, limited to approx. 200-400 characters. ",
+            "type_of_content": "personalized"
+        },
+        {
+            "format_id": "EmailSmallB2C",
+            "format_name": "Email S",
+            "format_written_description": "An email containing a shorter message, limited to one block à 300-600  characters. ",
+            "type_of_content": "personalized"
+        },
+        {
+            "format_id": "EmailMediumB2C",
+            "format_name": "Email M",
+            "format_written_description": "A medium sized email that contains two (2) blocks of content, up to 1000 characters in total. ",
+            "type_of_content": "personalized"
+        },
+        {
+            "format_id": "EmailLargeB2C",
+            "format_name": "Email L",
+            "format_written_description": "A large email that contains three (3) blocks of content, up to 1600 characters. ",
+            "type_of_content": "personalized"
+        },
+        {
+            "format_id": "EmailXLargeB2C",
+            "format_name": "Email XL",
+            "format_written_description": "A large email that contents four (4) blocks of content, up to 1600 characters. ",
+            "type_of_content":  "personalized"
+        },
+        {
+            "format_id": "ProductTextSmall",
+            "format_name": "Product text S",
+            "format_written_description": "A short form of communication to describe a product in either running text or in bullet points on website, e.g. design or features of a product. Approx. 100-350 characters. ",
+            "type_of_content": null
+        },
+        {
+            "format_id": "ProductTextMedium",
+            "format_name": "Product text M",
+            "format_written_description": "A medium sized form of communication to describe a product in either running text or in bullet points on website, e.g. design or features of a product. Approx. 500 - 1500 characters.  ",
+            "type_of_content": null
+        },
+        {
+            "format_id": "ProductTextLarge",
+            "format_name": "Product text L",
+            "format_written_description": "A larger sized form of communication to describe a product in either running text or in bullet points on website, e.g. design or features of a product. Approx. 1500 - 3000 characters.  ",
+            "type_of_content": null
+        },
+        {
+            "format_id": "CampaignTextSmall",
+            "format_name": "Campaign text S",
+            "format_written_description": "Smaller text focusing on a campaign for the website. Please specify price and terms in prompt, if applicable. Approx. 200-400 characters. ",
+            "type_of_content": null
+        },
+        {
+            "format_id": "CampaignTextLarge",
+            "format_name": "Campaign text L",
+            "format_written_description": "Larger text focusing on a campaign for the website. Please specify price and terms in prompt, if applicable and relevant. Approx. 500-1000 characters. ",
+            "type_of_content": null
+        },
+        {
+            "format_id": "ProductCard",
+            "format_name": "Product card",
+            "format_written_description": "A short description of a product summarising the benefits and unique features, either in bullet points or running text, which will be listed next to other products on website. Approx. 110 characters.",
+            "type_of_content": null
+        },
+        {
+            "format_id": "ProductAreaIntro",
+            "format_name": "Product area intro",
+            "format_written_description": "Introduction to the product category for the website, which usually gives a brief overview of what is included in the category.",
+            "type_of_content": null
+        },
+        {
+            "format_id": "ArticleB2C",
+            "format_name": "Article",
+            "format_written_description": "Article for the website, explaining a subject or news pertaining to products and services. ",
+            "type_of_content": "generic"
+        },
+        {
+            "format_id": "BannerWebB2C",
+            "format_name": "Banner (Web)",
+            "format_written_description": "Often a catchy headline followed by a short description of the subject. May include price point and terms and conditions in some cases, which should be specified in free text prompt.",
+            "type_of_content": ["generic", "personalized"]
+        },
+        {
+            "format_id": "SEOMetaData",
+            "format_name": "SEO Meta data",
+            "format_written_description": "SEO Meta data, consisting of a headline and a meta description to the product, service or subject in question, with the purpose of boosting visibility in search engines using important keywords. ",
+            "type_of_content": "generic"
+        },
+        {
+            "format_id": "MicrocopyResourceOpenPages",
+            "format_name": "Microcopy resource open pages",
+            "format_written_description": "Descriptive microcopy asset guiding customers on a webpage.",
+            "type_of_content": null
+        },
+        {
+            "format_id": "MicrocopyUXCopySalesflow",
+            "format_name": "Microcopy / UX-copy salesflow",
+            "format_written_description": "Short description that describes a logic flow or instruction or to give notifications in a process.",
+            "type_of_content": "generic"
+        },
+        {
+            "format_id": "USPB2C",
+            "format_name": "USP",
+            "format_written_description": "Unique selling points regarding product or service, approx. 3-6 features.",
+            "type_of_content": "generic"
+        },
+        {
+            "format_id": "FactBox",
+            "format_name": "Fact Box",
+            "format_written_description": "Box with a bullet list of functions, explaining the features more short and concrete. ",
+            "type_of_content": "generic"
+        },
+        {
+            "format_id": "FAQ",
+            "format_name": "FAQ",
+            "format_written_description": "Frequently-asked questions about products or services, including answer. ",
+            "type_of_content": "generic"
+        },
+        {
+            "format_id": "GuideStepper",
+            "format_name": "Guide stepper",
+            "format_written_description": "A pedagogical guide on setting products or service up, structured in several steps that includes illustrations as visual guidance (not attached in the model).",
+            "type_of_content": "generic"
+        },
+        {
+            "format_id": "GuideArticle",
+            "format_name": "Guide article",
+            "format_written_description": "Longer guide in running text as well as steps on how to setup or navigate through product, services and features. No limitations on characters. ",
+            "type_of_content": "generic"
+        },
+        {
+            "format_id": "Tips",
+            "format_name": "Tips",
+            "format_written_description": "Additional tips that may be relevant to a guide article or stepper. ",
+            "type_of_content": "generic"
+        },
+        {
+            "format_id": "TeaserCards",
+            "format_name": "Teaser cards",
+            "format_written_description": "A way to promote a certain product, service or section within the support. Usually with a short headline, description and CTA.  Approx. 160 characters.",
+            "type_of_content": ["generic", "personalized"]
+        },
+        {
+            "format_id": "BannerSupport",
+            "format_name": "Banner (Support)",
+            "format_written_description": "An introduction to a guide or section of the support, or web, that explains briefly what kind of content will be presented in the following content blocks. Approx. 200-350 characters.",
+            "type_of_content": null
+        },
+        {
+            "format_id": "PostalB2BB2C",
+            "format_name": "Postal",
+            "format_written_description": "For postal sendouts, e.g. when informing of price hikes. Contains headline with content incl. 350-600 characters. ",
+            "type_of_content": null
+        },
+        {
+            "format_id": "TroubleshootinginstructionsB2C",
+            "format_name": "Trouble shooting instructions",
+            "format_written_description": "For creating trouble shooting content (FIXA). Creates step to step instructions to solve customer's problem.",
+            "type_of_content": "generic"
+        },
+        {
+            "format_id": "TroubleshootinginformationB2C",
+            "format_name": "Trouble shooting information",
+            "format_written_description": "For creating trouble shoot content (FIXA). Creates question/title and answer.",
+            "type_of_content": "generic"
+        }
     ]
-
 }
