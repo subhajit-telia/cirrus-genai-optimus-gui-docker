@@ -17,7 +17,7 @@ import rehypeRaw from 'rehype-raw';
 import ProductDropdown from '../../components/dropdown/productDropdown/ProductDropdown';
 import { Tooltip } from 'react-tooltip';
 import { i } from 'vite/dist/node/types.d-aGj9QkWt';
-
+import template from '../../template.json'; // adjust path if needed
 
 type Tab = {
   answer: string;
@@ -70,7 +70,7 @@ interface Formats {
   format_id: string;
   format_written_description: string;
 }
-
+const forbiddenChars = /[!@#$%^&*(),?":{}|<>]/;
 const B2C: React.FC = () => {
   /* Variables start */
   const [segments, setSegments] = useState<Segment[]>([]);
@@ -117,6 +117,8 @@ const B2C: React.FC = () => {
   const [isPersonalized, setIsPersonalized] = useState(false);
   const [isTroubleshooting, setIsTroubleshooting] = useState(false);
   const [isCreateAssembly, setIsCreateAssembly] = useState(false);
+  const [contentError, setContentError] = useState("");
+  const [contentName, setContentName] = useState("");
 
   useEffect(() => {
     let userLocalData:any = localStorage.getItem('user');
@@ -838,9 +840,47 @@ const B2C: React.FC = () => {
   /* genarate Refine Copy end */
 
   /* send To contentful start */
+  const handleContentfulChange = (e: CustomEvent) => {
+    let input = (e.target as HTMLIonInputElement).value as string;
+    console.log('raw input>>>>', input);
+    // 1. Remove trailing spaces immediately
+    if (input.endsWith(" ")) {
+      input = input.trimEnd();
+    }
+    console.log('input>>>>', input);
+    // 2. Validate forbidden characters
+    if (forbiddenChars.test(input)) {
+      console.log('Invalid input detected');
+      setContentError("Contains forbidden characters (!@#$%^&* etc.)");
+    } else {
+      setContentError("");
+    }
+
+    setContentName(input);
+  };
+
+  const handleContentfulBlur = () => {
+    // Trim fully when user leaves the field
+    setContentName((prev) => prev.trim());
+  };
   const sendTocontentful = async (data: any): Promise<void> => {
     console.log('contentfulData', data);
-    setContentfulCopy(data)
+    console.log('B2C array from template.json:', template.B2C); // <-- log B2C array here
+    const B2CFormats = template.B2C;
+    const filtered = data.filter((item:any) => {
+      const format = B2CFormats.find(
+        (f) => f.format_id === item.input_params.format_id
+      );
+
+      // If no match found → exclude
+      if (!format) return false;
+
+      // Exclude if type_of_content is null
+      if (format.type_of_content === null) return false;
+
+      return true;
+    });
+    setContentfulCopy(filtered)
   }
 
   const handleContentfulFormSubmit = async (data:any) => {
@@ -896,7 +936,7 @@ const B2C: React.FC = () => {
     }
 
     let payload = {
-      contentName: data.contentName,
+      contentName: contentName,
       action: contentAction,
       qid: allQids,
       typeOfContent: types,
@@ -926,16 +966,16 @@ const B2C: React.FC = () => {
         setIsTroubleshooting(false);
       } else {
         setIsShowError(true);
-        setIsErrorMsg(responseData.ErrorMessage || 'Something went wrong!');
+        setIsErrorMsg(responseData.ErrorMessage || isPersonalized ? 'No Personalized content found.' : 'No Generic content found');
       }
     } catch (error: any) {
       console.error('Login failed:', error);
       if (error.response) {
         setIsShowError(true);
-        setIsErrorMsg(error.response || 'Something went wrong!');
+        setIsErrorMsg(error.response || isPersonalized ? 'No Personalized content found.' : 'No Generic content found');
       }else {
         setIsShowError(true);
-        setIsErrorMsg(error.response || 'Please generate again!');
+        setIsErrorMsg(error.response || isPersonalized ? 'No Personalized content found.' : 'No Generic content found');
       }
     }
   };
@@ -1491,7 +1531,7 @@ const B2C: React.FC = () => {
                     <Tabs tabs={tabs} regenarateItem={regenarateItem} saveEditedAnswer={saveEditedAnswer} genarateRefineCopy={genarateRefineCopy} contentfulData={sendTocontentful} isEditingMode={handleEditingMode}/>
                     <div className="text-right mt-3">
                       <IonChip onClick={() => handleFormSubmit(requestData)} className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Rewrite all suggestions</IonChip>
-                      <IonChip data-tooltip-id="contentful" data-tooltip-content="Save all content before sending it to Contentful." disabled={isOpenEditing} onClick={ handleClickContentful } className='!pointer-events-auto text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Send to contentful</IonChip>
+                      <IonChip data-tooltip-id="contentful" data-tooltip-content="Save all content before sending it to Contentful." disabled={isOpenEditing || contentfulCopy.length === 0} onClick={ handleClickContentful } className='!pointer-events-auto text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Send to contentful</IonChip>
                       <IonChip onClick={() => exportToDoc(tabs)} className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Save all suggestions to word.doc</IonChip>
                       {/* <IonChip onClick={handleReset} className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Create new task</IonChip> */}
                       <Tooltip className={`${!isOpenEditing ? 'hidden' : ''}`} id="contentful" />
@@ -1609,11 +1649,11 @@ const B2C: React.FC = () => {
             
             <Tooltip id="contentfulInfo" />
             <form onSubmit={handleSubmit(handleContentfulFormSubmit)} className="w-full">
-              <IonInput className='mb-4 text-sm' label={` ${isTroubleshooting ? "Readable ID" : "Internal Name"}`} labelPlacement="floating" fill="outline" placeholder={`Please add an ${isTroubleshooting ? "Readable ID" : "Internal name"}`}
-                {...register("contentName", {
-                  validate: {},
-                })}
-                required
+              <IonInput className={`mb-4 text-sm ${!contentError && 'ion-valid'} ${contentError && 'ion-invalid'}`} label={` ${isTroubleshooting ? "Readable ID" : "Internal Name"}`} labelPlacement="floating" fill="outline" placeholder={`Please add an ${isTroubleshooting ? "Readable ID" : "Internal name"}`}
+                value={contentName}
+                onIonInput={handleContentfulChange}
+                onIonBlur={handleContentfulBlur}
+                helperText={contentError}
               ></IonInput>
               <div className={`flex ${isCreateAssembly ? 'justify-between' : 'justify-end'}`}>
                 {isCreateAssembly &&
