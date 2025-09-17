@@ -122,9 +122,17 @@ const SelectDropdown = <T extends Record<string, any>>({
           <div className="selected-options selectedText">
             {multiSelect ? (
               selectedOptions.map((option, index) => (
-                <span key={option[idKey]}>
+                <span key={option[idKey]} className="selected-option flex items-center">
                   {option[nameKey]}
-                  {index < selectedOptions.length - 1 && ', '}
+                  <IonIcon
+                  className="ml-1"
+                  onClick={e => {
+                    e.stopPropagation();
+                    setSelectedOptions(selectedOptions.filter(o => o[idKey] !== option[idKey]));
+                  }}
+                  icon={closeCircleOutline}
+                  />
+                  {/* {index < selectedOptions.length - 1 && ', '} */}
                 </span>
               ))
             ) : (
