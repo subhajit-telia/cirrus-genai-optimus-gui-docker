@@ -3,7 +3,7 @@ import { FixedSizeList as List } from 'react-window';
 import debounce from 'lodash.debounce';
 import './ProductDropdown.css';
 import { IonIcon } from '@ionic/react';
-import { caretDownOutline, caretUpOutline, informationCircleOutline } from 'ionicons/icons';
+import { caretDownOutline, caretUpOutline, closeCircleOutline, informationCircleOutline } from 'ionicons/icons';
 import { Tooltip } from 'react-tooltip';
 
 interface ProductDropdownProps<T> {
@@ -166,9 +166,17 @@ const ProductDropdown = <T extends Record<string, any>>({
           <div className="selected-options selectedText">
             {multiSelect ? (
               selectedOptions.map((option, index) => (
-                <span key={option[idKey]}>
+                <span key={option[idKey]} className="selected-option flex items-center">
                   {option[nameKey]}
-                  {index < selectedOptions.length - 1 && ', '}
+                  <IonIcon
+                    className="ml-1"
+                    onClick={e => {
+                      e.stopPropagation();
+                      setSelectedOptions(selectedOptions.filter(o => o[idKey] !== option[idKey]));
+                    }}
+                    icon={closeCircleOutline}
+                    />
+                  {/* {index < selectedOptions.length - 1 && ', '} */}
                 </span>
               ))
             ) : (
