@@ -31,9 +31,16 @@
   }
 
   .multi-select-dropdown .selectedText  {
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    overflow: hidden;
+    display: flex;
+    flex-wrap: wrap;
+    font-size: 14px;
+    
+  }
+  .multi-select-dropdown .selectedText .selected-option {
+    padding: 0px 6px;
+    border-radius: 12px;
+    background: #f5e0ff;
+    margin: 1px 1px 0px 0px;
   }
   
   .multi-select-options {

@@ -1,6 +1,6 @@
-import { IonButton, IonButtons, IonChip, IonCol, IonContent, IonFab, IonFabButton, IonFabList, IonFooter, IonGrid, IonHeader, IonIcon, IonInput, IonLabel, IonModal, IonPage, IonProgressBar, IonRow, IonSkeletonText, IonSpinner, IonTextarea, IonTitle, IonToast, IonToggle, IonToolbar, ToggleCustomEvent } from '@ionic/react';
+import { IonButton, IonButtons, IonCheckbox, IonChip, IonCol, IonContent, IonFab, IonFabButton, IonFabList, IonFooter, IonGrid, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonModal, IonPage, IonProgressBar, IonRow, IonSkeletonText, IonSpinner, IonText, IonTextarea, IonTitle, IonToast, IonToggle, IonToolbar, ToggleCustomEvent } from '@ionic/react';
 import AppHeader from '../../components/header/Header';
-import { attach, closeCircle, closeCircleOutline, closeOutline, documentAttach, documentAttachOutline, globe, information, link } from 'ionicons/icons';
+import { attach, closeCircle, closeCircleOutline, closeOutline, documentAttach, documentAttachOutline, globe, information, informationCircle, link } from 'ionicons/icons';
 import { useEffect, useRef, useState } from 'react';
 import Tabs from '../../components/tab/Tab';
 import { useForm } from "react-hook-form";
@@ -16,7 +16,8 @@ import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import ProductDropdown from '../../components/dropdown/productDropdown/ProductDropdown';
 import { Tooltip } from 'react-tooltip';
-
+import { i } from 'vite/dist/node/types.d-aGj9QkWt';
+import template from '../../template.json'; // adjust path if needed
 
 type Tab = {
   answer: string;
@@ -44,7 +45,8 @@ interface UserAddModel {
   purpose: string;
   products: string;
   question: string;
-  internalName: string;
+  contentName: string;
+  createAssembly:boolean
   kb_number: string;
 }
 
@@ -68,7 +70,7 @@ interface Formats {
   format_id: string;
   format_written_description: string;
 }
-
+const forbiddenChars = /[!@#$%^&*(),?":{}|<>]/;
 const B2B: React.FC = () => {
   /* Variables start */
   const [segments, setSegments] = useState<Segment[]>([]);
@@ -96,11 +98,13 @@ const B2B: React.FC = () => {
   const [isOpenModal, setIsOpenModal] = useState(false);
   const [isOpenEditing, setIsOpenEditing] = useState(false);
   const [selectedDiv, setSelectedDiv] = useState<number | null>(null);
+  const [selfLearningData, setSelfLearningData] = useState<any>('');
   const [feedbackCopy, setFeedbackCopy] = useState<any[]>([]);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   const storedVersion = localStorage.getItem("app_version");
   const [isContentfulModal, setIsContentfulModal] = useState(false);
   const [contentfulCopy, setContentfulCopy] = useState<any[]>([]);
+  const [qidHistory, setQidHistory] = useState<{ id: string; parent_id: string }[]>([]);
   const [sessionId, setSessionId] = useState<string>('');
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -110,6 +114,11 @@ const B2B: React.FC = () => {
   const [knowledgeBaseEnabled, setKnowledgeBaseEnabled] = useState<boolean>(false);
   const [isKnowledgeBaseModal, setIsKnowledgeBaseModal] = useState(false);
   const [isKnowledgeBaseData, setKnowledgeBaseData] = useState<any[]>([]);
+  const [isPersonalized, setIsPersonalized] = useState(false);
+  const [isTroubleshooting, setIsTroubleshooting] = useState(false);
+  const [isCreateAssembly, setIsCreateAssembly] = useState(false);
+  const [contentError, setContentError] = useState("");
+  const [contentName, setContentName] = useState("");
 
   useEffect(() => {
     let userLocalData:any = localStorage.getItem('user');
@@ -302,6 +311,8 @@ const B2B: React.FC = () => {
 
   const handleFormSubmit = (data: any) => {
     console.log('selectedPurpose', selectedPurpose);
+    setQidHistory([]);
+    setIsTroubleshooting(false);
     setFeedbackCopy([]);
     data.format = selectedFormats.map(format => format.format_id);
     data.purpose = selectedPurpose.length > 0 && selectedPurpose[0].purpose_id 
@@ -552,6 +563,7 @@ const B2B: React.FC = () => {
     formState: { errors }
   } = useForm<UserAddModel>({
     defaultValues: {
+      createAssembly: false
     },
   });
   /* Handle form input field changes end */
@@ -578,6 +590,8 @@ const B2B: React.FC = () => {
     setValue("products", '');
     setValue("question", '');
     handleRemoveFile();
+    setQidHistory([]);
+    setIsTroubleshooting(false);
   };
   /*  Reset form end */
 
@@ -826,19 +840,107 @@ const B2B: React.FC = () => {
   /* genarate Refine Copy end */
 
   /* send To contentful start */
+  const handleContentfulChange = (e: CustomEvent) => {
+    let input = (e.target as HTMLIonInputElement).value as string;
+    console.log('raw input>>>>', input);
+    // 1. Remove trailing spaces immediately
+    if (input.endsWith(" ")) {
+      input = input.trimEnd();
+    }
+    console.log('input>>>>', input);
+    // 2. Validate forbidden characters
+    if (forbiddenChars.test(input)) {
+      console.log('Invalid input detected');
+      setContentError("Contains forbidden characters (!@#$%^&* etc.)");
+    } else {
+      setContentError("");
+    }
+
+    setContentName(input);
+  };
+
+  const handleContentfulBlur = () => {
+    // Trim fully when user leaves the field
+    setContentName((prev) => prev.trim());
+  };
   const sendTocontentful = async (data: any): Promise<void> => {
     console.log('contentfulData', data);
-    setContentfulCopy(data)
+    console.log('B2B array from template.json:', template.B2B); // <-- log B2B array here
+    const B2BFormats = template.B2B;
+    const filtered = data.filter((item:any) => {
+      const format = B2BFormats.find(
+        (f) => f.format_id === item.input_params.format_id
+      );
+
+      // If no match found → exclude
+      if (!format) return false;
+
+      // Exclude if type_of_content is null
+      if (format.type_of_content === null) return false;
+
+      return true;
+    });
+    setContentfulCopy(filtered)
   }
 
   const handleContentfulFormSubmit = async (data:any) => {
     
-    console.log('contentfulCopy', data);
-    let allQids: string[] = contentfulCopy.map(item => item.input_params.qid);
+    console.log('handleContentfulFormSubmit', data);
+    console.log('contentfulCopy', contentfulCopy);
+    let contentAction = 'NEW'
+
+    // Build qid arrays for Generic and Personalized
+    let genericQids: { id: string; parent_id: string }[] = [];
+    let personalizedQids: { id: string; parent_id: string }[] = [];
+
+    contentfulCopy.forEach((item, idx) => {
+      const formatName = item.input_params.format_name || "";
+      const newId = item.input_params.qid;
+      const prev = qidHistory.find(q => q.id === newId);
+      let parent_id = "";
+      if (prev) {
+        contentAction = 'Update';
+        parent_id = prev.parent_id;
+      } else {
+        const prevQidObj = qidHistory[idx];
+        parent_id = prevQidObj ? prevQidObj.id : "";
+      }
+      const qidObj = { id: newId, parent_id };
+      console.log('formatName', formatName);
+      if (
+        formatName === "Sms" ||
+        formatName.startsWith("Email")
+      ) {
+        personalizedQids.push(qidObj);
+      } else {
+        genericQids.push(qidObj);
+      }
+    });
+
+    // Final qid object
+    let allQids = {
+      Generic: genericQids,
+      Personalized: personalizedQids
+    };
+
+    // Update the qidHistory for next time (flatten both arrays)
+    setQidHistory([...genericQids, ...personalizedQids]);
     console.log('qids', allQids);
+    // Determine which types to include in the array
+    let types: string[] = [];
+    if (genericQids.length > 0) {
+      types.push("Generic");
+    }
+    if (personalizedQids.length > 0 && isPersonalized) {
+      types.push("Personalized");
+    }
+
     let payload = {
-      contentName: data.internalName,
-      qids: allQids
+      contentName: contentName,
+      action: contentAction,
+      qid: allQids,
+      typeOfContent: types,
+      createAssembly: data.createAssembly,
     };
     let formUrl = apiUrl + '/contentful/push';
     try {
@@ -856,21 +958,24 @@ const B2B: React.FC = () => {
   
       if (response.ok && !responseData.ErrorMessage) {
         reset;
+        setValue("contentName", '');
         setIsContentfulModal(false);
         setIsShowError(true);
         setIsErrorMsg('Contentful submited successfully!');
+        setIsPersonalized(false);
+        setIsTroubleshooting(false);
       } else {
         setIsShowError(true);
-        setIsErrorMsg(responseData.ErrorMessage || 'Something went wrong!');
+        setIsErrorMsg(responseData.ErrorMessage || isPersonalized ? 'No Personalized content found.' : 'No Generic content found');
       }
     } catch (error: any) {
       console.error('Login failed:', error);
       if (error.response) {
         setIsShowError(true);
-        setIsErrorMsg(error.response || 'Something went wrong!');
+        setIsErrorMsg(error.response || isPersonalized ? 'No Personalized content found.' : 'No Generic content found');
       }else {
         setIsShowError(true);
-        setIsErrorMsg(error.response || 'Please generate again!');
+        setIsErrorMsg(error.response || isPersonalized ? 'No Personalized content found.' : 'No Generic content found');
       }
     }
   };
@@ -913,14 +1018,14 @@ const B2B: React.FC = () => {
   /* Export to doc end */
 
   /* ---------------Self learning start--------------- */
-  const handleDivClick = async (selectItem:any, tabIndex:number) => {
-    console.log('selectItem', selectItem);
-    setSelectedDiv(tabIndex); // Set the clicked div's ID as selected
+  const submitSelfLearning = async () => {
+    console.log('selfLearningData', selfLearningData);
+     // Set the clicked div's ID as selected
     setIsOpenModal(false);
     setIsShowError(true);
     setIsErrorMsg('Testing submitted!');
     console.log('feedbackCopy', feedbackCopy);
-    if (currentIndex < feedbackCopy.length - 1) {
+    if (selectedDiv !== null && selectedDiv < feedbackCopy.length - 1) {
       // Move to the next response
       setSelectedDiv(null);
       setCurrentIndex((prev) => prev + 1);
@@ -933,18 +1038,18 @@ const B2B: React.FC = () => {
     let currentNoSegmentArray:any = noSegmentArray;
     if (currentArrayTab !== undefined) {
       currentArrayTab = currentArrayTab.map((segment: { segment_id: any; segment_name: any; data: any[] }) => {
-        if (segment.segment_id === selectItem.input_params.segment_id) {
+        if (segment.segment_id === selfLearningData.input_params.segment_id) {
           segment.data = segment.data.map((format: any) => {
-            if (format.format_id === selectItem.input_params.format_id) {
+            if (format.format_id === selfLearningData.input_params.format_id) {
               return {
                 ...format,
-                answer: DOMPurify.sanitize(selectItem.answer),
-                input_params: selectItem.input_params,
+                answer: DOMPurify.sanitize(selfLearningData.answer),
+                input_params: selfLearningData.input_params,
                 outputs: [
                   ...(format.outputs || []),
                   { 
-                    answer: DOMPurify.sanitize(selectItem.answer), 
-                    input_params: selectItem.input_params ,
+                    answer: DOMPurify.sanitize(selfLearningData.answer), 
+                    input_params: selfLearningData.input_params ,
                     rating: null,
                     timestamp: Date.now()
                   }
@@ -959,17 +1064,17 @@ const B2B: React.FC = () => {
       setTabs(currentArrayTab);
     } else {
       currentNoSegmentArray = currentNoSegmentArray.map((format: { format_id: any; outputs?: any[] }) => {
-        if (format.format_id === selectItem.input_params.format_id || format.format_id === 'customPrompts') {
+        if (format.format_id === selfLearningData.input_params.format_id || format.format_id === 'customPrompts') {
           const currentOutputs = format.outputs || [];
           return {
             ...format,
-            answer: DOMPurify.sanitize(selectItem.answer),
-            input_params: selectItem.input_params,
+            answer: DOMPurify.sanitize(selfLearningData.answer),
+            input_params: selfLearningData.input_params,
             outputs: [
               ...currentOutputs,
               { 
-                answer: DOMPurify.sanitize(selectItem.answer), 
-                input_params: selectItem.input_params ,
+                answer: DOMPurify.sanitize(selfLearningData.answer), 
+                input_params: selfLearningData.input_params ,
                 rating: null,
                 timestamp: Date.now()
               }
@@ -983,7 +1088,7 @@ const B2B: React.FC = () => {
     setLoading(false);
     showLoadingIndicator(false);
 
-    let formUrl = apiUrl + '/self_learning/select_answer?qid='+selectItem.input_params.qid;
+    let formUrl = apiUrl + '/self_learning/select_answer?qid='+selfLearningData.input_params.qid;
     try {
       const response = await fetch(formUrl, {
         method: HTTPMethod.PUT,
@@ -1006,7 +1111,19 @@ const B2B: React.FC = () => {
     if (!(e.target as HTMLIonChipElement).disabled) {
       setIsContentfulModal(true);
     }
-    
+    console.log('Contentful modal opened', contentfulCopy);
+    // Loop through the array and check format_name
+    contentfulCopy .forEach((item) => {
+      const format = item.input_params.format_name;
+      if (format.startsWith('Sms') || format.startsWith('Email')) {
+        console.log('Matches:', format);
+        setIsCreateAssembly(true);
+        setIsPersonalized(true);
+      }
+      if (format.startsWith('Trouble')) {
+        setIsTroubleshooting(true);
+      }
+    });
   };
 
 
@@ -1414,7 +1531,7 @@ const B2B: React.FC = () => {
                     <Tabs tabs={tabs} regenarateItem={regenarateItem} saveEditedAnswer={saveEditedAnswer} genarateRefineCopy={genarateRefineCopy} contentfulData={sendTocontentful} isEditingMode={handleEditingMode}/>
                     <div className="text-right mt-3">
                       <IonChip onClick={() => handleFormSubmit(requestData)} className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Rewrite all suggestions</IonChip>
-                      <IonChip data-tooltip-id="contentful" data-tooltip-content="Save all content before sending it to Contentful." disabled onClick={ handleClickContentful } className='!pointer-events-auto text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Send to contentful</IonChip>
+                      <IonChip data-tooltip-id="contentful" data-tooltip-content="Save all content before sending it to Contentful." disabled={isOpenEditing || contentfulCopy.length === 0} onClick={ handleClickContentful } className='!pointer-events-auto text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Send to contentful</IonChip>
                       <IonChip onClick={() => exportToDoc(tabs)} className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Save all suggestions to word.doc</IonChip>
                       {/* <IonChip onClick={handleReset} className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Create new task</IonChip> */}
                       <Tooltip className={`${!isOpenEditing ? 'hidden' : ''}`} id="contentful" />
@@ -1483,7 +1600,7 @@ const B2B: React.FC = () => {
                   <IonRow>
                     {feedbackCopy[currentIndex].responses.map((feedbackItem:any, tabIndex:number) => (
                       <IonCol size="6">
-                        <div onClick={() => handleDivClick(feedbackItem, tabIndex)} className={`${selectedDiv === tabIndex ? 'border-primary' : ''} hover:border-primary bg-white mb-5 tab-body border-2 p-2 rounded-md relative`}>
+                        <div onClick={() =>{setSelectedDiv(tabIndex); setSelfLearningData(feedbackItem)}} className={`${selectedDiv === tabIndex ? 'border-primary border-2' : ''} hover:border-primary bg-white mb-5 tab-body rounded-md relative`}>
                           {/* <h3 className='capitalize'>{feedbackItem.input_params.format_name}</h3> */}
                           
                           <div className='shadow-md rounded-md p-2 mb-1.5 relative'>
@@ -1492,6 +1609,10 @@ const B2B: React.FC = () => {
                         </div>
                       </IonCol>
                     ))}
+                    <IonCol size="12" className="text-center">
+                      <IonButton disabled={selectedDiv === null} data-tooltip-id="feedbackCopy" data-tooltip-content="Please select the copy." onClick={() => submitSelfLearning()}>Submit Copy</IonButton>
+                      <Tooltip id="feedbackCopy" />
+                    </IonCol>
                   </IonRow>
                 </IonGrid>
               </div>
@@ -1501,7 +1622,7 @@ const B2B: React.FC = () => {
         {/* self learning modal end */}
 
         {/* send to contentful start */}
-        <IonModal id="example-modal" isOpen={isContentfulModal} onWillDismiss={() => setIsContentfulModal(false)}>
+        <IonModal id="example-modal" isOpen={isContentfulModal} onWillDismiss={() => {setIsContentfulModal(false); setIsCreateAssembly(false); setIsTroubleshooting(false);}}>
           <IonHeader>
             <IonToolbar>
               <IonTitle className='text-sm font-bold'>Send to Contentful</IonTitle>
@@ -1513,16 +1634,42 @@ const B2B: React.FC = () => {
             </IonToolbar>
           </IonHeader>
           <div className="ion-padding inner-content">
-            <p className='text-sm text-center pb-8 tex'>Send all generated copies to Contentful. Add an internal name that will be added to the copies (Optimus will automatically add format and other attributes after the internal name).</p>
+            {!isTroubleshooting &&
+              <p className='text-sm text-center pb-8 tex'>Add an internal name to be added to the copies. Optimus will automatically apply the correct attributes based on the format. 
+                {isPersonalized ? 
+                  <IonIcon data-tooltip-id="contentfulInfo" data-tooltip-content="Example: If you enter 'Black Week 25 BB 100/100', Optimus might generate 'B2B - Xsell - Black Week 25 BB 100/100 - Seniors - SMS', depending on the format." icon={informationCircle}></IonIcon>
+                : 
+                  <IonIcon data-tooltip-id="contentfulInfo" data-tooltip-content="Example: If you enter 'mobilabonnemang', Optimus might generate 'B2B - Mobilabonnmemang - FAQ', depending on the format." icon={informationCircle}></IonIcon> 
+                }
+              </p>
+            }
+            {isTroubleshooting &&
+              <p className='text-sm text-center pb-8 tex'>Add the specific readableID to be added to the copies. <IonIcon data-tooltip-id="contentfulInfo" data-tooltip-content="Example: 'b2x-tsf-common-installationGuideForSpecificRouter'" icon={informationCircle}></IonIcon></p>
+            }
+            
+            <Tooltip id="contentfulInfo" />
             <form onSubmit={handleSubmit(handleContentfulFormSubmit)} className="w-full">
-              <IonInput className='mb-4 text-sm' label="Internal Name" labelPlacement="floating" fill="outline" placeholder="Please add an Internal name"
-                {...register("internalName", {
-                  validate: {},
-                })}
-                helperText={`A total ${contentfulCopy.length} copies will be sent to contentful.`}
-                required
+              <IonInput className={`mb-4 text-sm ${!contentError && 'ion-valid'} ${contentError && 'ion-invalid'}`} label={` ${isTroubleshooting ? "Readable ID" : "Internal Name"}`} labelPlacement="floating" fill="outline" placeholder={`Please add an ${isTroubleshooting ? "Readable ID" : "Internal name"}`}
+                value={contentName}
+                onIonInput={handleContentfulChange}
+                onIonBlur={handleContentfulBlur}
+                helperText={contentError}
               ></IonInput>
+              <div className={`flex ${isCreateAssembly ? 'justify-between' : 'justify-end'}`}>
+                {isCreateAssembly &&
+                  <IonCheckbox className='text-sm' labelPlacement="end"
+                    onIonChange={(event) => setValue("createAssembly", event.detail.checked)}
+                  >Create an Assembly</IonCheckbox>
+              }
+                <IonToggle 
+                  className='text-sm'
+                  checked={isPersonalized}
+                  onIonChange={(e) => setIsPersonalized(e.detail.checked)}
+                >{isPersonalized ? 'Personalized' : 'Generic'}</IonToggle>
+              </div>
+              
               <div className='text-center mt-4'>
+                <IonText className='block text-sm mb-4'>{`A total ${contentfulCopy.length} copies will be sent to contentful.`}</IonText>
                 <IonButton size='small' type='submit' className='btn-primary' shape="round">
                   {loading && <IonSpinner className='mr-2' name="bubbles"></IonSpinner>}
                   Save
