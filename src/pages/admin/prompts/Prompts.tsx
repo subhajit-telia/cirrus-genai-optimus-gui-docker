@@ -214,9 +214,11 @@ const Prompts: React.FC = () => {
                     <IonButton id="open-modal" onClick={() => handleEdit(item, index)} slot="end" size="small" color="warning">
                       <IonIcon icon={createOutline}></IonIcon>
                     </IonButton>
-                    <IonButton onClick={() => handleDeleteAleart(true, index)} color="danger" slot="end" size="small">
-                      <IonIcon icon={trashOutline}></IonIcon>
-                    </IonButton>
+                    {item.prompt_name !== 'system_prompt' && 
+                      <IonButton  onClick={() => handleDeleteAleart(true, index)} color="danger" slot="end" size="small">
+                        <IonIcon icon={trashOutline}></IonIcon>
+                      </IonButton>
+                    }
                   </IonItem>
                   <IonItemOptions>
                     <IonItemOption id="open-modal" onClick={() => handleEdit(item, index)} color="warning">Edit</IonItemOption>
