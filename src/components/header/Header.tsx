@@ -5,6 +5,7 @@ import { useHistory, useLocation } from 'react-router-dom';
 import logo from '../../theme/assets/logo.png'
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../config/AuthContext';
+import LogoutButton from '../logoutbutton/LogoutButton';
 
 interface ContainerProps { }
 
@@ -94,6 +95,9 @@ const AppHeader: React.FC<ContainerProps> = () => {
                         <IonItem onClick={() => handleLogout()}  className='text-sm' button={true} detail={false}>
                             <IonIcon className='text-base' aria-hidden="true" icon={power} slot="start"></IonIcon>
                             <IonLabel>Logout</IonLabel>
+                        </IonItem>
+                        <IonItem className='hidden'>
+                            <LogoutButton />
                         </IonItem>
                     </IonList>
                 </IonContent>
