@@ -6,6 +6,7 @@ import './Login.css';
 import loginVideo from '../../theme/assets/bg-video.mp4'
 import { useHistory } from 'react-router-dom';
 import { useAuth } from '../../config/AuthContext';
+import LoginButton from '../../components/loginbutton/LoginButton';
 
 interface UserAddModel {
     username: string;
@@ -162,6 +163,10 @@ const Login: React.FC = () => {
                                 {loading && <IonSpinner className='mr-2' name="bubbles"></IonSpinner>}
                                 Sign in
                             </IonButton>
+                            <div className='hidden'>
+                                <LoginButton />
+                            </div>
+                            
                         </div>
                     </form>
                 </div>
