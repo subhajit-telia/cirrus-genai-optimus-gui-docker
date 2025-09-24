@@ -9,10 +9,19 @@ const LoginButton = () => {
   const { instance } = useMsal();
   const history = useHistory();
   const { login } = useAuth();
-  const reactAppUrl = NetworkInfo.REACT_APP_URL;
 
   const handleLogin = async () => {
-    console.log('hostUrl', reactAppUrl);
+    const currentUrl = window.location.href;
+    console.log("Current URL:", currentUrl);
+    let reactAppUrl;
+    if (currentUrl.toLowerCase().includes('dev')) {
+      reactAppUrl = 'https://genai-optimus-gui.cirrus-dev.teliacompany.net';
+    }else if (currentUrl.toLowerCase().includes('stage')) {
+      reactAppUrl = 'https://genai-optimus-gui.cirrus-stage.teliacompany.net';
+    }else {
+      reactAppUrl = 'https://genai-optimus.cirrus.teliacompany.net';
+    }
+    console.log("React App URL:", reactAppUrl);
     try {
       const response: AuthenticationResult = await instance.loginPopup({
         scopes: ["User.Read"], // Request necessary scopes
