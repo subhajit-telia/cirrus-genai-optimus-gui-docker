@@ -1112,6 +1112,17 @@ const B2B: React.FC = () => {
       setIsContentfulModal(true);
     }
     console.log('Contentful modal opened', contentfulCopy);
+    
+    const emailCount = contentfulCopy.filter(
+      (item) => item.input_params.format_name && item.input_params.format_name.startsWith('Email')
+    ).length;
+
+    if (emailCount > 1) {
+      console.log('Multiple Email formats found:', emailCount);
+      setIsShowError(true);
+      setIsErrorMsg('Can only send one email format at a time.');
+      setIsContentfulModal(false);
+    }
     // Loop through the array and check format_name
     contentfulCopy .forEach((item) => {
       const format = item.input_params.format_name;
