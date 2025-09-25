@@ -6,6 +6,7 @@ import logo from '../../theme/assets/logo.png'
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../config/AuthContext';
 import LogoutButton from '../logoutbutton/LogoutButton';
+import { useMsal } from '@azure/msal-react';
 
 interface ContainerProps { }
 
@@ -29,6 +30,7 @@ const AppHeader: React.FC<ContainerProps> = () => {
     : location.pathname;
 
     const { logout } = useAuth();
+    const { instance } = useMsal();
 
     useEffect(() => {
         let userLocalData:any = localStorage.getItem('user');
@@ -37,9 +39,19 @@ const AppHeader: React.FC<ContainerProps> = () => {
     }, []);
 
     /* handleLogout start */
-    const handleLogout = () => {
-        logout();
-    };
+    const handleLogout = async () => {
+    try {
+      await instance.logoutPopup(); // Use logoutRedirect() if needed
+
+      // Return a response after successful logout
+      console.log("User successfully logged out");
+      logout();
+      return { success: true, message: "Logout successful" };
+    } catch (error) {
+      console.error("Logout Failed:", error);
+      return { success: false, message: "Logout failed", error };
+    }
+  };
     
   return (
     <IonHeader className='flex px-5 items-center justify-between'>
@@ -95,9 +107,6 @@ const AppHeader: React.FC<ContainerProps> = () => {
                         <IonItem onClick={() => handleLogout()}  className='text-sm' button={true} detail={false}>
                             <IonIcon className='text-base' aria-hidden="true" icon={power} slot="start"></IonIcon>
                             <IonLabel>Logout</IonLabel>
-                        </IonItem>
-                        <IonItem className='hidden'>
-                            <LogoutButton />
                         </IonItem>
                     </IonList>
                 </IonContent>

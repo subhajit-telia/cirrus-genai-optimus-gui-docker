@@ -1,6 +1,6 @@
 import { AuthenticationResult } from "@azure/msal-browser";
 import { useMsal } from "@azure/msal-react";
-import { IonButton } from "@ionic/react";
+import { IonButton, IonLabel, IonSegmentButton } from "@ionic/react";
 import { useHistory } from "react-router-dom";
 import { useAuth } from "../../config/AuthContext";
 import { NetworkInfo } from "../../routes/network";
@@ -37,8 +37,21 @@ const LoginButton = () => {
       // Store "removed" for API calls
       const accessToken = response.accessToken;
       if (accessToken) {
+        const groups = (response.idTokenClaims as { groups?: string[] })?.groups || [];
+        const isUser = groups.includes('HID100007708_PROD_CIRRUS_GENAI_OPTIMUS_USER');
+        const isAdmin = groups.includes('HID100007708_PROD_CIRRUS_GENAI_OPTIMUS_ADMIN');
+        const userData = {
+          verification: true,
+          roles: {
+            user: isUser,
+            admin: isAdmin
+          },
+          username: account?.username,
+          display_name: account?.name
+        };
+        localStorage.setItem('user', JSON.stringify(userData));
         login('user');
-        history.push('/use-cases');
+        history.push('/b2c');
       }
       console.log("Access Token:", accessToken);
     } catch (error) {
@@ -46,7 +59,7 @@ const LoginButton = () => {
     }
   };
 
-  return <IonButton onClick={handleLogin} className='btn-primary' shape="round">Login with TCAD</IonButton> ;
+  return <IonSegmentButton onClick={handleLogin} className='size-min min-w-0 h-7 min-h-6' value="sso"><IonLabel  className='m-0 text-xs'>AZURE AD</IonLabel></IonSegmentButton>;
 };
 
 export default LoginButton;
