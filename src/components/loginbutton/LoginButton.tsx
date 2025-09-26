@@ -50,7 +50,14 @@ const LoginButton = () => {
           display_name: account?.name
         };
         localStorage.setItem('user', JSON.stringify(userData));
-        login('user');
+
+        if (userData.roles.admin === true && userData.roles.user === true) {
+          login('admin');
+        }else if (userData.roles.admin === true) {
+          login('admin');
+        }else if (userData.roles.user === true) {
+          login('user');
+        }
         history.push('/b2c');
       }
       console.log("Access Token:", accessToken);
