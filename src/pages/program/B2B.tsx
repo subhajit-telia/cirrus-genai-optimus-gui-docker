@@ -1112,17 +1112,44 @@ const B2B: React.FC = () => {
       setIsContentfulModal(true);
     }
     console.log('Contentful modal opened', contentfulCopy);
-    
+
     const emailCount = contentfulCopy.filter(
       (item) => item.input_params.format_name && item.input_params.format_name.startsWith('Email')
     ).length;
 
-    if (emailCount > 1) {
+    // Step 1: Filter only items with format_id starting with "Email"
+    const emailItems = contentfulCopy.filter(item => item.input_params.format_id.startsWith("Email"));
+    console.log('emailItems:', emailItems);
+    // Step 2: Group by segment_id
+    const grouped = emailItems.reduce((acc, item) => {
+      const segmentId = item.input_params.segment_id || 'noSegment';
+      if (!acc[segmentId]) {
+        acc[segmentId] = [];
+      }
+      acc[segmentId].push(item);
+      return acc;
+    }, {} as Record<string, typeof contentfulCopy>);
+    console.log('grouped by segment_id:', grouped);
+    const keyExists = 'noSegment' in grouped;
+    console.log('Key "noSegment" exists:', keyExists);
+    // Step 3: Check which segment_ids have multiple entries
+    const duplicates = Object.entries(grouped).filter(([_, items]: any) => items.length > 1);
+
+    console.log('duplicates:', duplicates);
+
+    if (!keyExists && duplicates.length > 0) {
       console.log('Multiple Email formats found:', emailCount);
       setIsShowError(true);
       setIsErrorMsg('Can only send one email format at a time.');
       setIsContentfulModal(false);
     }
+     
+    if (keyExists && emailCount > 1) {
+      setIsShowError(true);
+      setIsErrorMsg('Can only send one email format at a time.');
+      setIsContentfulModal(false);
+    }
+    
     // Loop through the array and check format_name
     contentfulCopy .forEach((item) => {
       const format = item.input_params.format_name;
