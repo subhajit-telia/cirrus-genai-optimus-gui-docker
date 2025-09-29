@@ -115,6 +115,7 @@ const B2C: React.FC = () => {
   const [isKnowledgeBaseModal, setIsKnowledgeBaseModal] = useState(false);
   const [isKnowledgeBaseData, setKnowledgeBaseData] = useState<any[]>([]);
   const [isPersonalized, setIsPersonalized] = useState(false);
+  const [isPersonalizedChanged, setIsPersonalizedChanged] = useState(false);
   const [isTroubleshooting, setIsTroubleshooting] = useState(false);
   const [isCreateAssembly, setIsCreateAssembly] = useState(false);
   const [contentError, setContentError] = useState("");
@@ -867,19 +868,23 @@ const B2C: React.FC = () => {
     console.log('contentfulData', data);
     console.log('B2C array from template.json:', template.B2C); // <-- log B2C array here
     const B2CFormats = template.B2C;
-    const filtered = data.filter((item:any) => {
+    const filtered = data
+      .map((item: any) => {
       const format = B2CFormats.find(
         (f) => f.format_id === item.input_params.format_id
       );
 
-      // If no match found → exclude
-      if (!format) return false;
+      // If no match found or type_of_content is null → exclude
+      if (!format || format.type_of_content === null) return null;
 
-      // Exclude if type_of_content is null
-      if (format.type_of_content === null) return false;
-
-      return true;
-    });
+      // Add type_of_content to the item
+      return {
+        ...item,
+        type_of_content: format.type_of_content,
+      };
+      })
+      .filter(Boolean);
+    console.log('contentful filtered data', filtered);
     setContentfulCopy(filtered)
   }
 
@@ -907,12 +912,18 @@ const B2C: React.FC = () => {
       }
       const qidObj = { id: newId, parent_id };
       console.log('formatName', formatName);
-      if (
-        formatName === "Sms" ||
-        formatName.startsWith("Email")
-      ) {
+      if (isPersonalizedChanged === isPersonalized) {
+        if (
+          formatName === "Sms" ||
+          formatName.startsWith("Email") || formatName.startsWith("Banner")
+        ) {
+          personalizedQids.push(qidObj);
+        } else {
+          genericQids.push(qidObj);
+        }
+      }else if (isPersonalized) {
         personalizedQids.push(qidObj);
-      } else {
+      }else {
         genericQids.push(qidObj);
       }
     });
@@ -1151,14 +1162,34 @@ const B2C: React.FC = () => {
     }
     
     // Loop through the array and check format_name
-    contentfulCopy .forEach((item) => {
+    // Check if all items have 'personalized' in type_of_content when contentfulCopy length is 2
+    if (
+      contentfulCopy.every(
+      (item) =>
+        Array.isArray(item.type_of_content) &&
+        item.type_of_content.includes("personalized") 
+      )
+    ) {
+      setIsPersonalized(true);
+      setIsPersonalizedChanged(true);
+      console.log("All items are personalized");
+    } else {
+      setIsPersonalized(false);
+      setIsPersonalizedChanged(false);
+      console.log("Not all items are personalized");
+    }
+
+    contentfulCopy.forEach((item) => {
       const format = item.input_params.format_name;
-      if (format.startsWith('Sms') || format.startsWith('Email')) {
-        console.log('Matches:', format);
+      if (
+      format.startsWith("Sms") ||
+      format.startsWith("Email")
+      ) {
+        console.log("Matches:", format);
         setIsCreateAssembly(true);
         setIsPersonalized(true);
       }
-      if (format.startsWith('Trouble')) {
+      if (format.startsWith("Trouble")) {
         setIsTroubleshooting(true);
       }
     });

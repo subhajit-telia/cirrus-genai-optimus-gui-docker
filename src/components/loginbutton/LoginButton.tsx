@@ -43,7 +43,7 @@ const LoginButton = () => {
         const userData = {
           verification: true,
           roles: {
-            user: isUser,
+            user: isUser || true,
             admin: isAdmin
           },
           username: account?.username,
