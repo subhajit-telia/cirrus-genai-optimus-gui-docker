@@ -972,7 +972,7 @@ const B2C: React.FC = () => {
         setValue("contentName", '');
         setIsContentfulModal(false);
         setIsShowError(true);
-        setIsErrorMsg('Contentful submited successfully!');
+        setIsErrorMsg(responseData.message || 'Contentful submited successfully!');
         setIsPersonalized(false);
         setIsTroubleshooting(false);
       } else {
