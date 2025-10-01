@@ -904,7 +904,7 @@ const B2C: React.FC = () => {
       const prev = qidHistory.find(q => q.id === newId);
       let parent_id = "";
       if (prev) {
-        contentAction = 'Update';
+        contentAction = 'UPDATE';
         parent_id = prev.parent_id;
       } else {
         const prevQidObj = qidHistory[idx];
