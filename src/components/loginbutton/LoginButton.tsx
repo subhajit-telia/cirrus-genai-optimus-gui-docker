@@ -37,7 +37,9 @@ const LoginButton = () => {
       // Store "removed" for API calls
       const accessToken = response.accessToken;
       if (accessToken) {
-        const groups = (response.idTokenClaims as { groups?: string[] })?.groups || [];
+        const groups = ((response.idTokenClaims as { groups?: string[] })?.groups || []).filter(
+          (group) => group.includes('OPTIMUS') || group.includes('KNOWLEDGEBASE')
+        );
         const isUser = groups.includes('HID100007708_PROD_CIRRUS_GENAI_OPTIMUS_USER');
         const isAdmin = groups.includes('HID100007708_PROD_CIRRUS_GENAI_OPTIMUS_ADMIN');
         const userData = {
