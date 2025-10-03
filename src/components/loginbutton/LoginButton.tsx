@@ -46,6 +46,7 @@ const LoginButton = () => {
             user: isUser || true,
             admin: isAdmin
           },
+          tiga_roles: groups || [],
           username: account?.username,
           display_name: account?.name
         };
