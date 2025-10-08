@@ -1,7 +1,7 @@
 {
   "name": "genai-optimus-app",
   "private": true,
-  "version": "1.4.3",
+  "version": "1.5.3",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -13,6 +13,8 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@azure/msal-browser": "^4.7.0",
+    "@azure/msal-react": "^3.0.6",
     "@capacitor/app": "6.0.0",
     "@capacitor/core": "6.1.0",
     "@capacitor/haptics": "6.0.0",

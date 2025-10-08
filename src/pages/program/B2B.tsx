@@ -115,6 +115,7 @@ const B2B: React.FC = () => {
   const [isKnowledgeBaseModal, setIsKnowledgeBaseModal] = useState(false);
   const [isKnowledgeBaseData, setKnowledgeBaseData] = useState<any[]>([]);
   const [isPersonalized, setIsPersonalized] = useState(false);
+  const [isPersonalizedChanged, setIsPersonalizedChanged] = useState(false);
   const [isTroubleshooting, setIsTroubleshooting] = useState(false);
   const [isCreateAssembly, setIsCreateAssembly] = useState(false);
   const [contentError, setContentError] = useState("");
@@ -867,19 +868,23 @@ const B2B: React.FC = () => {
     console.log('contentfulData', data);
     console.log('B2B array from template.json:', template.B2B); // <-- log B2B array here
     const B2BFormats = template.B2B;
-    const filtered = data.filter((item:any) => {
+    const filtered = data
+      .map((item: any) => {
       const format = B2BFormats.find(
         (f) => f.format_id === item.input_params.format_id
       );
 
-      // If no match found → exclude
-      if (!format) return false;
+      // If no match found or type_of_content is null → exclude
+      if (!format || format.type_of_content === null) return null;
 
-      // Exclude if type_of_content is null
-      if (format.type_of_content === null) return false;
-
-      return true;
-    });
+      // Add type_of_content to the item
+      return {
+        ...item,
+        type_of_content: format.type_of_content,
+      };
+      })
+      .filter(Boolean);
+    console.log('contentful filtered data', filtered);
     setContentfulCopy(filtered)
   }
 
@@ -899,7 +904,7 @@ const B2B: React.FC = () => {
       const prev = qidHistory.find(q => q.id === newId);
       let parent_id = "";
       if (prev) {
-        contentAction = 'Update';
+        contentAction = 'UPDATE';
         parent_id = prev.parent_id;
       } else {
         const prevQidObj = qidHistory[idx];
@@ -907,12 +912,18 @@ const B2B: React.FC = () => {
       }
       const qidObj = { id: newId, parent_id };
       console.log('formatName', formatName);
-      if (
-        formatName === "Sms" ||
-        formatName.startsWith("Email")
-      ) {
+      if (isPersonalizedChanged === isPersonalized) {
+        if (
+          formatName === "Sms" ||
+          formatName.startsWith("Email") || formatName.startsWith("Banner")
+        ) {
+          personalizedQids.push(qidObj);
+        } else {
+          genericQids.push(qidObj);
+        }
+      }else if (isPersonalized) {
         personalizedQids.push(qidObj);
-      } else {
+      }else {
         genericQids.push(qidObj);
       }
     });
@@ -961,7 +972,7 @@ const B2B: React.FC = () => {
         setValue("contentName", '');
         setIsContentfulModal(false);
         setIsShowError(true);
-        setIsErrorMsg('Contentful submited successfully!');
+        setIsErrorMsg(responseData.message || 'Contentful submited successfully!');
         setIsPersonalized(false);
         setIsTroubleshooting(false);
       } else {
@@ -1112,15 +1123,73 @@ const B2B: React.FC = () => {
       setIsContentfulModal(true);
     }
     console.log('Contentful modal opened', contentfulCopy);
+
+    const emailCount = contentfulCopy.filter(
+      (item) => item.input_params.format_name && item.input_params.format_name.startsWith('Email')
+    ).length;
+
+    // Step 1: Filter only items with format_id starting with "Email"
+    const emailItems = contentfulCopy.filter(item => item.input_params.format_id.startsWith("Email"));
+    console.log('emailItems:', emailItems);
+    // Step 2: Group by segment_id
+    const grouped = emailItems.reduce((acc, item) => {
+      const segmentId = item.input_params.segment_id || 'noSegment';
+      if (!acc[segmentId]) {
+        acc[segmentId] = [];
+      }
+      acc[segmentId].push(item);
+      return acc;
+    }, {} as Record<string, typeof contentfulCopy>);
+    console.log('grouped by segment_id:', grouped);
+    const keyExists = 'noSegment' in grouped;
+    console.log('Key "noSegment" exists:', keyExists);
+    // Step 3: Check which segment_ids have multiple entries
+    const duplicates = Object.entries(grouped).filter(([_, items]: any) => items.length > 1);
+
+    console.log('duplicates:', duplicates);
+
+    if (!keyExists && duplicates.length > 0) {
+      console.log('Multiple Email formats found:', emailCount);
+      setIsShowError(true);
+      setIsErrorMsg('Can only send one email format at a time.');
+      setIsContentfulModal(false);
+    }
+     
+    if (keyExists && emailCount > 1) {
+      setIsShowError(true);
+      setIsErrorMsg('Can only send one email format at a time.');
+      setIsContentfulModal(false);
+    }
+    
     // Loop through the array and check format_name
-    contentfulCopy .forEach((item) => {
+    // Check if all items have 'personalized' in type_of_content when contentfulCopy length is 2
+    if (
+      contentfulCopy.every(
+      (item) =>
+        Array.isArray(item.type_of_content) &&
+        item.type_of_content.includes("personalized") 
+      )
+    ) {
+      setIsPersonalized(true);
+      setIsPersonalizedChanged(true);
+      console.log("All items are personalized");
+    } else {
+      setIsPersonalized(false);
+      setIsPersonalizedChanged(false);
+      console.log("Not all items are personalized");
+    }
+
+    contentfulCopy.forEach((item) => {
       const format = item.input_params.format_name;
-      if (format.startsWith('Sms') || format.startsWith('Email')) {
-        console.log('Matches:', format);
+      if (
+      format.startsWith("Sms") ||
+      format.startsWith("Email")
+      ) {
+        console.log("Matches:", format);
         setIsCreateAssembly(true);
         setIsPersonalized(true);
       }
-      if (format.startsWith('Trouble')) {
+      if (format.startsWith("Trouble")) {
         setIsTroubleshooting(true);
       }
     });

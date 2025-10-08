@@ -1,0 +1,75 @@
+import { AuthenticationResult } from "@azure/msal-browser";
+import { useMsal } from "@azure/msal-react";
+import { IonButton, IonLabel, IonSegmentButton } from "@ionic/react";
+import { useHistory } from "react-router-dom";
+import { useAuth } from "../../config/AuthContext";
+import { NetworkInfo } from "../../routes/network";
+
+const LoginButton = () => {
+  const { instance } = useMsal();
+  const history = useHistory();
+  const { login } = useAuth();
+
+  const handleLogin = async () => {
+    const currentUrl = window.location.href;
+    console.log("Current URL:", currentUrl);
+    let reactAppUrl;
+    if (currentUrl.toLowerCase().includes('dev')) {
+      reactAppUrl = 'https://genai-optimus-gui.cirrus-dev.teliacompany.net';
+    }else if (currentUrl.toLowerCase().includes('stage')) {
+      reactAppUrl = 'https://genai-optimus-gui.cirrus-stage.teliacompany.net';
+    }else {
+      reactAppUrl = 'https://genai-optimus-gui.cirrus.teliacompany.net';
+    }
+    console.log("React App URL:", reactAppUrl);
+    try {
+      const response: AuthenticationResult = await instance.loginPopup({
+        scopes: ["User.Read"], // Request necessary scopes
+        redirectUri: reactAppUrl, // Force base URL
+      });
+
+      console.log("Login Response:", response);
+
+      // Extract user details
+      const account = response.account;
+      console.log("User Info:", account?.name, account?.username);
+
+      // Store "removed" for API calls
+      const accessToken = response.accessToken;
+      if (accessToken) {
+        const groups = ((response.idTokenClaims as { groups?: string[] })?.groups || []).filter(
+          (group) => group.includes('OPTIMUS') || group.includes('KNOWLEDGEBASE')
+        );
+        const isUser = groups.includes('HID100007708_PROD_CIRRUS_GENAI_OPTIMUS_USER');
+        const isAdmin = groups.includes('HID100007708_PROD_CIRRUS_GENAI_OPTIMUS_ADMIN');
+        const userData = {
+          verification: true,
+          roles: {
+            user: isUser || true,
+            admin: isAdmin
+          },
+          tiga_roles: groups || [],
+          username: account?.username,
+          display_name: account?.name
+        };
+        localStorage.setItem('user', JSON.stringify(userData));
+
+        if (userData.roles.admin === true && userData.roles.user === true) {
+          login('admin');
+        }else if (userData.roles.admin === true) {
+          login('admin');
+        }else if (userData.roles.user === true) {
+          login('user');
+        }
+        history.push('/b2c');
+      }
+      console.log("Access Token:", accessToken);
+    } catch (error) {
+      console.error("Login Failed:", error);
+    }
+  };
+
+  return <IonSegmentButton onClick={handleLogin} className='size-min min-w-0 h-7 min-h-6' value="sso"><IonLabel  className='m-0 text-xs'>AZURE AD</IonLabel></IonSegmentButton>;
+};
+
+export default LoginButton;
