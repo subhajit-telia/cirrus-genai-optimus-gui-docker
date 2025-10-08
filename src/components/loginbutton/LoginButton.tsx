@@ -19,7 +19,7 @@ const LoginButton = () => {
     }else if (currentUrl.toLowerCase().includes('stage')) {
       reactAppUrl = 'https://genai-optimus-gui.cirrus-stage.teliacompany.net';
     }else {
-      reactAppUrl = 'https://genai-optimus.cirrus.teliacompany.net';
+      reactAppUrl = 'https://genai-optimus-gui.cirrus.teliacompany.net';
     }
     console.log("React App URL:", reactAppUrl);
     try {
