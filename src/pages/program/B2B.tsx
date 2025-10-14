@@ -82,6 +82,7 @@ const B2B: React.FC = () => {
   const [noSegmentArray, setNoSegmentArray] = useState<[]>([]);
   const [tabArray, setTabArray] = useState<[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
+  const [loadingContentful, setLoadingContentful] = useState<boolean>(false);
   const [loadingSegments, setLoadingSegments] = useState<boolean>(false);
   const [loadingPurposes, setLoadingPurposes] = useState<boolean>(false);
   const [loadingFormats, setLoadingFormats] = useState<boolean>(false);
@@ -889,7 +890,7 @@ const B2B: React.FC = () => {
   }
 
   const handleContentfulFormSubmit = async (data:any) => {
-    
+    setLoadingContentful(true);
     console.log('handleContentfulFormSubmit', data);
     console.log('contentfulCopy', contentfulCopy);
     let contentAction = 'NEW'
@@ -968,6 +969,7 @@ const B2B: React.FC = () => {
       console.log('Success:', responseData);
   
       if (response.ok && !responseData.ErrorMessage) {
+        setLoadingContentful(false);
         reset;
         setValue("contentName", '');
         setIsContentfulModal(false);
@@ -976,10 +978,12 @@ const B2B: React.FC = () => {
         setIsPersonalized(false);
         setIsTroubleshooting(false);
       } else {
+        setLoadingContentful(false);
         setIsShowError(true);
         setIsErrorMsg(responseData.ErrorMessage || isPersonalized ? 'No Personalized content found.' : 'No Generic content found');
       }
     } catch (error: any) {
+      setLoadingContentful(false);
       console.error('Login failed:', error);
       if (error.response) {
         setIsShowError(true);
@@ -1739,8 +1743,8 @@ const B2B: React.FC = () => {
               
               <div className='text-center mt-4'>
                 <IonText className='block text-sm mb-4'>{`A total ${contentfulCopy.length} copies will be sent to contentful.`}</IonText>
-                <IonButton size='small' type='submit' className='btn-primary' shape="round">
-                  {loading && <IonSpinner className='mr-2' name="bubbles"></IonSpinner>}
+                <IonButton disabled={loadingContentful} size='small' type='submit' className='btn-primary' shape="round">
+                  {loadingContentful && <IonSpinner className='mr-2' name="bubbles"></IonSpinner>}
                   Save
                 </IonButton>
                 <IonButton onClick={() => setIsContentfulModal(false)} size='small' type='reset' fill='outline' shape="round">
