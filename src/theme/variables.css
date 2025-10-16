@@ -242,6 +242,11 @@ ion-textarea .textarea-wrapper-inner .native-wrapper .native-textarea {
 ion-toggle .label-text-wrapper {
     margin-right: 10px;
 }
+.mdxeditor ol {
+    list-style: auto;
+    margin: auto;
+    padding: revert;
+}
 @media (prefers-color-scheme: dark) {
     :root.md {
         --checkbox-background: #fff;
