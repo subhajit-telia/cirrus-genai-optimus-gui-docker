@@ -1724,9 +1724,9 @@ const B2C: React.FC = () => {
             <form onSubmit={handleSubmit(handleContentfulFormSubmit)} className="w-full">
               <IonInput className={`mb-4 text-sm ${!contentError && 'ion-valid'} ${contentError && 'ion-invalid'}`} label={` ${isTroubleshooting ? "Readable ID" : "Internal Name"}`} labelPlacement="floating" fill="outline" placeholder={`Please add an ${isTroubleshooting ? "Readable ID" : "Internal name"}`}
                 value={contentName}
-                onIonInput={handleContentfulChange}
-                onIonBlur={handleContentfulBlur}
-                helperText={contentError}
+                // onIonInput={handleContentfulChange}
+                // onIonBlur={handleContentfulBlur}
+                // helperText={contentError}
               ></IonInput>
               <div className={`flex ${isCreateAssembly ? 'justify-between' : 'justify-end'}`}>
                 {isCreateAssembly &&

@@ -1200,7 +1200,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                                           </IonButton>
                                         :
                                           <IonButton fill='outline' data-tooltip-id='tooltip' data-tooltip-content='Close editing' className='text-xs' onClick={() => {handleEditAnswer(tabIndex, itemIndex, outputIndex), saveAnswerChange(editorChangedText || editInputValues[tabIndex][itemIndex][outputIndex], outputItem.input_params.qid)}} shape="round">
-                                            <IonIcon slot="icon-only" icon={createOutline}></IonIcon>
+                                            <IonIcon color='primary' slot="icon-only" icon={createOutline}></IonIcon>
                                           </IonButton>
                                         }
 
@@ -1440,7 +1440,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                                       </IonButton>
                                     :
                                       <IonButton fill='outline' data-tooltip-id='tooltip' data-tooltip-content='Close editing' className='text-xs' onClick={() => {handleEditAnswer(tabIndex, null, outputIndex), saveAnswerChange(editorChangedText || editInputValues[tabIndex][outputIndex] as string, outputItem.input_params.qid)}} shape="round">
-                                        <IonIcon slot="icon-only" icon={createOutline}></IonIcon>
+                                        <IonIcon color='primary' slot="icon-only" icon={createOutline}></IonIcon>
                                       </IonButton>
                                     }
                                     {isRefineType === 'refine' && isRefineBox ?
