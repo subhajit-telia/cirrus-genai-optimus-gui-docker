@@ -242,10 +242,13 @@ ion-textarea .textarea-wrapper-inner .native-wrapper .native-textarea {
 ion-toggle .label-text-wrapper {
     margin-right: 10px;
 }
-.mdxeditor ol {
+.tab-body ol {
     list-style: auto;
     margin: auto;
     padding: revert;
+}
+.tab-body ol li::marker {
+    font-weight: bold;
 }
 @media (prefers-color-scheme: dark) {
     :root.md {
