@@ -853,9 +853,9 @@ const B2B: React.FC = () => {
     // 2. Validate forbidden characters
     if (forbiddenChars.test(input)) {
       console.log('Invalid input detected');
-      setContentError("Contains forbidden characters (!@#$%^&* etc.)");
+      // setContentError("Contains forbidden characters (!@#$%^&* etc.)");
     } else {
-      setContentError("");
+      // setContentError("");
     }
 
     setContentName(input);
@@ -1724,8 +1724,8 @@ const B2B: React.FC = () => {
             <form onSubmit={handleSubmit(handleContentfulFormSubmit)} className="w-full">
               <IonInput className={`mb-4 text-sm ${!contentError && 'ion-valid'} ${contentError && 'ion-invalid'}`} label={` ${isTroubleshooting ? "Readable ID" : "Internal Name"}`} labelPlacement="floating" fill="outline" placeholder={`Please add an ${isTroubleshooting ? "Readable ID" : "Internal name"}`}
                 value={contentName}
-                // onIonInput={handleContentfulChange}
-                // onIonBlur={handleContentfulBlur}
+                onIonInput={handleContentfulChange}
+                onIonBlur={handleContentfulBlur}
                 // helperText={contentError}
               ></IonInput>
               <div className={`flex ${isCreateAssembly ? 'justify-between' : 'justify-end'}`}>
