@@ -19,6 +19,8 @@ interface ConfigAddModel {
     temperature: number;
     example_validation_steps: number;
     max_file_size_mb: number;
+    generic_env: string;
+    personalized_env: string;
     max_"removed"_length: number;
     test_example_chance: number;
     example_acceptance_threshold: number;
@@ -74,6 +76,8 @@ const Config: React.FC = () => {
         setValue("test_example_chance", responseData.example_validation.test_example_chance);
         setValue("example_validation_steps", responseData.example_validation.example_validation_steps);
         setValue("max_file_size_mb", responseData.attachment.max_file_size_mb);
+        setValue("generic_env", responseData.contentful.generic_env);
+        setValue("personalized_env", responseData.contentful.personalized_env);
         setValue("max_"removed"_length", responseData.attachment.max_"removed"_length);
         setValue("example_acceptance_threshold", responseData.example_validation.example_acceptance_threshold);
         setValue("example_automatic_approval", responseData.example_validation.example_automatic_approval);
@@ -113,6 +117,8 @@ const Config: React.FC = () => {
     payLoad.example_validation.test_example_chance = data.test_example_chance;
     payLoad.example_validation.example_validation_steps = data.example_validation_steps;
     payLoad.attachment.max_file_size_mb = data.max_file_size_mb;
+    payLoad.contentful.generic_env = data.generic_env;
+    payLoad.contentful.personalized_env = data.personalized_env;
     payLoad.attachment.max_"removed"_length = data.max_"removed"_length;
     payLoad.example_validation.example_acceptance_threshold = data.example_acceptance_threshold;
     payLoad.example_validation.example_automatic_approval = data.example_automatic_approval;
@@ -433,6 +439,36 @@ const Config: React.FC = () => {
                                 <IonPopover className="rating-popover" size="auto" trigger="max-"removed"-length" triggerAction="hover">
                                     <IonContent class="ion-padding">
                                         Maximum number of "removed"s allowed for the attachment. This value limits the length of the attached document in terms of "removed"s, where a "removed" is a single unit of text (such as a word, punctuation mark, or part of a word) as used by the language model (LLM). If the document exceeds this limit, it will be truncated.
+                                    </IonContent>
+                                </IonPopover>
+                            </IonCol>
+                        </IonRow>
+
+                        <p className='font-bold text-lg text-black mb-2.5'>Contentful Settings:</p>
+                        <IonRow>
+                            <IonCol size="4">
+                                <IonInput type='text' className='mb-4 text-sm' label="Generic Environment" labelPlacement="floating" fill="outline" placeholder="Generic Environment ID "
+                                    {...register("generic_env", {
+                                        validate: {},
+                                    })}
+                                    ><IonIcon id="generic_env" className="block absolute left-0 -top-1.5 z-10 cursor-pointer" slot="icon-only" icon={informationCircle}></IonIcon>
+                                </IonInput>
+                                <IonPopover className="rating-popover" size="auto" trigger="generic_env" triggerAction="hover">
+                                    <IonContent class="ion-padding">
+                                        This environment id specifies the target Contentful environment where all generic content from Optimus will be sent. The value is case-sensitive. 
+                                    </IonContent>
+                                </IonPopover>
+                            </IonCol>
+                            <IonCol size="4">
+                                <IonInput type='text' className='mb-4 text-sm' label="Personalized Environment" labelPlacement="floating" fill="outline" placeholder="Personalized Environment ID"
+                                    {...register("personalized_env", {
+                                        validate: {},
+                                    })}
+                                    ><IonIcon id="personalized_env" className="block absolute left-0 -top-1.5 z-10 cursor-pointer" slot="icon-only" icon={informationCircle}></IonIcon>
+                                </IonInput>
+                                <IonPopover className="rating-popover" size="auto" trigger="personalized_env" triggerAction="hover">
+                                    <IonContent class="ion-padding">
+                                        This environment id specifies the target Contentful environment where all personalized content from Optimus will be sent. The value is case-sensitive.
                                     </IonContent>
                                 </IonPopover>
                             </IonCol>
