@@ -121,6 +121,7 @@ const B2B: React.FC = () => {
   const [isCreateAssembly, setIsCreateAssembly] = useState(false);
   const [contentError, setContentError] = useState("");
   const [contentName, setContentName] = useState("");
+  const [configData, setConfigData] = useState<any>('');
 
   useEffect(() => {
     let userLocalData:any = localStorage.getItem('user');
@@ -893,6 +894,13 @@ const B2B: React.FC = () => {
     setLoadingContentful(true);
     console.log('handleContentfulFormSubmit', data);
     console.log('contentfulCopy', contentfulCopy);
+    console.log('configData>>>', configData);
+
+    const targetEnv = Object.entries(configData.contentful).map(([key, value]) => {
+      // remove the "_env" part from the key
+      const newKey = key.replace('_env', '');
+      return { [newKey]: value };
+    });
     let contentAction = 'NEW'
 
     // Build qid arrays for Generic and Personalized
@@ -948,6 +956,7 @@ const B2B: React.FC = () => {
     }
 
     let payload = {
+      targetEnv: targetEnv,
       contentName: contentName,
       action: contentAction,
       qid: allQids,
@@ -995,6 +1004,33 @@ const B2B: React.FC = () => {
     }
   };
   /* send To contentful end */
+
+  /* -------------get Config data start------------- */
+  const getConfigData = async () => {
+    try {
+      const urlData = apiUrl + '/config/get';
+
+      const response = await fetch(urlData, {
+        method: 'GET',
+        headers: {
+          '"removed"': `${NetworkInfo.ACCESSTOKEN}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      const responseData = await response.json();
+      console.log("Success setConfigData:", responseData);
+
+      if (response.ok) {
+        setConfigData(responseData);
+      }
+      
+    } catch (error: any) {
+      console.error("catch failed:", error);
+      setLoading(false);
+    }
+  };
+  /* get config data end */
 
   /* -------------handleEditingMode start------------- */
   const handleEditingMode = async (data: boolean): Promise<void> => {
@@ -1122,6 +1158,7 @@ const B2B: React.FC = () => {
   /* Self learning end */
 
   const handleClickContentful = (e: React.MouseEvent<HTMLIonChipElement>) => {
+    getConfigData();
     console.log('handleClickContentful', e);
     if (!(e.target as HTMLIonChipElement).disabled) {
       setIsContentfulModal(true);
