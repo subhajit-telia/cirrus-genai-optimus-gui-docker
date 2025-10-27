@@ -983,23 +983,23 @@ const B2C: React.FC = () => {
         setValue("contentName", '');
         setIsContentfulModal(false);
         setIsShowError(true);
-        setIsErrorMsg(responseData.message || 'Contentful submited successfully!');
+        setIsErrorMsg(responseData.message || 'Submitted successfully!');
         setIsPersonalized(false);
         setIsTroubleshooting(false);
       } else {
         setLoadingContentful(false);
         setIsShowError(true);
-        setIsErrorMsg(responseData.ErrorMessage || isPersonalized ? 'No Personalized content found.' : 'No Generic content found');
+        setIsErrorMsg(responseData.ErrorMessage || 'Something went wrong!');
       }
     } catch (error: any) {
       setLoadingContentful(false);
       console.error('Login failed:', error);
       if (error.response) {
         setIsShowError(true);
-        setIsErrorMsg(error.response || isPersonalized ? 'No Personalized content found.' : 'No Generic content found');
+        setIsErrorMsg(error.response || 'Something went wrong!');
       }else {
         setIsShowError(true);
-        setIsErrorMsg(error.response || isPersonalized ? 'No Personalized content found.' : 'No Generic content found');
+        setIsErrorMsg(error.response || 'Something went wrong!');
       }
     }
   };
