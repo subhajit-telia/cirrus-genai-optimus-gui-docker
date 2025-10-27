@@ -82,6 +82,7 @@ const B2C: React.FC = () => {
   const [noSegmentArray, setNoSegmentArray] = useState<[]>([]);
   const [tabArray, setTabArray] = useState<[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
+  const [loadingContentful, setLoadingContentful] = useState<boolean>(false);
   const [loadingSegments, setLoadingSegments] = useState<boolean>(false);
   const [loadingPurposes, setLoadingPurposes] = useState<boolean>(false);
   const [loadingFormats, setLoadingFormats] = useState<boolean>(false);
@@ -120,6 +121,7 @@ const B2C: React.FC = () => {
   const [isCreateAssembly, setIsCreateAssembly] = useState(false);
   const [contentError, setContentError] = useState("");
   const [contentName, setContentName] = useState("");
+  const [configData, setConfigData] = useState<any>('');
 
   useEffect(() => {
     let userLocalData:any = localStorage.getItem('user');
@@ -852,9 +854,9 @@ const B2C: React.FC = () => {
     // 2. Validate forbidden characters
     if (forbiddenChars.test(input)) {
       console.log('Invalid input detected');
-      setContentError("Contains forbidden characters (!@#$%^&* etc.)");
+      // setContentError("Contains forbidden characters (!@#$%^&* etc.)");
     } else {
-      setContentError("");
+      // setContentError("");
     }
 
     setContentName(input);
@@ -889,9 +891,16 @@ const B2C: React.FC = () => {
   }
 
   const handleContentfulFormSubmit = async (data:any) => {
-    
+    setLoadingContentful(true);
     console.log('handleContentfulFormSubmit', data);
     console.log('contentfulCopy', contentfulCopy);
+    console.log('configData>>>', configData);
+
+    const targetEnv = Object.entries(configData.contentful).map(([key, value]) => {
+      // remove the "_env" part from the key
+      const newKey = key.replace('_env', '');
+      return { [newKey]: value };
+    });
     let contentAction = 'NEW'
 
     // Build qid arrays for Generic and Personalized
@@ -947,6 +956,7 @@ const B2C: React.FC = () => {
     }
 
     let payload = {
+      targetEnv: targetEnv,
       contentName: contentName,
       action: contentAction,
       qid: allQids,
@@ -968,6 +978,7 @@ const B2C: React.FC = () => {
       console.log('Success:', responseData);
   
       if (response.ok && !responseData.ErrorMessage) {
+        setLoadingContentful(false);
         reset;
         setValue("contentName", '');
         setIsContentfulModal(false);
@@ -976,10 +987,12 @@ const B2C: React.FC = () => {
         setIsPersonalized(false);
         setIsTroubleshooting(false);
       } else {
+        setLoadingContentful(false);
         setIsShowError(true);
         setIsErrorMsg(responseData.ErrorMessage || isPersonalized ? 'No Personalized content found.' : 'No Generic content found');
       }
     } catch (error: any) {
+      setLoadingContentful(false);
       console.error('Login failed:', error);
       if (error.response) {
         setIsShowError(true);
@@ -991,6 +1004,33 @@ const B2C: React.FC = () => {
     }
   };
   /* send To contentful end */
+
+  /* -------------get Config data start------------- */
+  const getConfigData = async () => {
+    try {
+      const urlData = apiUrl + '/config/get';
+
+      const response = await fetch(urlData, {
+        method: 'GET',
+        headers: {
+          '"removed"': `${NetworkInfo.ACCESSTOKEN}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      const responseData = await response.json();
+      console.log("Success setConfigData:", responseData);
+
+      if (response.ok) {
+        setConfigData(responseData);
+      }
+      
+    } catch (error: any) {
+      console.error("catch failed:", error);
+      setLoading(false);
+    }
+  };
+  /* get config data end */
 
   /* -------------handleEditingMode start------------- */
   const handleEditingMode = async (data: boolean): Promise<void> => {
@@ -1118,6 +1158,7 @@ const B2C: React.FC = () => {
   /* Self learning end */
 
   const handleClickContentful = (e: React.MouseEvent<HTMLIonChipElement>) => {
+    getConfigData();
     console.log('handleClickContentful', e);
     if (!(e.target as HTMLIonChipElement).disabled) {
       setIsContentfulModal(true);
@@ -1722,7 +1763,7 @@ const B2C: React.FC = () => {
                 value={contentName}
                 onIonInput={handleContentfulChange}
                 onIonBlur={handleContentfulBlur}
-                helperText={contentError}
+                // helperText={contentError}
               ></IonInput>
               <div className={`flex ${isCreateAssembly ? 'justify-between' : 'justify-end'}`}>
                 {isCreateAssembly &&
@@ -1739,8 +1780,8 @@ const B2C: React.FC = () => {
               
               <div className='text-center mt-4'>
                 <IonText className='block text-sm mb-4'>{`A total ${contentfulCopy.length} copies will be sent to contentful.`}</IonText>
-                <IonButton size='small' type='submit' className='btn-primary' shape="round">
-                  {loading && <IonSpinner className='mr-2' name="bubbles"></IonSpinner>}
+                <IonButton disabled={loadingContentful} size='small' type='submit' className='btn-primary' shape="round">
+                  {loadingContentful && <IonSpinner className='mr-2' name="bubbles"></IonSpinner>}
                   Save
                 </IonButton>
                 <IonButton onClick={() => setIsContentfulModal(false)} size='small' type='reset' fill='outline' shape="round">
