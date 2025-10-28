@@ -24,7 +24,7 @@ const LoginButton = () => {
     console.log("React App URL:", reactAppUrl);
     try {
       const response: AuthenticationResult = await instance.loginPopup({
-        scopes: ["User.Read"], // Request necessary scopes
+        scopes: ["User.Read", "profile", "openid", "email"], // Request necessary scopes
         redirectUri: reactAppUrl, // Force base URL
       });
 
@@ -74,7 +74,7 @@ const LoginButton = () => {
   /* -------------get user details data start------------- */
   const getUserDetails = async (accessToken:string) => {
     try {
-      const urlData = 'https://graph.microsoft.com/v1.0/me/memberOf';
+      const urlData = 'https://graph.microsoft.com/v1.0/me';
 
       const response = await fetch(urlData, {
         method: 'GET',
