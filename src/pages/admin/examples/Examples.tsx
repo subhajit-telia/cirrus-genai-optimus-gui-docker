@@ -466,8 +466,12 @@ const Examples: React.FC = () => {
       console.log('edit')
       prevExampleList.splice(index[0], 1, payLoad);
     } else {
-      console.log('no edit')
-      payLoad.example_id = `ex${generateDateTimeString()}`;
+      console.log('no edit');
+      const maxExampleId = Math.max(
+        ...exampleList.map(item => parseInt(item.example_id.replace('ex', ''), 10))
+      );
+      console.log('maxExampleId', maxExampleId);
+      payLoad.example_id = `ex${maxExampleId + 1}`;
       payLoad.test_results = [];
       prevExampleList = [...filterExampleList, payLoad];
     }
