@@ -230,8 +230,10 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
   /* Disabled key press on editing mode end */
 
   /* ----------Save edit answer copy start---------- */
-  const saveAnswerChange = async (value:any, qid:any) => {
+  const saveAnswerChange = async (value:any, qid:any, mode:any) => {
     console.log('editInputValues', editInputValues);
+    console.log('currentEditCopy', currentEditCopy);
+    console.log('currentEditingCopy', currentEditingCopy);
     console.log('value', value);
     console.log('qid', qid);
     setIsRefineBox(false);
@@ -241,8 +243,25 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
       qid: qid,
       text: value.replace(/<span class="new_content">|<\/span>/g, '').replace(/<span class="cursor">|<\/span>/g, '')
     }
+
     // setCurrentEditCopy('');
-    saveEditedAnswer(data);
+    // Remove last space from value if present
+    let trimmedValue = currentEditCopy;
+    if(mode === 'editingMode'){ 
+      if (trimmedValue.endsWith(' ')) {
+        trimmedValue = trimmedValue.slice(0, -1);
+      }
+      if (trimmedValue.endsWith('\n')) {
+        trimmedValue = trimmedValue.slice(0, -1);
+      }
+    }
+    console.log('trimmedValue', trimmedValue);
+    if (trimmedValue !== value) {
+      saveEditedAnswer(data);
+    }else {
+      setIsSaveChanges(false);
+    }
+    
     isEditingMode(false)
     setEditorChangedText('');
   }
@@ -256,13 +275,13 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
       if (isRefineDetails.itemIndex !== '' && isRefineDetails.itemIndex !== null) {
         if (tabs[isRefineDetails.tabIndex].data[isRefineDetails.itemIndex].outputs[isRefineDetails.outputIndex].answer !== currentEditCopy) {
           tabs[isRefineDetails.tabIndex].data[isRefineDetails.itemIndex].outputs[isRefineDetails.outputIndex].answer = currentEditCopy;
-          saveAnswerChange(currentEditCopy, tabs[isRefineDetails.tabIndex].data[isRefineDetails.itemIndex].outputs[isRefineDetails.outputIndex].input_params.qid);
+          saveAnswerChange(currentEditCopy, tabs[isRefineDetails.tabIndex].data[isRefineDetails.itemIndex].outputs[isRefineDetails.outputIndex].input_params.qid, 'discardMode');
           console.log('tabs@@@@', tabs);
         }
       }else {
         if (tabs[isRefineDetails.tabIndex].outputs[isRefineDetails.outputIndex].answer !== currentEditCopy) {
           tabs[isRefineDetails.tabIndex].outputs[isRefineDetails.outputIndex].answer = currentEditCopy;
-          saveAnswerChange(currentEditCopy, tabs[isRefineDetails.tabIndex].outputs[isRefineDetails.outputIndex].input_params.qid);
+          saveAnswerChange(currentEditCopy, tabs[isRefineDetails.tabIndex].outputs[isRefineDetails.outputIndex].input_params.qid, 'discardMode');
           console.log('tabs####', tabs)
         }
       }
@@ -811,13 +830,12 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
   };
   // /////////
   
-
   const handleChangeEditor = (updatedMarkdown: string) => {
     console.log('handleChangeEditor', updatedMarkdown);
     document.querySelectorAll('._contentEditable_uazmk_379').forEach(element => {
       element.setAttribute('spellcheck', 'false');
     });
-    const cleanedText = updatedMarkdown.replace(/\\_/g, "_");
+    const cleanedText = updatedMarkdown.replace(/\\_/g, "_").replace(/\n\n/g, "\n");
     console.log('cleanedText', cleanedText);
     setEditorChangedText(cleanedText);
   }
@@ -1199,7 +1217,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                                             <IonIcon slot="icon-only" icon={createOutline}></IonIcon>
                                           </IonButton>
                                         :
-                                          <IonButton fill='outline' data-tooltip-id='tooltip' data-tooltip-content='Close editing' className='text-xs' onClick={() => {handleEditAnswer(tabIndex, itemIndex, outputIndex), saveAnswerChange(editorChangedText || editInputValues[tabIndex][itemIndex][outputIndex], outputItem.input_params.qid)}} shape="round">
+                                          <IonButton fill='outline' data-tooltip-id='tooltip' data-tooltip-content='Close editing' className='text-xs' onClick={() => {handleEditAnswer(tabIndex, itemIndex, outputIndex), saveAnswerChange(editorChangedText || editInputValues[tabIndex][itemIndex][outputIndex], outputItem.input_params.qid, 'editingMode')}} shape="round">
                                             <IonIcon color='primary' slot="icon-only" icon={createOutline}></IonIcon>
                                           </IonButton>
                                         }
@@ -1269,7 +1287,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                                 </IonButton>
                                 {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === itemIndex && editVisibility.outputIndex === outputIndex ? 
                                   <>
-                                    <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Save answer' className='text-xs' onClick={() => {console.log('editorChangedText>>', editorChangedText); console.log('saveAnswerValue>>', editInputValues[tabIndex][itemIndex][outputIndex]), saveAnswerChange(editorChangedText || editInputValues[tabIndex][itemIndex][outputIndex], outputItem.input_params.qid); handleEditingMode(tabIndex, itemIndex, outputIndex, false)}} shape="round">
+                                    <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Save answer' className='text-xs' onClick={() => {console.log('editorChangedText>>', editorChangedText); console.log('saveAnswerValue>>', editInputValues[tabIndex][itemIndex][outputIndex]), saveAnswerChange(editorChangedText || editInputValues[tabIndex][itemIndex][outputIndex], outputItem.input_params.qid, 'saveMode'); handleEditingMode(tabIndex, itemIndex, outputIndex, false)}} shape="round">
                                       <IonIcon className='' slot="icon-only" icon={saveOutline}></IonIcon>
                                     </IonButton>
 
@@ -1439,7 +1457,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                                         <IonIcon slot="icon-only" icon={createOutline}></IonIcon>
                                       </IonButton>
                                     :
-                                      <IonButton fill='outline' data-tooltip-id='tooltip' data-tooltip-content='Close editing' className='text-xs' onClick={() => {handleEditAnswer(tabIndex, null, outputIndex), saveAnswerChange(editorChangedText || editInputValues[tabIndex][outputIndex] as string, outputItem.input_params.qid)}} shape="round">
+                                      <IonButton fill='outline' data-tooltip-id='tooltip' data-tooltip-content='Close editing' className='text-xs' onClick={() => {handleEditAnswer(tabIndex, null, outputIndex), saveAnswerChange(editorChangedText || editInputValues[tabIndex][outputIndex] as string, outputItem.input_params.qid, 'editingMode')}} shape="round">
                                         <IonIcon color='primary' slot="icon-only" icon={createOutline}></IonIcon>
                                       </IonButton>
                                     }
@@ -1508,7 +1526,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
 
                             {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === null && editVisibility.outputIndex === outputIndex ? 
                               <>
-                                <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Save answer' className='text-xs' onClick={() => {saveAnswerChange(editorChangedText || editInputValues[tabIndex][outputIndex] as string, outputItem.input_params.qid); handleEditingMode(tabIndex, null, outputIndex, false)}} shape="round">
+                                <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Save answer' className='text-xs' onClick={() => {saveAnswerChange(editorChangedText || editInputValues[tabIndex][outputIndex] as string, outputItem.input_params.qid, 'saveMode'); handleEditingMode(tabIndex, null, outputIndex, false)}} shape="round">
                                   <IonIcon className='' slot="icon-only" icon={saveOutline}></IonIcon>
                                 </IonButton>
 
