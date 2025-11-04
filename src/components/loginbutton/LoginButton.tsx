@@ -24,7 +24,7 @@ const LoginButton = () => {
     console.log("React App URL:", reactAppUrl);
     try {
       const response: AuthenticationResult = await instance.loginPopup({
-        scopes: ["User.Read"], // Request necessary scopes
+        scopes: ["User.Read", "profile", "openid", "email"], // Request necessary scopes
         redirectUri: reactAppUrl, // Force base URL
       });
 
@@ -36,7 +36,9 @@ const LoginButton = () => {
 
       // Store "removed" for API calls
       const accessToken = response.accessToken;
+      
       if (accessToken) {
+        getUserDetails(accessToken);
         const groups = ((response.idTokenClaims as { groups?: string[] })?.groups || []).filter(
           (group) => group.includes('OPTIMUS') || group.includes('KNOWLEDGEBASE')
         );
@@ -68,6 +70,31 @@ const LoginButton = () => {
       console.error("Login Failed:", error);
     }
   };
+
+  /* -------------get user details data start------------- */
+  const getUserDetails = async (accessToken:string) => {
+    try {
+      const urlData = 'https://graph.microsoft.com/v1.0/me';
+
+      const response = await fetch(urlData, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+      
+      const responseData = await response.json();
+      console.log("Success graph data:", responseData);
+
+      if (response.ok) {
+
+      }
+      
+    } catch (error: any) {
+      console.error("catch failed:", error);
+    }
+  };
+  /* get user details data end */
 
   return <IonSegmentButton onClick={handleLogin} className='size-min min-w-0 h-7 min-h-6' value="sso"><IonLabel  className='m-0 text-xs'>AZURE AD</IonLabel></IonSegmentButton>;
 };
