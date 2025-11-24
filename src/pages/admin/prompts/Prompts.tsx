@@ -1,4 +1,4 @@
-import { IonAlert, IonButton, IonButtons, IonCard, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonItemOption, IonItemOptions, IonItemSliding, IonLabel, IonList, IonModal, IonPage, IonProgressBar, IonSpinner, IonSplitPane, IonTextarea, IonTitle, IonToast, IonToolbar } from '@ionic/react';
+import { IonAlert, IonButton, IonButtons, IonCard, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonItemOption, IonItemOptions, IonItemSliding, IonLabel, IonList, IonModal, IonPage, IonProgressBar, IonSelect, IonSelectOption, IonSpinner, IonSplitPane, IonTextarea, IonTitle, IonToast, IonToolbar } from '@ionic/react';
 import { useEffect, useRef, useState } from 'react';
 import AppHeader from '../../../components/header/Header';
 import Sidenav from '../../../components/sidenav/Sidenav';
@@ -10,19 +10,24 @@ import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 
 interface PromptAddModel {
-  prompt_name: string;
+  prompt_id: string;
   prompt: string;
+  user_id: string;
+  status: string;
+  version_number: number;
+  prompt_version_id: string;
 }
 
 const Prompts: React.FC = () => {
   /* Variables start */
   const [promptList, setPromptList] = useState<PromptAddModel[]>([]);
+  const [promptVersionList, setPromptVersionList] = useState<PromptAddModel[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const modal = useRef<HTMLIonModalElement>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [isOpenModal, setIsOpenModal] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
-  const [targetIndex, setTargetIndex] = useState<number>();
+  const [targetItem, setTargetItem] = useState<PromptAddModel>();
   const [isShowError, setIsShowError] = useState(false);
   const [isErrorMsg, setIsErrorMsg] = useState('');
   const apiUrl = `${NetworkInfo.URL}`;
@@ -36,7 +41,7 @@ const Prompts: React.FC = () => {
   const getPromptsData = async () => {
     setLoading(true);
     try {
-      const urlData = apiUrl + '/resource/get?table=prompts';
+      const urlData = apiUrl + '/resource/prompt';
 
       const response = await fetch(urlData, {
         method: 'GET',
@@ -66,22 +71,25 @@ const Prompts: React.FC = () => {
     setIsOpenModal(false);
     setIsEdit(false);
     setValue("prompt", '');
-    setValue("prompt_name", '');
+    setValue("prompt_id", '');
   }
 
-  const handleDeleteAleart = (_indicator:boolean, _value:number) => {
+  const onChangeVersion = (version: number) => {
+    const matchedVersion = promptVersionList.find(prompt => prompt.version_number === version);
+    console.log('matchedVersion', matchedVersion);
+    handleEdit(matchedVersion);
+  };
+
+  const handleDeleteAleart = (_indicator:boolean, _value:PromptAddModel) => {
+    setIsEdit(true);
     if (_indicator === true) {
       setIsOpen(true);
-      setTargetIndex(_value);
+      setTargetItem(_value);
     }else if (_indicator === false) {
-      let updatedPrompts = promptList;
 
-      let delIndex:any = targetIndex;
-      updatedPrompts.splice(delIndex, 1);
-
-      console.log('updatedPrompts', updatedPrompts);
+      console.log('updatedPrompts', targetItem);
       setIsOpen(false);
-      handlePromptsUpdate(updatedPrompts);
+      handlePromptsUpdate(targetItem as PromptAddModel, 'delete');
     }
 
   }
@@ -89,59 +97,72 @@ const Prompts: React.FC = () => {
   /* modal functions end */
 
   /* handle edit start */
-  const handleEdit = (_value:any, _index:number) => {
+  const handleEdit = (_value:any) => {
     console.log('_value', _value);
+    const matchedPrompt = promptList.filter(prompt => prompt.prompt_id === _value.prompt_id);
+    console.log('matchedPrompt', matchedPrompt);
+    setPromptVersionList(promptList.filter(prompt => prompt.prompt_id === _value.prompt_id));
+
     setValue("prompt", _value.prompt);
-    setValue("prompt_name", _value.prompt_name);
+    setValue("prompt_id", _value.prompt_id);
+    setValue("prompt_version_id", _value.prompt_version_id);
 
     setIsOpenModal(true);
     setIsEdit(true);
-    setTargetIndex(_index);
+    setTargetItem(_value);
   }
   /* handle edit end */
 
   /* -----------Handle form submit start----------- */
   const handleFormSubmit = async (data: any) => {
     console.log('handleFormSubmit', data);
+    let userLocalData:any = localStorage.getItem('user');
+    let userData = JSON.parse(userLocalData);
     let payLoad:any = {};
-    payLoad.prompt_name = data.prompt_name;
+    payLoad.prompt_id = data.prompt_id;
     payLoad.prompt = data.prompt;
+    payLoad.user_id = userData.username;
+    payLoad.prompt_version_id = data.prompt_version_id;
+    payLoad.type = 'prompt';
 
-    let prevPromptList = promptList;
-    let index:any = targetIndex;
+    console.log('payLoad', payLoad);
+    console.log('targetItem', targetItem);
 
-    console.log('finalData', payLoad);
-    if (isEdit === true) {
-      prevPromptList.splice(index, 1, payLoad);
+    // Check if any value was changed between payLoad and targetItem
+    if (isEdit && targetItem) {
+      const changedFields: string[] = [];
+      
+      // Compare each field
+      if (payLoad.prompt_id !== targetItem.prompt_id) changedFields.push('prompt_id');
+      if (payLoad.prompt !== targetItem.prompt) changedFields.push('prompt');
+      
+      console.log('Changed fields:', changedFields);
+      console.log('Has changes:', changedFields.length > 0);
+      
+      if (changedFields.length === 0) {
+        console.log('No changes detected');
+        handlePromptsUpdate(payLoad, 'status');
+      }else {
+        handlePromptsUpdate(payLoad, isEdit ? 'edit' : 'add');
+      }
     }else {
-      prevPromptList = [...promptList, payLoad];
+      handlePromptsUpdate(payLoad, isEdit ? 'edit' : 'add');
     }
 
     
-    console.log('prevList', prevPromptList);
-
-    handlePromptsUpdate(prevPromptList);
   }
-  const handlePromptsUpdate = async (allPrompt: PromptAddModel[]) => {
+  const handlePromptsUpdate = async (promptItem: PromptAddModel, type:string) => {
     setLoading(true);
-    let formUrl = apiUrl + '/resource/put';
-    console.log('payload', allPrompt);
-
-    let updatedPrompts = allPrompt;
-
-    let finalPayload = {
-      table: "prompts",
-      json_obj: updatedPrompts
-    }
+    console.log('payload', promptItem);
     
     try {
-      const response = await fetch(formUrl, {
-        method: HTTPMethod.PUT,
+      const response = await fetch(isEdit && type === 'delete' ? NetworkInfo.URL + '/resource/prompt/' + promptItem.prompt_id + '/deprecate' : isEdit && type === 'status' ? NetworkInfo.URL + '/resource/prompt/' + promptItem.prompt_version_id + '/activate' : NetworkInfo.URL + '/resource/prompt', {
+        method: isEdit && type === 'delete' ? HTTPMethod.PATCH : isEdit && type === 'status' ? HTTPMethod.PATCH : HTTPMethod.POST,
         headers: {
           '"removed"': `${NetworkInfo.ACCESSTOKEN}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(finalPayload),
+        body: JSON.stringify(promptItem),
       });
       const responseData = await response.json();
       console.log("Success:", responseData);
@@ -155,15 +176,14 @@ const Prompts: React.FC = () => {
           
         }else {
           setIsShowError(true);
-          setIsErrorMsg(responseData);
+          setIsErrorMsg(responseData.message || 'Prompt updated successfully');
           reset();
           setLoading(false);
           setIsEdit(false);
-          setTargetIndex(-1);
+          setTargetItem(undefined);
           getPromptsData();
           onModalDismiss();
         }
-        
       }
       
     } catch (error: any) {
@@ -202,30 +222,30 @@ const Prompts: React.FC = () => {
         
           <IonList className='bg-transparent'>
             {promptList.map((item, index) => (
-              <IonCard key={index}>
-                <IonItemSliding>
-                  <IonItem button={true}>
-                    <IonLabel>
-                      <p className='font-bold'>Prompt name: {item.prompt_name}</p>
-                      
-                      <p>Prompt:</p>
-                      <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} children={item.prompt}/>
-                    </IonLabel>
-                    <IonButton id="open-modal" onClick={() => handleEdit(item, index)} slot="end" size="small" color="warning">
-                      <IonIcon icon={createOutline}></IonIcon>
-                    </IonButton>
-                    {item.prompt_name !== 'system_prompt' && 
-                      <IonButton  onClick={() => handleDeleteAleart(true, index)} color="danger" slot="end" size="small">
+              item.status === 'active' && (
+                <IonCard key={index}>
+                  <IonItemSliding>
+                    <IonItem button={true}>
+                      <IonLabel>
+                        <p className='font-bold'>Prompt name: {item.prompt_id}</p>
+                        
+                        <p>Prompt:</p>
+                        <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} children={item.prompt}/>
+                      </IonLabel>
+                      <IonButton id="open-modal" onClick={() => handleEdit(item)} slot="end" size="small" color="warning">
+                        <IonIcon icon={createOutline}></IonIcon>
+                      </IonButton>
+                      <IonButton onClick={() => handleDeleteAleart(true, item)} color="danger" slot="end" size="small">
                         <IonIcon icon={trashOutline}></IonIcon>
                       </IonButton>
-                    }
-                  </IonItem>
-                  <IonItemOptions>
-                    <IonItemOption id="open-modal" onClick={() => handleEdit(item, index)} color="warning">Edit</IonItemOption>
-                    <IonItemOption onClick={() => handleDeleteAleart(true, index)} color="danger">Delete</IonItemOption>
-                  </IonItemOptions>
-                </IonItemSliding>
-              </IonCard>
+                    </IonItem>
+                    <IonItemOptions>
+                      <IonItemOption id="open-modal" onClick={() => handleEdit(item)} color="warning">Edit</IonItemOption>
+                      <IonItemOption onClick={() => handleDeleteAleart(true, item)} color="danger">Delete</IonItemOption>
+                    </IonItemOptions>
+                  </IonItemSliding>
+                </IonCard>
+              )
             ))}
           </IonList>
 
@@ -233,7 +253,15 @@ const Prompts: React.FC = () => {
           <IonModal id="example-modal" isOpen={isOpenModal} onWillDismiss={() => onModalDismiss()}>
             <IonHeader>
               <IonToolbar>
-                <IonTitle className='text-sm font-bold'>Prompts Add & Edit</IonTitle>
+                <div className='flex'>
+                  <IonTitle className='text-sm font-bold'>Prompts Add & Edit</IonTitle>
+                  <IonSelect onIonChange={(e) => onChangeVersion(e.detail.value)} value={targetItem?.version_number} placeholder="Select Status" className={`min-h-8 field-item text-sm w-[150px] ${!isEdit && 'hidden'}`} label="Select version" interface="popover" labelPlacement="stacked" fill="outline">
+                    {promptVersionList.map((item, index) => (
+                      <IonSelectOption key={index} value={item.version_number}>{item.version_number}</IonSelectOption>
+                    ))}
+                  </IonSelect>
+                </div>
+                
                 <IonButtons slot="end">
                   <IonButton size="small" shape="round" onClick={() => onModalDismiss()}>
                     <IonIcon slot="icon-only" icon={closeOutline}></IonIcon>
@@ -243,8 +271,8 @@ const Prompts: React.FC = () => {
             </IonHeader>
             <div className="ion-padding inner-content">
               <form onSubmit={handleSubmit(handleFormSubmit)} className="w-full">
-                <IonInput className='mb-4 text-sm' label="Prompt Name" labelPlacement="floating" fill="outline" placeholder="Enter Prompt Name"
-                  {...register("prompt_name", {
+                <IonInput disabled={isEdit} className='mb-4 text-sm' label="Prompt Name" labelPlacement="floating" fill="outline" placeholder="Enter Prompt Name"
+                  {...register("prompt_id", {
                     validate: {},
                   })}
                 ></IonInput>
@@ -262,11 +290,11 @@ const Prompts: React.FC = () => {
                 ></IonTextarea>
                 
                 <div className='text-center'>
-                  <IonButton size='small' type='submit' className='btn-primary' shape="round">
+                  <IonButton title='Save edit data.' size='small' type='submit' className='btn-primary' shape="round">
                     {loading && <IonSpinner className='mr-2' name="bubbles"></IonSpinner>}
                     Save
                   </IonButton>
-                  <IonButton onClick={() => onModalDismiss()} size='small' type='reset' fill='outline' shape="round">
+                  <IonButton title='Cancel' onClick={() => onModalDismiss()} size='small' type='reset' fill='outline' shape="round">
                     Cancel
                   </IonButton>
                 </div>
@@ -294,7 +322,7 @@ const Prompts: React.FC = () => {
                 text: 'Delete',
                 role: 'confirm',
                 handler: () => {
-                  handleDeleteAleart(false, 0);
+                  handleDeleteAleart(false, targetItem as PromptAddModel);
                   console.log('Alert confirmed');
                 },
               },

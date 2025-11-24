@@ -2,7 +2,7 @@ class HTTPMethod {
   static readonly GET: string = "get";
   static readonly POST: string = "post";
   static readonly PUT: string = "put";
-  static readonly PATCH: string = "patch";
+  static readonly PATCH: string = "PATCH";
   static readonly DELETE: string = "delete";
 }
 

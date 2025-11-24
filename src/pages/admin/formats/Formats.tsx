@@ -1,8 +1,8 @@
-import { IonAlert, IonButton, IonButtons, IonCard, IonCheckbox, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonItemOption, IonItemOptions, IonItemSliding, IonLabel, IonList, IonModal, IonPage, IonProgressBar, IonSpinner, IonSplitPane, IonTextarea, IonTitle, IonToast, IonToolbar } from '@ionic/react';
+import { IonAlert, IonButton, IonButtons, IonCard, IonCheckbox, IonContent, IonFab, IonFabButton, IonFabList, IonHeader, IonIcon, IonInput, IonItem, IonItemOption, IonItemOptions, IonItemSliding, IonLabel, IonList, IonModal, IonPage, IonProgressBar, IonSelect, IonSelectOption, IonSpinner, IonSplitPane, IonTextarea, IonTitle, IonToast, IonToolbar } from '@ionic/react';
 import { useEffect, useRef, useState } from 'react';
 import AppHeader from '../../../components/header/Header';
 import Sidenav from '../../../components/sidenav/Sidenav';
-import { add, closeOutline, createOutline, trashOutline } from 'ionicons/icons';
+import { add, chevronForwardCircle, closeOutline, colorPalette, createOutline, document, globe, trashOutline } from 'ionicons/icons';
 import { HTTPMethod, NetworkInfo } from '../../../routes/network';
 import { useForm } from 'react-hook-form';
 import ReactMarkdown from 'react-markdown';
@@ -18,17 +18,23 @@ interface FormatAddModel {
   quality_check: number | boolean;
   b2b: number | boolean;
   b2c: number | boolean;
+  use_cases: string[];
+  user_id:string;
+  status: string;
+  version_number: number;
+  format_version_id: string;
 }
 
 const Formats: React.FC = () => {
   /* Variables start */
   const [formatList, setFormatList] = useState<FormatAddModel[]>([]);
+  const [formatVersionList, setFormatVersionList] = useState<FormatAddModel[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const modal = useRef<HTMLIonModalElement>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [isOpenModal, setIsOpenModal] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
-  const [targetIndex, setTargetIndex] = useState<number>();
+  const [targetItem, setTargetItem] = useState<FormatAddModel>();
   const [isShowError, setIsShowError] = useState(false);
   const [isErrorMsg, setIsErrorMsg] = useState('');
   const apiUrl = `${NetworkInfo.URL}`;
@@ -42,7 +48,7 @@ const Formats: React.FC = () => {
   const getFormatsData = async () => {
     setLoading(true);
     try {
-      const urlData = apiUrl + '/resource/get?table=formats';
+      const urlData = apiUrl + '/resource/format';
 
       const response = await fetch(urlData, {
         method: 'GET',
@@ -80,19 +86,22 @@ const Formats: React.FC = () => {
     setValue("quality_check", false);
   }
 
-  const handleDeleteAleart = (_indicator:boolean, _value:number) => {
+  const onChangeVersion = (version: number) => {
+    const matchedVersion = formatVersionList.find(format => format.version_number === version);
+    console.log('matchedVersion', matchedVersion);
+    handleEdit(matchedVersion);
+  };
+
+  const handleDeleteAleart = (_indicator:boolean, _value:FormatAddModel) => {
+    setIsEdit(true);
     if (_indicator === true) {
       setIsOpen(true);
-      setTargetIndex(_value);
+      setTargetItem(_value);
     }else if (_indicator === false) {
-      let updatedFormats = formatList;
 
-      let delIndex:any = targetIndex;
-      updatedFormats.splice(delIndex, 1);
-
-      console.log('updatedFormats', updatedFormats);
+      console.log('updatedFormats', targetItem);
       setIsOpen(false);
-      handleFormatsUpdate(updatedFormats);
+      handleFormatsUpdate(targetItem as FormatAddModel, 'delete');
     }
 
   }
@@ -100,23 +109,31 @@ const Formats: React.FC = () => {
   /* modal functions end */
 
   /* handle edit start */
-  const handleEdit = (_value:any, _index:number) => {
+  const handleEdit = (_value:any) => {
     console.log('_value', _value);
+    const matchedFormat = formatList.filter(format => format.format_id === _value.format_id);
+    console.log('matchedFormat', matchedFormat);
+    setFormatVersionList(formatList.filter(format => format.format_id === _value.format_id));
+
     setValue("format_class_definition", _value.format_class_definition);
     setValue("format_written_description", _value.format_written_description);
     setValue("format_name", _value.format_name);
     setValue("format_id", _value.format_id);
     setValue("format_class_name", _value.format_class_name);
-    if (_value.b2b === 1) {
+    setValue("format_version_id", _value.format_version_id);
+
+    if (_value.use_cases && _value.use_cases.includes("b2b")) {
       setValue("b2b", true);
-    }else {
+    } else {
       setValue("b2b", false);
     }
-    if (_value.b2c === 1) {
+    if (_value.use_cases && _value.use_cases.includes("b2c")) {
       setValue("b2c", true);
-    }else {
+    } else {
       setValue("b2c", false);
     }
+
+    
     if (_value.quality_check === 1) {
       setValue("quality_check", true);
     }else {
@@ -125,35 +142,36 @@ const Formats: React.FC = () => {
 
     setIsOpenModal(true);
     setIsEdit(true);
-    setTargetIndex(_index);
+    setTargetItem(_value);
   }
   /* handle edit end */
 
   /* -----------Handle form submit start----------- */
   const handleFormSubmit = async (data: any) => {
     console.log('handleFormSubmit', data);
+    let userLocalData:any = localStorage.getItem('user');
+    let userData = JSON.parse(userLocalData);
     let payLoad:any = {};
     payLoad.format_name = data.format_name;
     payLoad.format_class_definition = data.format_class_definition;
     payLoad.format_written_description = data.format_written_description;
     payLoad.format_class_name = data.format_class_name;
+    payLoad.user_id = userData.username;
+    payLoad.format_version_id = data.format_version_id;
+    payLoad.type = 'format';
 
     if (isEdit) {
       payLoad.format_id = getValues("format_id");
     }else {
-      payLoad.format_id = `${data.format_name.replace(/\s+/g, '')}${data.b2b === true ? 'B2B' : ''}${data.b2c === true ? 'B2C' : ''}`
+      payLoad.format_id = `${data.format_name.replace(/\s+/g, '')}${data.b2b === true ? 'B2B' : ''}${data.b2c === true ? 'B2C' : ''}`;
     }
     
+    payLoad.use_cases = [];
     if (data.b2b === true) {
-      payLoad.b2b = 1;
-    }else {
-      payLoad.b2b = 0;
+      payLoad.use_cases.push("b2b");
     }
-
     if (data.b2c === true) {
-      payLoad.b2c = 1;
-    }else {
-      payLoad.b2c = 0;
+      payLoad.use_cases.push("b2c");
     }
 
     if (data.quality_check === true) {
@@ -162,43 +180,57 @@ const Formats: React.FC = () => {
       payLoad.quality_check = 0;
     }
 
-    
+    console.log('payLoad', payLoad);
+    console.log('targetItem', targetItem);
 
-    let prevFormatList = formatList;
-    let index:any = targetIndex;
-
-    console.log('finalData', payLoad);
-    if (isEdit === true) {
-      prevFormatList.splice(index, 1, payLoad);
+    // Check if any value was changed between payLoad and targetItem
+    if (isEdit &&targetItem) {
+      const changedFields: string[] = [];
+      
+      // Compare each field
+      if (payLoad.format_name !== targetItem.format_name) changedFields.push('format_name');
+      if (payLoad.format_class_definition !== targetItem.format_class_definition) changedFields.push('format_class_definition');
+      if (payLoad.format_written_description !== targetItem.format_written_description) changedFields.push('format_written_description');
+      if (payLoad.format_class_name !== targetItem.format_class_name) changedFields.push('format_class_name');
+      if (payLoad.quality_check !== (targetItem.quality_check === 1 ? 1 : 0)) changedFields.push('quality_check');
+      
+      // Compare use_cases arrays
+      const targetUseCases = targetItem.use_cases || [];
+      if (JSON.stringify(payLoad.use_cases.sort()) !== JSON.stringify(targetUseCases.sort())) {
+        changedFields.push('use_cases');
+      }
+      
+      console.log('Changed fields:', changedFields);
+      console.log('Has changes:', changedFields.length > 0);
+      
+      if (changedFields.length === 0) {
+        console.log('No changes detected');
+        // Optionally show a toast message or prevent the update
+        // setIsShowError(true);
+        // setIsErrorMsg('No changes detected');
+        // return;
+        handleFormatsUpdate(payLoad, 'status');
+      }else {
+        handleFormatsUpdate(payLoad, isEdit ? 'edit' : 'add');
+      }
     }else {
-      prevFormatList = [...formatList, payLoad];
+      handleFormatsUpdate(payLoad, isEdit ? 'edit' : 'add');
     }
 
     
-    console.log('prevList', prevFormatList);
-
-    handleFormatsUpdate(prevFormatList);
   }
-  const handleFormatsUpdate = async (allFormat: FormatAddModel[]) => {
+  const handleFormatsUpdate = async (formatItem: FormatAddModel, type:string) => {
     setLoading(true);
-    let formUrl = apiUrl + '/resource/put';
-    console.log('payload', allFormat);
-
-    let updatedFormats = allFormat;
-
-    let finalPayload = {
-      table: "formats",
-      json_obj: updatedFormats
-    }
+    console.log('payload', formatItem);
     
     try {
-      const response = await fetch(formUrl, {
-        method: HTTPMethod.PUT,
+      const response = await fetch(isEdit && type === 'delete' ? NetworkInfo.URL + '/resource/format/' + formatItem.format_id + '/deprecate' : isEdit && type === 'status' ? NetworkInfo.URL + '/resource/format/' + formatItem.format_version_id + '/activate' : NetworkInfo.URL + '/resource/format', {
+        method: isEdit && type === 'delete' ? HTTPMethod.PATCH : isEdit && type === 'status' ? HTTPMethod.PATCH : HTTPMethod.POST,
         headers: {
           '"removed"': `${NetworkInfo.ACCESSTOKEN}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(finalPayload),
+        body: JSON.stringify(formatItem),
       });
       const responseData = await response.json();
       console.log("Success:", responseData);
@@ -212,11 +244,11 @@ const Formats: React.FC = () => {
           
         }else {
           setIsShowError(true);
-          setIsErrorMsg(responseData);
+          setIsErrorMsg(responseData.message || 'Format updated successfully');
           reset();
           setLoading(false);
           setIsEdit(false);
-          setTargetIndex(-1);
+          setTargetItem(undefined);
           getFormatsData();
           onModalDismiss();
         }
@@ -265,36 +297,38 @@ const Formats: React.FC = () => {
         
           <IonList className='bg-transparent'>
             {formatList.map((item, index) => (
-              <IonCard key={index}>
-                <IonItemSliding>
-                  <IonItem button={true}>
-                    <IonLabel>
-                      <p className='font-bold'>Format name: {item.format_name}</p>
-                      <p>Format description: {item.format_written_description}</p>
-                      <p>Class name: {item.format_class_name}</p>
-                      <p>
-                        B2B: {item.b2b === 1 ? 'Yes' : item.b2b === 0 ? 'No' : 'invalid value'}
-                      </p>
-                      <p>
-                        B2C: {item.b2c === 1 ? 'Yes' : item.b2c === 0 ? 'No' : 'invalid value'}
-                      </p>
-                      <p>Quality checked: {item.quality_check === 1 ? 'Yes' : item.quality_check === 0 ? 'No' : 'invalid value'}</p>
-                      <p>Class Definition:</p>
-                      <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} children={item.format_class_definition}/>
-                    </IonLabel>
-                    <IonButton id="open-modal" onClick={() => handleEdit(item, index)} slot="end" size="small" color="warning">
-                      <IonIcon icon={createOutline}></IonIcon>
-                    </IonButton>
-                    <IonButton onClick={() => handleDeleteAleart(true, index)} color="danger" slot="end" size="small">
-                      <IonIcon icon={trashOutline}></IonIcon>
-                    </IonButton>
-                  </IonItem>
-                  <IonItemOptions>
-                    <IonItemOption id="open-modal" onClick={() => handleEdit(item, index)} color="warning">Edit</IonItemOption>
-                    <IonItemOption onClick={() => handleDeleteAleart(true, index)} color="danger">Delete</IonItemOption>
-                  </IonItemOptions>
-                </IonItemSliding>
-              </IonCard>
+              item.status === 'active' && (
+                <IonCard key={index}>
+                  <IonItemSliding>
+                    <IonItem button={true}>
+                      <IonLabel>
+                        <p className='font-bold'>Format name: {item.format_name}</p>
+                        <p>Format description: {item.format_written_description}</p>
+                        <p>Class name: {item.format_class_name}</p>
+                          <p>
+                          B2B: {item.use_cases && item.use_cases.includes("b2b") ? 'Yes' : 'No'}
+                          </p>
+                          <p>
+                          B2C: {item.use_cases && item.use_cases.includes("b2c") ? 'Yes' : 'No'}
+                          </p>
+                        <p>Quality checked: {item.quality_check === 1 ? 'Yes' : item.quality_check === 0 ? 'No' : 'invalid value'}</p>
+                        <p>Class Definition:</p>
+                        <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} children={item.format_class_definition}/>
+                      </IonLabel>
+                      <IonButton id="open-modal" onClick={() => handleEdit(item)} slot="end" size="small" color="warning">
+                        <IonIcon icon={createOutline}></IonIcon>
+                      </IonButton>
+                      <IonButton onClick={() => handleDeleteAleart(true, item)} color="danger" slot="end" size="small">
+                        <IonIcon icon={trashOutline}></IonIcon>
+                      </IonButton>
+                    </IonItem>
+                    <IonItemOptions>
+                      <IonItemOption id="open-modal" onClick={() => handleEdit(item)} color="warning">Edit</IonItemOption>
+                      <IonItemOption onClick={() => handleDeleteAleart(true, item)} color="danger">Delete</IonItemOption>
+                    </IonItemOptions>
+                  </IonItemSliding>
+                </IonCard>
+              )
             ))}
           </IonList>
 
@@ -302,7 +336,15 @@ const Formats: React.FC = () => {
           <IonModal id="example-modal" isOpen={isOpenModal} onWillDismiss={() => onModalDismiss()}>
             <IonHeader>
               <IonToolbar>
-                <IonTitle className='text-sm font-bold'>Formats Add & Edit</IonTitle>
+                <div className='flex'>
+                  <IonTitle className='text-sm font-bold'>Formats Add & Edit</IonTitle>
+                  <IonSelect onIonChange={(e) => onChangeVersion(e.detail.value)} value={targetItem?.version_number} placeholder="Select Status" className={`min-h-8 field-item text-sm w-[150px] ${!isEdit && 'hidden'}`} label="Select version" interface="popover" labelPlacement="stacked" fill="outline">
+                    {formatVersionList.map((item, index) => (
+                      <IonSelectOption key={index} value={item.version_number}>{item.version_number}</IonSelectOption>
+                    ))}
+                  </IonSelect>
+                </div>
+                
                 <IonButtons slot="end">
                   <IonButton size="small" shape="round" onClick={() => onModalDismiss()}>
                     <IonIcon slot="icon-only" icon={closeOutline}></IonIcon>
@@ -312,7 +354,7 @@ const Formats: React.FC = () => {
             </IonHeader>
             <div className="ion-padding inner-content">
               <form onSubmit={handleSubmit(handleFormSubmit)} className="w-full">
-                <IonInput className='mb-4 text-sm' label="Format Name" labelPlacement="floating" fill="outline" placeholder="Enter Format Name"
+                <IonInput disabled={isEdit} className='mb-4 text-sm' label="Format Name" labelPlacement="floating" fill="outline" placeholder="Enter Format Name"
                   {...register("format_name", {
                     validate: {},
                   })}
@@ -378,11 +420,11 @@ const Formats: React.FC = () => {
                   className='mb-4 text-sm' labelPlacement="start">Rewrite output if it does not match schema</IonCheckbox>
                 
                 <div className='text-center'>
-                  <IonButton size='small' type='submit' className='btn-primary' shape="round">
+                  <IonButton title='Save edit data.' size='small' type='submit' className='btn-primary' shape="round">
                     {loading && <IonSpinner className='mr-2' name="bubbles"></IonSpinner>}
                     Save
                   </IonButton>
-                  <IonButton onClick={() => onModalDismiss()} size='small' type='reset' fill='outline' shape="round">
+                  <IonButton title='Cancel' onClick={() => onModalDismiss()} size='small' type='reset' fill='outline' shape="round">
                     Cancel
                   </IonButton>
                 </div>
@@ -410,7 +452,7 @@ const Formats: React.FC = () => {
                 text: 'Delete',
                 role: 'confirm',
                 handler: () => {
-                  handleDeleteAleart(false, 0);
+                  handleDeleteAleart(false, targetItem as FormatAddModel);
                   console.log('Alert confirmed');
                 },
               },
