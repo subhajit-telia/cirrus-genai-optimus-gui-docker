@@ -170,7 +170,7 @@ const B2C: React.FC = () => {
   const getSegmentsData = async () => {
     setLoadingSegments(true);
     try {
-      const urlData =apiUrl + '/resource/get?table=segments&use_case=content_creation_b2c&columns=segment_id&columns=segment_name';
+      const urlData =apiUrl + '/resource/segment?filter=use_cases:b2c&filter=status:active&columns=segment_id&columns=segment_name';
 
       const response = await fetch(urlData, {
         method: 'GET',
@@ -197,7 +197,7 @@ const B2C: React.FC = () => {
   const getPurposesData = async () => {
     setLoadingPurposes(true);
     try {
-      const urlData =apiUrl + '/resource/get?table=purposes&use_case=content_creation_b2c&columns=purpose_id&columns=purpose_name&columns=purpose_written_description';
+      const urlData =apiUrl + '/resource/purpose?filter=use_cases:b2c&filter=status:active&columns=purpose_id&columns=purpose_name&columns=purpose_written_description';
 
       const response = await fetch(urlData, {
         method: 'GET',
@@ -224,7 +224,7 @@ const B2C: React.FC = () => {
   const getProductsData = async () => {
     setLoadingProducts(true);
     try {
-      const urlData =apiUrl + '/resource/get?table=products_b2c&columns=product_id&columns=product_name&columns=category';
+      const urlData =apiUrl + '/product/get?table=products_b2c&columns=product_id&columns=product_name&columns=category';
 
       const response = await fetch(urlData, {
         method: 'GET',
@@ -251,7 +251,7 @@ const B2C: React.FC = () => {
   const getFormatsData = async () => {
     setLoadingFormats(true);
     try {
-      const urlData =apiUrl + '/resource/get?table=formats&use_case=content_creation_b2c&columns=format_id&columns=format_name&columns=format_written_description';
+      const urlData =apiUrl + '/resource/format?filter=use_cases:b2c&filter=status:active&columns=format_id&columns=format_name&columns=format_written_description';
 
       const response = await fetch(urlData, {
         method: 'GET',
