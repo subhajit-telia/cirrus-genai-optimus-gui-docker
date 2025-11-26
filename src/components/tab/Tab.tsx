@@ -15,6 +15,7 @@ import {MDXEditor, MDXEditorMethods, headingsPlugin, listsPlugin, markdownShortc
 import '@mdxeditor/editor/style.css';
 import stringSimilarity from "string-similarity";
 import { marked } from "marked";
+import { v4 as uuidv4 } from 'uuid';
 
 interface Tab {
   answer: string;
@@ -58,7 +59,7 @@ interface RefineAnswer {
 }
 
 interface FeedbackBox {
-  qid: string,
+  copy_version_id: string,
   rating: number,
   format_rate: number,
   integrity_rate: number,
@@ -70,7 +71,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
   const [activeTab, setActiveTab] = useState(tabs[0].segment_id); // Set the first tab as active initially
   
   const [isSaveChanges, setIsSaveChanges] = useState(false);
-  const [isEditQid, setIsEditQid] = useState('');
+  const [isEditCopyVersionId, setIsEditCopyVersionId] = useState('');
   const [isRefineBox, setIsRefineBox] = useState(false);
   const [isRefineText, setIsRefineText] = useState('');
   const [isRefineType, setIsRefineType] = useState('');
@@ -84,7 +85,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
  
   // const [popoverEvent, setPopoverEvent] = useState<MouseEvent | null>(null);
 
-  const [hoveredRating, setHoveredRating] = useState<{ qid: string; rating: number | null } | null>(null);
+  const [hoveredRating, setHoveredRating] = useState<{ copy_version_id: string; rating: number | null } | null>(null);
 
   const [isShowError, setIsShowError] = useState(false);
   const [isErrorMsg, setIsErrorMsg] = useState('');
@@ -122,9 +123,10 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
 
   const handleButtonClick = (identifier:any, tabIndex:any, itemIndex:any, data:any) => {
     console.log(tabIndex+'/'+itemIndex+'/'+data);
-    if (identifier === 'regenarate') {
-      console.log('regenarate:', data);
-      data.session_id = generateDateTimeString();
+    if (identifier === 'chat_regenerate') {
+      console.log('chat_regenerate:', data);
+      data.copy_id = uuidv4();
+      data.request_type = 'chat_regenerate';
       if (itemIndex !== '') {
         tabs[tabIndex].data[itemIndex].answer = '';
         regenarateItem(data); 
@@ -133,9 +135,9 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
         tabs[tabIndex].answer = '';
         regenarateItem(data);  
       }
-    }else if (identifier === 'chatAnswer') {
-      data.qid = generateDateTimeString();
-
+    }else if (identifier === 'chat_refine') {
+      data.copy_version_id = uuidv4();
+      data.request_type = 'chat_refine';
       if (itemIndex !== '') {
         tabs[tabIndex].data[itemIndex].answer = '';
       }else {
@@ -230,17 +232,17 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
   /* Disabled key press on editing mode end */
 
   /* ----------Save edit answer copy start---------- */
-  const saveAnswerChange = async (value:any, qid:any, mode:any) => {
+  const saveAnswerChange = async (value:any, copy_version_id:any, mode:any) => {
     console.log('editInputValues', editInputValues);
     console.log('currentEditCopy', currentEditCopy);
     console.log('currentEditingCopy', currentEditingCopy);
     console.log('value', value);
-    console.log('qid', qid);
+    console.log('copy_version_id', copy_version_id);
     setIsRefineBox(false);
-    setIsEditQid(qid);
+    setIsEditCopyVersionId(copy_version_id);
     setIsSaveChanges(true);
     let data:any = {
-      qid: qid,
+      copy_version_id: copy_version_id,
       text: value.replace(/<span class="new_content">|<\/span>/g, '').replace(/<span class="cursor">|<\/span>/g, '')
     }
 
@@ -275,13 +277,13 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
       if (isRefineDetails.itemIndex !== '' && isRefineDetails.itemIndex !== null) {
         if (tabs[isRefineDetails.tabIndex].data[isRefineDetails.itemIndex].outputs[isRefineDetails.outputIndex].answer !== currentEditCopy) {
           tabs[isRefineDetails.tabIndex].data[isRefineDetails.itemIndex].outputs[isRefineDetails.outputIndex].answer = currentEditCopy;
-          saveAnswerChange(currentEditCopy, tabs[isRefineDetails.tabIndex].data[isRefineDetails.itemIndex].outputs[isRefineDetails.outputIndex].input_params.qid, 'discardMode');
+          saveAnswerChange(currentEditCopy, tabs[isRefineDetails.tabIndex].data[isRefineDetails.itemIndex].outputs[isRefineDetails.outputIndex].input_params.copy_version_id, 'discardMode');
           console.log('tabs@@@@', tabs);
         }
       }else {
         if (tabs[isRefineDetails.tabIndex].outputs[isRefineDetails.outputIndex].answer !== currentEditCopy) {
           tabs[isRefineDetails.tabIndex].outputs[isRefineDetails.outputIndex].answer = currentEditCopy;
-          saveAnswerChange(currentEditCopy, tabs[isRefineDetails.tabIndex].outputs[isRefineDetails.outputIndex].input_params.qid, 'discardMode');
+          saveAnswerChange(currentEditCopy, tabs[isRefineDetails.tabIndex].outputs[isRefineDetails.outputIndex].input_params.copy_version_id, 'discardMode');
           console.log('tabs####', tabs)
         }
       }
@@ -386,7 +388,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
     /* initialize the array for contentful end */
 
     setIsSaveChanges(false);
-    setIsEditQid('');
+    setIsEditCopyVersionId('');
     setEditorChangedText('');
     if (editInputValues[0].length !== 0 && editInputValues[0][0].length !== 0 && editVisibility.outputIndex !== null && (tabs[0].answer || tabs[0].data?.[0].answer)) {
       let currentEditAnswer;
@@ -840,8 +842,8 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
     setEditorChangedText(cleanedText);
   }
   
-  /* ----------select Copy Qid start---------- */
-  const selectCopyQid = async (tabIndex:number, itemIndex:any, outputIndex:number, outputItem:any) => {
+  /* ----------select Copy CopyVersionId start---------- */
+  const selectCopyCopyVersionId = async (tabIndex:number, itemIndex:any, outputIndex:number, outputItem:any) => {
     console.log(tabIndex +'/'+ itemIndex +'/'+ outputItem);
     let selectedItem:RefineAnswer = {
       tabIndex: tabIndex,
@@ -852,7 +854,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
     console.log('selectedItem', selectedItem);
     setIsRefineDetails(selectedItem);
   }
-  /* select Copy Qid end */
+  /* select Copy CopyVersionId end */
 
   /* --------refine Selected Text start-------- */
   const refineSelectedText = (_identifier:any, _text:any) => {
@@ -861,14 +863,14 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
     setIsRefineType(_identifier);
     console.log('selectedText', selectedText);
     console.log('clickedText', clickedText);
-    if (_identifier === 'refine') {
+    if (_identifier === 'edit_refine') {
       setIsRefineBox(prevState => !prevState);
-    }else if (_identifier === 'regenarate'){
+    }else if (_identifier === 'edit_regenerate'){
       setIsRefineBox(false);
       setIsRefineText('');
-      submitRefineQuestion('','regenerate', _text)
+      submitRefineQuestion('','edit_regenerate', _text)
     }else {
-      // submitRefineQuestion('','insert')
+      // submitRefineQuestion('','edit_insert')
       // setIsRefineBox(true);
       setIsRefineBox(prevState => !prevState);
     }
@@ -885,22 +887,22 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
     console.log('selectedText>>>>>',selectedText);
     console.log('isRefineType>>>>', isRefineType);
     let refineData:any;
-    if (identifier === 'insert') {
+    if (identifier === 'edit_insert') {
       refineData = {
-        qid: isRefineDetails.outputItem.input_params.qid,
-        action: identifier,
+        copy_version_id: isRefineDetails.outputItem.input_params.copy_version_id,
+        request_type: identifier,
         text: clickedText,
         text_index: isTextIndex,
-        question: data
+        question: data || null
       }
     }else {
       console.log('regenarate', selecteText);
       refineData = {
-        qid: isRefineDetails.outputItem.input_params.qid,
-        action: identifier,
+        copy_version_id: isRefineDetails.outputItem.input_params.copy_version_id,
+        request_type: identifier,
         text: selectedText,
         text_index: isTextIndex,
-        question: data
+        question: data || null
       }
     }
     console.log('refineData', refineData);
@@ -966,7 +968,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
       inputParams.question = inputValues[tabIndex][itemIndex];
       console.log('a', inputParams);
 
-      handleButtonClick('chatAnswer', tabIndex, itemIndex, parseArrayItem.input_params);
+      handleButtonClick('chat_refine', tabIndex, itemIndex, parseArrayItem.input_params);
     }else {
       let arrayItem = JSON.stringify(tabs[tabIndex]);
     
@@ -975,7 +977,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
       inputParams.question = inputValues[tabIndex];
       console.log('a', inputParams);
 
-      handleButtonClick('chatAnswer', tabIndex, '', parseArrayItem.input_params);
+      handleButtonClick('chat_refine', tabIndex, '', parseArrayItem.input_params);
     }
   };
   /* Show hide question input end */
@@ -1019,21 +1021,21 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
 
   const feedbackAlertRef = useRef<any>(null);
 
-  const openFeedbackAlert = (qId: string) => {
+  const openFeedbackAlert = (copy_version_id: string) => {
     if (feedbackAlertRef.current) {
-      feedbackAlertRef.current.open(qId);
+      feedbackAlertRef.current.open(copy_version_id);
     }
   };
 
   /* ----------------star rating start---------------- */
-  const handleTotalRatingClick = async (tabIndex:number, itemIndex:any, outputIndex:number, qid:string, rating: number) => {
+  const handleTotalRatingClick = async (tabIndex:number, itemIndex:any, outputIndex:number, copy_version_id:string, rating: number) => {
 
-    console.log('item', qid);
+    console.log('item', copy_version_id);
     console.log('rating', rating);
 
     console.log(tabIndex +'/'+ itemIndex +'/'+ outputIndex)
     let starItem:any = {
-      qid: qid,
+      copy_version_id: copy_version_id,
       rating: rating,
       format_rate: rating,
       integrity_rate: rating,
@@ -1045,7 +1047,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
     };
 
     let data:any = {
-      qid: qid,
+      copy_version_id: copy_version_id,
       rate: rating,
     };
     if (itemIndex !== '' && itemIndex !== null) {
@@ -1088,7 +1090,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
     console.log('updatedItem', updatedItem);
     setIsModalOpen(false);
     if (updatedItem.rating === 5) {
-      openFeedbackAlert(updatedItem.qid);
+      openFeedbackAlert(updatedItem.copy_version_id);
     }
 
     if (updatedItem.itemIndex !== '' && updatedItem.itemIndex !== null) {
@@ -1099,7 +1101,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
     }
 
     let data:any = {
-      qid: updatedItem.qid,
+      copy_version_id: updatedItem.copy_version_id,
       rate: updatedItem.rating,
       format_rate: updatedItem.format_rate,
       integrity_rate: updatedItem.integrity_rate,
@@ -1169,7 +1171,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                     {tabItem.outputs.length > 0 ?
                       <>
                         {tabItem.outputs.map((outputItem:any, outputIndex) => (
-                          <div onClick={() => selectCopyQid(tabIndex, itemIndex, outputIndex, outputItem)} className='shadow-md rounded-md mb-1.5 relative' key={outputIndex}>
+                          <div onClick={() => selectCopyCopyVersionId(tabIndex, itemIndex, outputIndex, outputItem)} className='shadow-md rounded-md mb-1.5 relative' key={outputIndex}>
                             {/* Show the output copy */}
                             {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === itemIndex && editVisibility.outputIndex === outputIndex ?
                               <></>
@@ -1217,31 +1219,31 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                                             <IonIcon slot="icon-only" icon={createOutline}></IonIcon>
                                           </IonButton>
                                         :
-                                          <IonButton fill='outline' data-tooltip-id='tooltip' data-tooltip-content='Close editing' className='text-xs' onClick={() => {handleEditAnswer(tabIndex, itemIndex, outputIndex), saveAnswerChange(editorChangedText || editInputValues[tabIndex][itemIndex][outputIndex], outputItem.input_params.qid, 'editingMode')}} shape="round">
+                                          <IonButton fill='outline' data-tooltip-id='tooltip' data-tooltip-content='Close editing' className='text-xs' onClick={() => {handleEditAnswer(tabIndex, itemIndex, outputIndex), saveAnswerChange(editorChangedText || editInputValues[tabIndex][itemIndex][outputIndex], outputItem.input_params.copy_version_id, 'editingMode')}} shape="round">
                                             <IonIcon color='primary' slot="icon-only" icon={createOutline}></IonIcon>
                                           </IonButton>
                                         }
 
-                                        {isRefineType === 'refine' && isRefineBox ?
-                                          <IonButton fill='outline' disabled={selectedText === '' || selectedText === null} onClick={() => refineSelectedText('refine', selectedText)} data-tooltip-id='tooltip' data-tooltip-content='Close Refine' className='text-xs' shape="round">
-                                            <IonIcon slot="icon-only" icon={chatbubblesOutline}></IonIcon>
+                                        {isRefineType === 'edit_refine' && isRefineBox ?
+                                          <IonButton fill='outline' disabled={selectedText === '' || selectedText === null} onClick={() => refineSelectedText('edit_refine', selectedText)} data-tooltip-id='tooltip' data-tooltip-content='Close Refine' className='text-xs' shape="round">
+                                            <IonIcon color='primary' slot="icon-only" icon={chatbubblesOutline}></IonIcon>
                                           </IonButton>
                                         :
-                                          <IonButton disabled={selectedText === '' || selectedText === null} onClick={() => refineSelectedText('refine', selectedText)} data-tooltip-id='tooltip' data-tooltip-content='Refine selection' className='text-xs' shape="round">
+                                          <IonButton disabled={selectedText === '' || selectedText === null} onClick={() => refineSelectedText('edit_refine', selectedText)} data-tooltip-id='tooltip' data-tooltip-content='Refine selection' className='text-xs' shape="round">
                                             <IonIcon slot="icon-only" icon={chatbubblesOutline}></IonIcon>
                                           </IonButton>
                                         }
                                         
-                                        <IonButton disabled={selectedText === '' || selectedText === null} onClick={() => refineSelectedText('regenarate', selectedText)} data-tooltip-id='tooltip' data-tooltip-content='Regenerate selection' className='text-xs' shape="round">
+                                        <IonButton disabled={selectedText === '' || selectedText === null} onClick={() => refineSelectedText('edit_regenerate', selectedText)} data-tooltip-id='tooltip' data-tooltip-content='Regenerate selection' className='text-xs' shape="round">
                                           <IonIcon slot="icon-only" icon={refreshOutline}></IonIcon>
                                         </IonButton>
 
-                                        {isRefineType === 'insert' && isRefineBox ?
-                                          <IonButton fill='outline' disabled={selectedText !== '' || selectedText === null} onClick={() => refineSelectedText('insert', clickedText)} data-tooltip-id='tooltip' data-tooltip-content='Close Insert' className='text-xs' shape="round">
+                                        {isRefineType === 'edit_insert' && isRefineBox ?
+                                          <IonButton fill='outline' disabled={selectedText !== '' || selectedText === null} onClick={() => refineSelectedText('edit_insert', clickedText)} data-tooltip-id='tooltip' data-tooltip-content='Close Insert' className='text-xs' shape="round">
                                             <IonIcon slot="icon-only" icon={addOutline}></IonIcon>
                                           </IonButton>
                                         :
-                                          <IonButton disabled={selectedText !== '' || selectedText === null} onClick={() => refineSelectedText('insert', clickedText)} data-tooltip-id='tooltip' data-tooltip-content='Generate More' className='text-xs' shape="round">
+                                          <IonButton disabled={selectedText !== '' || selectedText === null} onClick={() => refineSelectedText('edit_insert', clickedText)} data-tooltip-id='tooltip' data-tooltip-content='Generate More' className='text-xs' shape="round">
                                             <IonIcon slot="icon-only" icon={addOutline}></IonIcon>
                                           </IonButton>
                                         }
@@ -1264,18 +1266,18 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                                       key={starValue}
                                       icon={
                                         starValue <=
-                                        (hoveredRating && hoveredRating.qid === outputItem.input_params.qid
+                                        (hoveredRating && hoveredRating.copy_version_id === outputItem.input_params.copy_version_id
                                           ? hoveredRating.rating ?? 0
                                           : outputItem.rating ?? 0)
                                           ? star
                                           : starOutline
                                       }
                                       onMouseEnter={() =>
-                                        setHoveredRating({ qid: outputItem.input_params.qid, rating: starValue })
+                                        setHoveredRating({ copy_version_id: outputItem.input_params.copy_version_id, rating: starValue })
                                       }
                                       onMouseLeave={() => setHoveredRating(null)}
                                       color="primary"
-                                      onClick={() => handleTotalRatingClick(tabIndex, itemIndex, outputIndex, outputItem.input_params.qid, starValue)}
+                                      onClick={() => handleTotalRatingClick(tabIndex, itemIndex, outputIndex, outputItem.input_params.copy_version_id, starValue)}
                                       style={{ cursor: "pointer", fontSize: "24px" }}
                                     />
                                   ))}
@@ -1287,7 +1289,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                                 </IonButton>
                                 {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === itemIndex && editVisibility.outputIndex === outputIndex ? 
                                   <>
-                                    <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Save answer' className='text-xs' onClick={() => {console.log('editorChangedText>>', editorChangedText); console.log('saveAnswerValue>>', editInputValues[tabIndex][itemIndex][outputIndex]), saveAnswerChange(editorChangedText || editInputValues[tabIndex][itemIndex][outputIndex], outputItem.input_params.qid, 'saveMode'); handleEditingMode(tabIndex, itemIndex, outputIndex, false)}} shape="round">
+                                    <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Save answer' className='text-xs' onClick={() => {console.log('editorChangedText>>', editorChangedText); console.log('saveAnswerValue>>', editInputValues[tabIndex][itemIndex][outputIndex]), saveAnswerChange(editorChangedText || editInputValues[tabIndex][itemIndex][outputIndex], outputItem.input_params.copy_version_id, 'saveMode'); handleEditingMode(tabIndex, itemIndex, outputIndex, false)}} shape="round">
                                       <IonIcon className='' slot="icon-only" icon={saveOutline}></IonIcon>
                                     </IonButton>
 
@@ -1297,7 +1299,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                                   </>
                                 :
                                   <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Edit answer' className='text-xs' onClick={() => {handleEditingMode(tabIndex, itemIndex, outputIndex, false), setCurrentEditCopy(outputItem.answer), setCurrentEditingCopy(outputItem.answer), isEditingMode(true)}} shape="round">
-                                    {isSaveChanges && outputItem.input_params.qid === isEditQid ?
+                                    {isSaveChanges && outputItem.input_params.copy_version_id === isEditCopyVersionId ?
                                       <IonIcon className='animate-spin' slot="icon-only" icon={refreshOutline}></IonIcon>
                                     :
                                       <IonIcon className='' slot="icon-only" icon={createOutline}></IonIcon>
@@ -1335,7 +1337,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
 
                         {(isRefineBox && isRefineDetails.tabIndex === tabIndex && isRefineDetails.itemIndex === itemIndex) &&
                           <div className='mt-5 bottom-textarea rounded-xl'>
-                            {isRefineType === 'refine' &&
+                            {isRefineType === 'edit_refine' &&
                               <div className='showSelectedText'>
                                 <div>
                                   <IonIcon icon={returnDownForwardOutline}></IonIcon>
@@ -1374,7 +1376,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                                   <IonIcon className='' slot="icon-only" icon={chatbubblesOutline}></IonIcon>
                                 }
                               </IonButton>
-                              <IonButton data-tooltip-id='tooltip' data-tooltip-content='Regenerate copy' className='text-xs' onClick={() => handleButtonClick('regenarate', tabIndex, itemIndex, tabItem.input_params)} shape="round">
+                              <IonButton data-tooltip-id='tooltip' data-tooltip-content='Regenerate copy' className='text-xs' onClick={() => handleButtonClick('chat_regenerate', tabIndex, itemIndex, tabItem.input_params)} shape="round">
                                 <IonIcon className='' slot="icon-only" icon={refreshOutline}></IonIcon>
                               </IonButton>
                               {/* <IonButton data-tooltip-id='tooltip' data-tooltip-content='Copy all' className='text-xs' onClick={() => copyToClipboard('multiple', tabItem.outputs)} shape="round">
@@ -1410,7 +1412,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                     const containerRef = React.createRef<HTMLDivElement>();
                     const boxIndex = tabIndex * 10 + outputIndex;
                     return (
-                      <div key={boxIndex} onClick={() => selectCopyQid(tabIndex, null, outputIndex, outputItem)} className='shadow-md rounded-md mb-1.5 relative'>
+                      <div key={boxIndex} onClick={() => selectCopyCopyVersionId(tabIndex, null, outputIndex, outputItem)} className='shadow-md rounded-md mb-1.5 relative'>
                         {/* Show the output copy */}
                         {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === null && editVisibility.outputIndex === outputIndex ?
                           <></>
@@ -1457,30 +1459,30 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                                         <IonIcon slot="icon-only" icon={createOutline}></IonIcon>
                                       </IonButton>
                                     :
-                                      <IonButton fill='outline' data-tooltip-id='tooltip' data-tooltip-content='Close editing' className='text-xs' onClick={() => {handleEditAnswer(tabIndex, null, outputIndex), saveAnswerChange(editorChangedText || editInputValues[tabIndex][outputIndex] as string, outputItem.input_params.qid, 'editingMode')}} shape="round">
+                                      <IonButton fill='outline' data-tooltip-id='tooltip' data-tooltip-content='Close editing' className='text-xs' onClick={() => {handleEditAnswer(tabIndex, null, outputIndex), saveAnswerChange(editorChangedText || editInputValues[tabIndex][outputIndex] as string, outputItem.input_params.copy_version_id, 'editingMode')}} shape="round">
                                         <IonIcon color='primary' slot="icon-only" icon={createOutline}></IonIcon>
                                       </IonButton>
                                     }
-                                    {isRefineType === 'refine' && isRefineBox ?
-                                      <IonButton fill='outline' disabled={selectedText === '' || selectedText === null} onClick={() => refineSelectedText('refine', selectedText)} data-tooltip-id='tooltip' data-tooltip-content='Close Refine' className='text-xs' shape="round">
-                                        <IonIcon slot="icon-only" icon={chatbubblesOutline}></IonIcon>
+                                    {isRefineType === 'edit_refine' && isRefineBox ?
+                                      <IonButton fill='outline' disabled={selectedText === '' || selectedText === null} onClick={() => refineSelectedText('edit_refine', selectedText)} data-tooltip-id='tooltip' data-tooltip-content='Close Refine' className='text-xs' shape="round">
+                                        <IonIcon color='primary' slot="icon-only" icon={chatbubblesOutline}></IonIcon>
                                       </IonButton>
                                     :
-                                    <IonButton disabled={selectedText === '' || selectedText === null} onClick={() => refineSelectedText('refine', selectedText)} data-tooltip-id='tooltip' data-tooltip-content='Refine selection' className='text-xs' shape="round">
+                                    <IonButton disabled={selectedText === '' || selectedText === null} onClick={() => refineSelectedText('edit_refine', selectedText)} data-tooltip-id='tooltip' data-tooltip-content='Refine selection' className='text-xs' shape="round">
                                       <IonIcon slot="icon-only" icon={chatbubblesOutline}></IonIcon>
                                     </IonButton>
                                     }
                                     
-                                    <IonButton disabled={selectedText === '' || selectedText === null} onClick={() => refineSelectedText('regenarate', selectedText)} data-tooltip-id='tooltip' data-tooltip-content='Regenerate selection' className='text-xs' shape="round">
+                                    <IonButton disabled={selectedText === '' || selectedText === null} onClick={() => refineSelectedText('edit_regenerate', selectedText)} data-tooltip-id='tooltip' data-tooltip-content='Regenerate selection' className='text-xs' shape="round">
                                       <IonIcon slot="icon-only" icon={refreshOutline}></IonIcon>
                                     </IonButton>
 
-                                    {isRefineType === 'insert' && isRefineBox ?
-                                      <IonButton fill='outline' disabled={selectedText !== '' || selectedText === null} onClick={() => refineSelectedText('insert', clickedText)} data-tooltip-id='tooltip' data-tooltip-content='Close Insert' className='text-xs' shape="round">
+                                    {isRefineType === 'edit_insert' && isRefineBox ?
+                                      <IonButton fill='outline' disabled={selectedText !== '' || selectedText === null} onClick={() => refineSelectedText('edit_insert', clickedText)} data-tooltip-id='tooltip' data-tooltip-content='Close Insert' className='text-xs' shape="round">
                                         <IonIcon slot="icon-only" icon={addOutline}></IonIcon>
                                       </IonButton>
                                     :
-                                      <IonButton disabled={selectedText !== '' || selectedText === null} onClick={() => refineSelectedText('insert', clickedText)} data-tooltip-id='tooltip' data-tooltip-content='Generate More' className='text-xs' shape="round">
+                                      <IonButton disabled={selectedText !== '' || selectedText === null} onClick={() => refineSelectedText('edit_insert', clickedText)} data-tooltip-id='tooltip' data-tooltip-content='Generate More' className='text-xs' shape="round">
                                         <IonIcon slot="icon-only" icon={addOutline}></IonIcon>
                                       </IonButton>
                                     }
@@ -1501,18 +1503,18 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                                   key={starValue}
                                   icon={
                                     starValue <=
-                                    (hoveredRating && hoveredRating.qid === outputItem.input_params.qid
+                                    (hoveredRating && hoveredRating.copy_version_id === outputItem.input_params.copy_version_id
                                       ? hoveredRating.rating ?? 0
                                       : outputItem.rating ?? 0)
                                       ? star
                                       : starOutline
                                   }
                                   onMouseEnter={() =>
-                                    setHoveredRating({ qid: outputItem.input_params.qid, rating: starValue })
+                                    setHoveredRating({ copy_version_id: outputItem.input_params.copy_version_id, rating: starValue })
                                   }
                                   onMouseLeave={() => setHoveredRating(null)}
                                   color="primary"
-                                  onClick={() => handleTotalRatingClick(tabIndex, null, outputIndex, outputItem.input_params.qid, starValue)}
+                                  onClick={() => handleTotalRatingClick(tabIndex, null, outputIndex, outputItem.input_params.copy_version_id, starValue)}
                                   
                                   style={{ cursor: "pointer", fontSize: "24px" }}
                                 />
@@ -1526,7 +1528,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
 
                             {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === null && editVisibility.outputIndex === outputIndex ? 
                               <>
-                                <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Save answer' className='text-xs' onClick={() => {saveAnswerChange(editorChangedText || editInputValues[tabIndex][outputIndex] as string, outputItem.input_params.qid, 'saveMode'); handleEditingMode(tabIndex, null, outputIndex, false)}} shape="round">
+                                <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Save answer' className='text-xs' onClick={() => {saveAnswerChange(editorChangedText || editInputValues[tabIndex][outputIndex] as string, outputItem.input_params.copy_version_id, 'saveMode'); handleEditingMode(tabIndex, null, outputIndex, false)}} shape="round">
                                   <IonIcon className='' slot="icon-only" icon={saveOutline}></IonIcon>
                                 </IonButton>
 
@@ -1536,7 +1538,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                               </>
                             :
                               <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Edit answer' className='text-xs' onClick={() => {handleEditingMode(tabIndex, null, outputIndex, false), setCurrentEditCopy(outputItem.answer), setCurrentEditingCopy(outputItem.answer), isEditingMode(true)}} shape="round">
-                                {isSaveChanges && outputItem.input_params.qid === isEditQid ?
+                                {isSaveChanges && outputItem.input_params.copy_version_id === isEditCopyVersionId ?
                                   <IonIcon className='animate-spin' slot="icon-only" icon={refreshOutline}></IonIcon>
                                 :
                                   <IonIcon className='' slot="icon-only" icon={createOutline}></IonIcon>
@@ -1575,7 +1577,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
 
                   {(isRefineBox && isRefineDetails.tabIndex === tabIndex) && 
                     <div className='mt-5 bottom-textarea rounded-xl'>
-                      {isRefineType === 'refine' &&
+                      {isRefineType === 'edit_refine' &&
                         <div className='showSelectedText'>
                           <div>
                             <IonIcon icon={returnDownForwardOutline}></IonIcon>
@@ -1611,7 +1613,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                             <IonIcon slot="icon-only" icon={chatbubblesOutline}></IonIcon>
                           }
                         </IonButton>
-                        <IonButton data-tooltip-id='tooltip' data-tooltip-content='Regenerate copy' className='text-xs' onClick={() => handleButtonClick('regenarate', tabIndex, '', tabItem.input_params)} shape="round">
+                        <IonButton data-tooltip-id='tooltip' data-tooltip-content='Regenerate copy' className='text-xs' onClick={() => handleButtonClick('chat_regenerate', tabIndex, '', tabItem.input_params)} shape="round">
                           <IonIcon slot="icon-only" icon={refreshOutline}></IonIcon>
                         </IonButton>
                         {/* <IonButton data-tooltip-id='tooltip' data-tooltip-content='Copy all' className='text-xs' onClick={() => copyToClipboard('multiple', tabItem.outputs)} shape="round">
