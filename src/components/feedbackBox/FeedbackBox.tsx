@@ -20,7 +20,7 @@ import './FeedbackBox.css';
 interface FeedbackModalProps {
   isOpen: boolean;
   selectedItem: {
-    qid: string,
+    copy_version_id: string,
     rating: number,
     format_rate: number,
     integrity_rate: number,
@@ -29,7 +29,7 @@ interface FeedbackModalProps {
   };
   onClose: () => void;
   onSave: (updatedItem: {
-    qid: string,
+    copy_version_id: string,
     rating: number,
     format_rate: number,
     integrity_rate: number,

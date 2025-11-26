@@ -300,9 +300,11 @@ const Segments: React.FC = () => {
                 <div className='flex'>
                   <IonTitle className='text-sm font-bold'>Segments Add & Edit</IonTitle>
                   <IonSelect onIonChange={(e) => onChangeVersion(e.detail.value)} value={targetItem?.version_number} placeholder="Select Status" className={`min-h-8 field-item text-sm w-[150px] ${!isEdit && 'hidden'}`} label="Select version" interface="popover" labelPlacement="stacked" fill="outline">
-                    {segmentVersionList.map((item, index) => (
+                    {segmentVersionList
+                      .sort((a, b) => a.version_number - b.version_number)
+                      .map((item, index) => (
                       <IonSelectOption key={index} value={item.version_number}>{item.version_number}</IonSelectOption>
-                    ))}
+                      ))}
                   </IonSelect>
                 </div>
                 
