@@ -559,13 +559,13 @@ const B2C: React.FC = () => {
   };
   /* Regenarate item end */
 
-  /* ----------Save edit answer copy start---------- */
-  const saveEditedAnswer = async (data: any): Promise<void> => {
-    console.log('saveEditedAnswer', data);
+  /* ----------Discard edit answer copy start---------- */
+  const discardEditedAnswer = async (data: any): Promise<void> => {
+    console.log('discardEditedAnswer', data);
     arrayNoSegment = tabs;
     arrayTab = tabArray;
     console.log('arrayTab>>', arrayTab);
-    let formUrl = apiUrl + '/chat/save';
+    let formUrl = apiUrl + '/chat/discard';
     try {
       const response = await fetch(formUrl, {
         method: HTTPMethod.POST,
@@ -654,7 +654,7 @@ const B2C: React.FC = () => {
     }
 
   };
-  /* Save edit answer copy end */
+  /* Discard edit answer copy end */
 
   /* ----------genarate Refine Copy start---------- */
   const genarateRefineCopy = async (data: any): Promise<void> => {
@@ -958,7 +958,7 @@ const B2C: React.FC = () => {
   /* -------------get Config data start------------- */
   const getConfigData = async () => {
     try {
-      const urlData = apiUrl + '/config/get';
+      const urlData = apiUrl + '/config/';
 
       const response = await fetch(urlData, {
         method: 'GET',
@@ -972,7 +972,7 @@ const B2C: React.FC = () => {
       console.log("Success setConfigData:", responseData);
 
       if (response.ok) {
-        setConfigData(responseData);
+        setConfigData(responseData[0].config_value);
       }
       
     } catch (error: any) {
@@ -1588,7 +1588,7 @@ const B2C: React.FC = () => {
               <IonRow>
                 <IonCol>
                   <div className="mx-2.5 mt-7">
-                    <Tabs tabs={tabs} regenarateItem={regenarateItem} saveEditedAnswer={saveEditedAnswer} genarateRefineCopy={genarateRefineCopy} contentfulData={sendTocontentful} isEditingMode={handleEditingMode}/>
+                    <Tabs tabs={tabs} regenarateItem={regenarateItem} discardEditedAnswer={discardEditedAnswer} genarateRefineCopy={genarateRefineCopy} contentfulData={sendTocontentful} isEditingMode={handleEditingMode}/>
                     <div className="text-right mt-3">
                       <IonChip onClick={() => handleFormSubmit(requestData)} className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Rewrite all suggestions</IonChip>
                       <IonChip data-tooltip-id="contentful" data-tooltip-content="Save all content before sending it to Contentful." disabled={isOpenEditing || contentfulCopy.length === 0} onClick={ handleClickContentful } className='!pointer-events-auto text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Send to contentful</IonChip>
