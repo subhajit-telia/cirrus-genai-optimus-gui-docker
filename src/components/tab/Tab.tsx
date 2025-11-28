@@ -40,7 +40,7 @@ interface innerOutput {
 interface TabsProps {
   tabs: Tab[];
   regenarateItem: (data: string) => void;
-  saveEditedAnswer: (data: string) => void;
+  discardEditedAnswer: (data: string) => void;
   genarateRefineCopy: (data: string) => void;
   contentfulData: (data: string) => void;
   isEditingMode: (data: boolean) => void;
@@ -67,7 +67,7 @@ interface FeedbackBox {
   comment: string
 }
 
-const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, genarateRefineCopy, contentfulData, isEditingMode }) => {
+const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, genarateRefineCopy, contentfulData, isEditingMode }) => {
   const [activeTab, setActiveTab] = useState(tabs[0].segment_id); // Set the first tab as active initially
   
   const [isSaveChanges, setIsSaveChanges] = useState(false);
@@ -95,7 +95,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
   const [selectedText, setSelectedText] = useState<string | null>(null);
   const [clickedText, setClickedText] = useState("");
   const [editorChangedText, setEditorChangedText] = useState('');
-  const [currentEditCopy, setCurrentEditCopy] = useState("");
+  const [currentEditCopy, setCurrentEditCopy] = useState<any>("");
   const [currentEditingCopy, setCurrentEditingCopy] = useState("");
 
   const [highlightStartIndex, setHighlightStartIndex] = useState<number | null>(null);
@@ -248,7 +248,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
 
     // setCurrentEditCopy('');
     // Remove last space from value if present
-    let trimmedValue = currentEditCopy;
+    let trimmedValue = currentEditCopy.answer;
     if(mode === 'editingMode'){ 
       if (trimmedValue.endsWith(' ')) {
         trimmedValue = trimmedValue.slice(0, -1);
@@ -259,7 +259,8 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
     }
     console.log('trimmedValue', trimmedValue);
     if (trimmedValue !== value) {
-      saveEditedAnswer(data);
+      // saveEditedAnswer(data);
+      submitRefineQuestion('','edit_manual', data);
     }else {
       setIsSaveChanges(false);
     }
@@ -270,24 +271,35 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
   /* Save edit answer copy end */
 
   /* ----------Discard edit answer copy start---------- */
-  const discardAnswerChange = async () => {
+  const discardAnswerChange = async (lastChangeItem:any) => {
     console.log('currentEditCopy', currentEditCopy);
+    console.log('lastChangeItem', lastChangeItem);
     console.log('isRefineDetails', isRefineDetails);
-    if (currentEditCopy) {
+    if (currentEditCopy.answer) {
       if (isRefineDetails.itemIndex !== '' && isRefineDetails.itemIndex !== null) {
-        if (tabs[isRefineDetails.tabIndex].data[isRefineDetails.itemIndex].outputs[isRefineDetails.outputIndex].answer !== currentEditCopy) {
-          tabs[isRefineDetails.tabIndex].data[isRefineDetails.itemIndex].outputs[isRefineDetails.outputIndex].answer = currentEditCopy;
-          saveAnswerChange(currentEditCopy, tabs[isRefineDetails.tabIndex].data[isRefineDetails.itemIndex].outputs[isRefineDetails.outputIndex].input_params.copy_version_id, 'discardMode');
+        if (tabs[isRefineDetails.tabIndex].data[isRefineDetails.itemIndex].outputs[isRefineDetails.outputIndex].answer !== currentEditCopy.answer) {
+          tabs[isRefineDetails.tabIndex].data[isRefineDetails.itemIndex].outputs[isRefineDetails.outputIndex].answer = currentEditCopy.answer;
+          saveAnswerChange(currentEditCopy.answer, tabs[isRefineDetails.tabIndex].data[isRefineDetails.itemIndex].outputs[isRefineDetails.outputIndex].input_params.copy_version_id, 'discardMode');
           console.log('tabs@@@@', tabs);
         }
       }else {
-        if (tabs[isRefineDetails.tabIndex].outputs[isRefineDetails.outputIndex].answer !== currentEditCopy) {
-          tabs[isRefineDetails.tabIndex].outputs[isRefineDetails.outputIndex].answer = currentEditCopy;
-          saveAnswerChange(currentEditCopy, tabs[isRefineDetails.tabIndex].outputs[isRefineDetails.outputIndex].input_params.copy_version_id, 'discardMode');
+        if (tabs[isRefineDetails.tabIndex].outputs[isRefineDetails.outputIndex].answer !== currentEditCopy.answer) {
+          tabs[isRefineDetails.tabIndex].outputs[isRefineDetails.outputIndex].answer = currentEditCopy.answer;
+          saveAnswerChange(currentEditCopy.answer, tabs[isRefineDetails.tabIndex].outputs[isRefineDetails.outputIndex].input_params.copy_version_id, 'discardMode');
           console.log('tabs####', tabs)
         }
       }
     }
+
+
+    const discardPayload:any = {
+      original_copy_version_id: currentEditCopy.input_params.copy_version_id,
+      discard_copy_version_id: lastChangeItem.input_params.copy_version_id
+    }
+    if (currentEditCopy.input_params.copy_version_id !== lastChangeItem.input_params.copy_version_id) {
+      discardEditedAnswer(discardPayload);
+    }
+    
     
     setCurrentEditCopy('');
     setCurrentEditingCopy('');
@@ -895,6 +907,14 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
         text_index: isTextIndex,
         question: data || null
       }
+    }else if (identifier === 'edit_manual') {
+      refineData = {
+        copy_version_id: selecteText.copy_version_id,
+        request_type: identifier,
+        text: selecteText.text,
+        text_index: null,
+        question: null
+      }
     }else {
       console.log('regenarate', selecteText);
       refineData = {
@@ -1293,12 +1313,12 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                                       <IonIcon className='' slot="icon-only" icon={saveOutline}></IonIcon>
                                     </IonButton>
 
-                                    <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Discard' className='text-xs' onClick={() => {handleEditingMode(tabIndex, itemIndex, outputIndex, false), discardAnswerChange()}} shape="round">
+                                    <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Discard' className='text-xs' onClick={() => {handleEditingMode(tabIndex, itemIndex, outputIndex, false), discardAnswerChange(outputItem)}} shape="round">
                                       <IonIcon className='' slot="icon-only" icon={closeCircleOutline}></IonIcon>
                                     </IonButton>
                                   </>
                                 :
-                                  <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Edit answer' className='text-xs' onClick={() => {handleEditingMode(tabIndex, itemIndex, outputIndex, false), setCurrentEditCopy(outputItem.answer), setCurrentEditingCopy(outputItem.answer), isEditingMode(true)}} shape="round">
+                                  <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Edit answer' className='text-xs' onClick={() => {handleEditingMode(tabIndex, itemIndex, outputIndex, false), setCurrentEditCopy(outputItem), setCurrentEditingCopy(outputItem.answer), isEditingMode(true)}} shape="round">
                                     {isSaveChanges && outputItem.input_params.copy_version_id === isEditCopyVersionId ?
                                       <IonIcon className='animate-spin' slot="icon-only" icon={refreshOutline}></IonIcon>
                                     :
@@ -1532,12 +1552,12 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, saveEditedAnswer, gen
                                   <IonIcon className='' slot="icon-only" icon={saveOutline}></IonIcon>
                                 </IonButton>
 
-                                <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Discard' className='text-xs' onClick={() => {handleEditingMode(tabIndex, null, outputIndex, false), discardAnswerChange()}} shape="round">
+                                <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Discard' className='text-xs' onClick={() => {handleEditingMode(tabIndex, null, outputIndex, false), discardAnswerChange(outputItem)}} shape="round">
                                   <IonIcon className='' slot="icon-only" icon={closeCircleOutline}></IonIcon>
                                 </IonButton>
                               </>
                             :
-                              <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Edit answer' className='text-xs' onClick={() => {handleEditingMode(tabIndex, null, outputIndex, false), setCurrentEditCopy(outputItem.answer), setCurrentEditingCopy(outputItem.answer), isEditingMode(true)}} shape="round">
+                              <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Edit answer' className='text-xs' onClick={() => {handleEditingMode(tabIndex, null, outputIndex, false), setCurrentEditCopy(outputItem), setCurrentEditingCopy(outputItem.answer), isEditingMode(true)}} shape="round">
                                 {isSaveChanges && outputItem.input_params.copy_version_id === isEditCopyVersionId ?
                                   <IonIcon className='animate-spin' slot="icon-only" icon={refreshOutline}></IonIcon>
                                 :
