@@ -275,21 +275,21 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
     console.log('currentEditCopy', currentEditCopy);
     console.log('lastChangeItem', lastChangeItem);
     console.log('isRefineDetails', isRefineDetails);
-    if (currentEditCopy.answer) {
-      if (isRefineDetails.itemIndex !== '' && isRefineDetails.itemIndex !== null) {
-        if (tabs[isRefineDetails.tabIndex].data[isRefineDetails.itemIndex].outputs[isRefineDetails.outputIndex].answer !== currentEditCopy.answer) {
-          tabs[isRefineDetails.tabIndex].data[isRefineDetails.itemIndex].outputs[isRefineDetails.outputIndex].answer = currentEditCopy.answer;
-          saveAnswerChange(currentEditCopy.answer, tabs[isRefineDetails.tabIndex].data[isRefineDetails.itemIndex].outputs[isRefineDetails.outputIndex].input_params.copy_version_id, 'discardMode');
-          console.log('tabs@@@@', tabs);
-        }
-      }else {
-        if (tabs[isRefineDetails.tabIndex].outputs[isRefineDetails.outputIndex].answer !== currentEditCopy.answer) {
-          tabs[isRefineDetails.tabIndex].outputs[isRefineDetails.outputIndex].answer = currentEditCopy.answer;
-          saveAnswerChange(currentEditCopy.answer, tabs[isRefineDetails.tabIndex].outputs[isRefineDetails.outputIndex].input_params.copy_version_id, 'discardMode');
-          console.log('tabs####', tabs)
-        }
-      }
-    }
+    // if (currentEditCopy.answer) {
+    //   if (isRefineDetails.itemIndex !== '' && isRefineDetails.itemIndex !== null) {
+    //     if (tabs[isRefineDetails.tabIndex].data[isRefineDetails.itemIndex].outputs[isRefineDetails.outputIndex].answer !== currentEditCopy.answer) {
+    //       tabs[isRefineDetails.tabIndex].data[isRefineDetails.itemIndex].outputs[isRefineDetails.outputIndex].answer = currentEditCopy.answer;
+    //       saveAnswerChange(currentEditCopy.answer, tabs[isRefineDetails.tabIndex].data[isRefineDetails.itemIndex].outputs[isRefineDetails.outputIndex].input_params.copy_version_id, 'discardMode');
+    //       console.log('tabs@@@@', tabs);
+    //     }
+    //   }else {
+    //     if (tabs[isRefineDetails.tabIndex].outputs[isRefineDetails.outputIndex].answer !== currentEditCopy.answer) {
+    //       tabs[isRefineDetails.tabIndex].outputs[isRefineDetails.outputIndex].answer = currentEditCopy.answer;
+    //       saveAnswerChange(currentEditCopy.answer, tabs[isRefineDetails.tabIndex].outputs[isRefineDetails.outputIndex].input_params.copy_version_id, 'discardMode');
+    //       console.log('tabs####', tabs)
+    //     }
+    //   }
+    // }
 
 
     const discardPayload:any = {
