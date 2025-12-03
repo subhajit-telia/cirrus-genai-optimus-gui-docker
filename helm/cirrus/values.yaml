@@ -1,0 +1,35 @@
+replicaCount: 2
+
+image:
+  repository: "cirrus-docker.jfrog.teliacompany.io/genai/ai-optimus-gui"
+  pullPolicy: IfNotPresent
+
+deployment:
+  ports:
+    - name: http
+      containerPort: 80
+      protocol: TCP
+  livenessProbe:
+    httpGet:
+      path: /
+      port: 80
+  readinessProbe:
+    httpGet:
+      path: /
+      port: 80
+    initialDelaySeconds: 10
+  serviceAccountName: "execution"
+  volumeMounts:
+    - name: secrets-store
+      mountPath: "/mnt/secrets"
+      readOnly: true
+  volumes:
+    - csi:
+        driver: secrets-store.csi.k8s.io
+        readOnly: true
+        volumeAttributes:
+          secretProviderClass: ai-optimus-gui-genai-app
+      name: secrets-store
+
+service:
+  port: 80
