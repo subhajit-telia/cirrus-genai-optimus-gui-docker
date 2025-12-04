@@ -250,6 +250,11 @@ ion-toggle .label-text-wrapper {
 .tab-body ol li::marker {
     font-weight: bold;
 }
+ion-item.text-green ion-radio {
+    color: #006f6c !important;
+}
+
+
 @media (prefers-color-scheme: dark) {
     :root.md {
         --checkbox-background: #fff;

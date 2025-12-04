@@ -1,9 +1,11 @@
 import { PublicClientApplication } from "@azure/msal-browser";
 import { NetworkInfo } from "../routes/network";
 
-console.log("NetworkInfo>>", NetworkInfo);
+console.log("NetworkInfo>>", NetworkInfo.AZURE_CLIENT_ID);
 const currentUrl = window.location.href;
 console.log("Current URL:", currentUrl);
+const RUNTIME_ENV = (window as any).RUNTIME_ENV || {};
+console.log("RUNTIME_ENV:", RUNTIME_ENV);
 
 
 const msalConfig = {

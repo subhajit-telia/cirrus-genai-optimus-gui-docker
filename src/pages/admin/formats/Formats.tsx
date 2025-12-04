@@ -23,6 +23,7 @@ interface FormatAddModel {
   status: string;
   version_number: number;
   format_version_id: string;
+  updated_at: string;
 }
 
 const Formats: React.FC = () => {
@@ -314,7 +315,11 @@ const Formats: React.FC = () => {
                         <p>Quality checked: {item.quality_check === 1 ? 'Yes' : item.quality_check === 0 ? 'No' : 'invalid value'}</p>
                         <p>Class Definition:</p>
                         <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} children={item.format_class_definition}/>
+                        <p className='border-t'>Version: {item.version_number}</p>
+                        <p>Updated By: {item.user_id}</p>
+                        <p>Updated at: {new Date(item.updated_at).toLocaleDateString('en-GB')} {new Date(item.updated_at).toLocaleTimeString('en-GB', { hour12: false })}</p>
                       </IonLabel>
+                      
                       <IonButton id="open-modal" onClick={() => handleEdit(item)} slot="end" size="small" color="warning">
                         <IonIcon icon={createOutline}></IonIcon>
                       </IonButton>
@@ -338,10 +343,14 @@ const Formats: React.FC = () => {
               <IonToolbar>
                 <div className='flex'>
                   <IonTitle className='text-sm font-bold'>Formats Add & Edit</IonTitle>
-                  <IonSelect onIonChange={(e) => onChangeVersion(e.detail.value)} value={targetItem?.version_number} placeholder="Select Status" className={`min-h-8 field-item text-sm w-[150px] ${!isEdit && 'hidden'}`} label="Select version" interface="popover" labelPlacement="stacked" fill="outline">
-                    {formatVersionList.sort((a, b) => a.version_number - b.version_number).map((item, index) => (
-                      <IonSelectOption key={index} value={item.version_number}>{item.version_number}</IonSelectOption>
-                    ))}
+                  <IonSelect onIonChange={(e) => onChangeVersion(e.detail.value)} value={targetItem?.version_number} placeholder="Select Status" className={`min-h-8 field-item text-sm w-[200px] ${!isEdit && 'hidden'}`} label="Select version" interface="popover" labelPlacement="stacked" fill="outline">
+                    {formatVersionList
+                      .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
+                      .map((item, index) => (
+                        <IonSelectOption key={index} value={item.version_number} className={`${item.status === 'inactive' ? 'text-red' : 'text-green'}`}>
+                          {item.version_number} - {new Date(item.updated_at).toLocaleDateString('en-GB')} {new Date(item.updated_at).toLocaleTimeString('en-GB', { hour12: false })}
+                        </IonSelectOption>
+                      ))}
                   </IonSelect>
                 </div>
                 
