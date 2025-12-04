@@ -8,7 +8,7 @@ import './Tab.css';
 import { saveAs } from 'file-saver';
 import FeedbackAlert from '../feedback/Feedback';
 import { Tooltip } from 'react-tooltip';
-import { AccessToken, HTTPMethod, NetworkInfo } from '../../routes/network';
+import { HTTPMethod, NetworkInfo } from '../../routes/network';
 import FeedbackModal from '../feedbackBox/FeedbackBox';
 
 import {MDXEditor, MDXEditorMethods, headingsPlugin, listsPlugin, markdownShortcutPlugin, quotePlugin, thematicBreakPlugin} from '@mdxeditor/editor';
