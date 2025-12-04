@@ -6,13 +6,17 @@ class HTTPMethod {
   static readonly DELETE: string = "delete";
 }
 
+class AccessToken {
+  static readonly "removed": string = 'REMOVED';
+}
+
 class NetworkInfo {
   static readonly URL: string = import.meta.env.VITE_API_BASE_URL;
   static readonly ACCESSTOKEN: string = import.meta.env.REMOVED;
-  static readonly AZURE_CLIENT_ID: string = import.meta.env.AZURE_AD_CLIENT_ID;
-  static readonly AZURE_TENANT_ID: string = import.meta.env.AZURE_AD_TENANT_ID;
-  static readonly AZURE_SECRET_ID: string = import.meta.env.AZURE_AD_CLIENT_SECRET;
+  static readonly AZURE_CLIENT_ID: string = import.meta.env.REMOVED;
+  static readonly AZURE_TENANT_ID: string = import.meta.env.REMOVED;
+  static readonly AZURE_SECRET_ID: string = import.meta.env.REMOVED;
   static readonly REACT_APP_URL: string = import.meta.env.REACT_APP_URL;
 }
 
-export { NetworkInfo, HTTPMethod };
+export { NetworkInfo, AccessToken, HTTPMethod };
