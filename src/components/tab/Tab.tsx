@@ -8,7 +8,7 @@ import './Tab.css';
 import { saveAs } from 'file-saver';
 import FeedbackAlert from '../feedback/Feedback';
 import { Tooltip } from 'react-tooltip';
-import { HTTPMethod, NetworkInfo } from '../../routes/network';
+import { AccessToken, HTTPMethod, NetworkInfo } from '../../routes/network';
 import FeedbackModal from '../feedbackBox/FeedbackBox';
 
 import {MDXEditor, MDXEditorMethods, headingsPlugin, listsPlugin, markdownShortcutPlugin, quotePlugin, thematicBreakPlugin} from '@mdxeditor/editor';
@@ -1088,7 +1088,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
       const response = await fetch(formUrl, {
         method: HTTPMethod.PUT,
         headers: {
-          '"removed"': `${NetworkInfo.ACCESSTOKEN}`,
+          '"removed"': AccessToken."removed",
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(data),
@@ -1134,7 +1134,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
       const response = await fetch(formUrl, {
         method: HTTPMethod.PUT,
         headers: {
-          '"removed"': `${NetworkInfo.ACCESSTOKEN}`,
+          '"removed"': AccessToken."removed",
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(data),
