@@ -16,6 +16,7 @@ interface PromptAddModel {
   status: string;
   version_number: number;
   prompt_version_id: string;
+  updated_at: string;
 }
 
 const Prompts: React.FC = () => {
@@ -231,6 +232,9 @@ const Prompts: React.FC = () => {
                         
                         <p>Prompt:</p>
                         <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} children={item.prompt}/>
+                        <p className='border-t'>Version: {item.version_number}</p>
+                        <p>Updated By: {item.user_id}</p>
+                        <p>Updated at: {new Date(item.updated_at).toLocaleDateString('en-GB')} {new Date(item.updated_at).toLocaleTimeString('en-GB', { hour12: false })}</p>
                       </IonLabel>
                       <IonButton id="open-modal" onClick={() => handleEdit(item)} slot="end" size="small" color="warning">
                         <IonIcon icon={createOutline}></IonIcon>
@@ -255,11 +259,13 @@ const Prompts: React.FC = () => {
               <IonToolbar>
                 <div className='flex'>
                   <IonTitle className='text-sm font-bold'>Prompts Add & Edit</IonTitle>
-                  <IonSelect onIonChange={(e) => onChangeVersion(e.detail.value)} value={targetItem?.version_number} placeholder="Select Status" className={`min-h-8 field-item text-sm w-[150px] ${!isEdit && 'hidden'}`} label="Select version" interface="popover" labelPlacement="stacked" fill="outline">
+                  <IonSelect onIonChange={(e) => onChangeVersion(e.detail.value)} value={targetItem?.version_number} placeholder="Select Status" className={`min-h-8 field-item text-sm w-[200px] ${!isEdit && 'hidden'}`} label="Select version" interface="popover" labelPlacement="stacked" fill="outline">
                     {promptVersionList
-                      .sort((a, b) => a.version_number - b.version_number)
+                      .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
                       .map((item, index) => (
-                      <IonSelectOption key={index} value={item.version_number}>{item.version_number}</IonSelectOption>
+                        <IonSelectOption key={index} value={item.version_number} className={`${item.status === 'inactive' ? 'text-red' : 'text-green'}`}>
+                          {item.version_number} - {new Date(item.updated_at).toLocaleDateString('en-GB')} {new Date(item.updated_at).toLocaleTimeString('en-GB', { hour12: false })}
+                        </IonSelectOption>
                       ))}
                   </IonSelect>
                 </div>
