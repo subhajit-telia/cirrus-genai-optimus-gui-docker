@@ -27,13 +27,13 @@ class NetworkInfo {
     NetworkInfo.runtimeEnv().API_KEY || import.meta.env.REMOVED;
 
   static readonly AZURE_CLIENT_ID: string =
-    NetworkInfo.runtimeEnv().AZURE_AD_CLIENT_ID || import.meta.env.AZURE_AD_CLIENT_ID || process.env.AZURE_AD_CLIENT_ID;
+    NetworkInfo.runtimeEnv().AZURE_AD_CLIENT_ID || import.meta.env.AZURE_AD_CLIENT_ID;
 
   static readonly AZURE_TENANT_ID: string =
-    NetworkInfo.runtimeEnv().AZURE_AD_TENANT_ID || import.meta.env.AZURE_AD_TENANT_ID || process.env.AZURE_AD_TENANT_ID;
+    NetworkInfo.runtimeEnv().AZURE_AD_TENANT_ID || import.meta.env.AZURE_AD_TENANT_ID;
 
   static readonly AZURE_SECRET_ID: string =
-    NetworkInfo.runtimeEnv().AZURE_AD_CLIENT_SECRET || import.meta.env.AZURE_AD_CLIENT_SECRET || process.env.AZURE_AD_CLIENT_SECRET;
+    NetworkInfo.runtimeEnv().AZURE_AD_CLIENT_SECRET || import.meta.env.AZURE_AD_CLIENT_SECRET;
 
   // Mantengo per compatibilità, se serve
   static readonly REACT_APP_URL: string =
