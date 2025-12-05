@@ -45,7 +45,7 @@ on:
         required: true
         type: string
         description: "Kubernetes Secret name to create/update from AWS secret"
-        default: "optimus-config"  # modify as you need
+        default: "optimus-gui-config"  # modify as you need
 
 jobs:
   Deploy:
