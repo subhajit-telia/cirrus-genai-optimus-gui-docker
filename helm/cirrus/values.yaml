@@ -18,7 +18,7 @@ deployment:
       path: /
       port: 80
     initialDelaySeconds: 10
-  serviceAccountName: "execution"
+  serviceAccountName: "deployment"
   volumeMounts:
     - name: secrets-store
       mountPath: "/mnt/secrets"
@@ -30,22 +30,6 @@ deployment:
         volumeAttributes:
           secretProviderClass: ai-optimus-gui-genai-app
       name: secrets-store
-  env:
-    - name: AZURE_AD_CLIENT_ID
-      valueFrom:
-        secretKeyRef:
-          name: example-webapp
-          key: azure-ad-client-id
-    - name: AZURE_AD_CLIENT_SECRET
-      valueFrom:
-        secretKeyRef:
-          name: example-webapp
-          key: azure-ad-client-secret
-    - name: AZURE_AD_TENANT_ID
-      valueFrom:
-        secretKeyRef:
-          name: example-webapp
-          key: azure-ad-tenant-id
 
 service:
   port: 80
