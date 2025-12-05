@@ -6,4 +6,3 @@ ingress:
 
 image:
   pullPolicy: Always
-  tag: latest
