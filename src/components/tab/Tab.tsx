@@ -61,9 +61,9 @@ interface RefineAnswer {
 interface FeedbackBox {
   copy_version_id: string,
   rating: number,
-  format_rate: number,
-  integrity_rate: number,
-  communication_rate: number,
+  format_rating: number,
+  accuracy_rating: number,
+  language_rating: number,
   comment: string
 }
 
@@ -81,6 +81,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
   const [isRefineDetails, setIsRefineDetails] = useState<any>("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<FeedbackBox | null>(null);
+  const [feedbackResponse, setFeedbackResponse] = useState<any>(null);
   const apiUrl = window.RUNTIME_ENV?.REACT_APP_API_URL || NetworkInfo.URL;
  
   // const [popoverEvent, setPopoverEvent] = useState<MouseEvent | null>(null);
@@ -1055,11 +1056,12 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
 
     console.log(tabIndex +'/'+ itemIndex +'/'+ outputIndex)
     let starItem:any = {
+      feedback_type: "user",
       copy_version_id: copy_version_id,
       rating: rating,
-      format_rate: rating,
-      integrity_rate: rating,
-      communication_rate: rating,
+      format_rating: rating,
+      accuracy_rating: rating,
+      language_rating: rating,
       comment: '',
       tabIndex: tabIndex,
       itemIndex: itemIndex,
@@ -1067,8 +1069,13 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
     };
 
     let data:any = {
+      feedback_type: "user",
       copy_version_id: copy_version_id,
-      rate: rating,
+      rating: rating,
+      format_rating: rating,
+      accuracy_rating: rating,
+      language_rating: rating,
+      comment: null,
     };
     if (itemIndex !== '' && itemIndex !== null) {
       tabs[tabIndex].data[itemIndex].outputs[outputIndex].rating = rating;
@@ -1083,10 +1090,10 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
 
     console.log('selectedItem', selectedItem);
 
-    let formUrl = apiUrl + '/feedback/put';
+    let formUrl = apiUrl + '/feedback/';
     try {
       const response = await fetch(formUrl, {
-        method: HTTPMethod.PUT,
+        method: HTTPMethod.POST,
         headers: {
           '"removed"': `${NetworkInfo.ACCESSTOKEN}`,
           'Content-Type': 'application/json'
@@ -1100,6 +1107,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
       if (response.ok && !responseData.ErrorMessage) {
         // setIsShowError(true);
         // setIsErrorMsg('Feedback submitted!');
+        setFeedbackResponse(responseData);
       }
     } catch (error: any) {
       console.error('Login failed:', error);
@@ -1121,18 +1129,18 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
     }
 
     let data:any = {
-      copy_version_id: updatedItem.copy_version_id,
-      rate: updatedItem.rating,
-      format_rate: updatedItem.format_rate,
-      integrity_rate: updatedItem.integrity_rate,
-      communication_rate: updatedItem.communication_rate,
-      comment: updatedItem.comment,
+      rating: updatedItem.rating,
+      format_rating: updatedItem.format_rating,
+      accuracy_rating: updatedItem.accuracy_rating,
+      language_rating: updatedItem.language_rating,
+      comment: updatedItem.comment || null,
+      feedback_type: "user",
     };
     
-    let formUrl = apiUrl + '/feedback/put';
+    let formUrl = apiUrl + '/feedback/'+ feedbackResponse.feedback_id;
     try {
       const response = await fetch(formUrl, {
-        method: HTTPMethod.PUT,
+        method: HTTPMethod.PATCH,
         headers: {
           '"removed"': `${NetworkInfo.ACCESSTOKEN}`,
           'Content-Type': 'application/json'
@@ -1146,6 +1154,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
       if (response.ok && !responseData.ErrorMessage) {
         setIsShowError(true);
         setIsErrorMsg('Thanks for the feedback.');
+        setFeedbackResponse(null)
       }
     } catch (error: any) {
       console.error('Login failed:', error);
