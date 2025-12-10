@@ -22,18 +22,18 @@ interface FeedbackModalProps {
   selectedItem: {
     copy_version_id: string,
     rating: number,
-    format_rate: number,
-    integrity_rate: number,
-    communication_rate: number,
+    format_rating: number,
+    accuracy_rating: number,
+    language_rating: number,
     comment: string
   };
   onClose: () => void;
   onSave: (updatedItem: {
     copy_version_id: string,
     rating: number,
-    format_rate: number,
-    integrity_rate: number,
-    communication_rate: number,
+    format_rating: number,
+    accuracy_rating: number,
+    language_rating: number,
     comment: string
   }) => void;
 }
@@ -46,13 +46,13 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({
 }) => {
   const [feedbackData, setFeedbackData] = React.useState({ ...selectedItem });
   const [hoveredRating, setHoveredRating] = useState<{
-    format_rate: number | null;
-    integrity_rate: number | null;
-    communication_rate: number | null;
+    format_rating: number | null;
+    accuracy_rating: number | null;
+    language_rating: number | null;
   }>({
-    format_rate: null,
-    integrity_rate: null,
-    communication_rate: null,
+    format_rating: null,
+    accuracy_rating: null,
+    language_rating: null,
   });
 
   React.useEffect(() => {
@@ -63,7 +63,7 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({
   }, [selectedItem]);
 
   const handleRatingChange = (
-    field: "format_rate" | "integrity_rate" | "communication_rate",
+    field: "format_rating" | "accuracy_rating" | "language_rating",
     value: number
   ) => {
     setFeedbackData((prev) => ({ ...prev, [field]: value }));
@@ -73,7 +73,7 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({
     console.log('feedbackData', feedbackData)
 
     const averageRating =
-    ((feedbackData.format_rate ?? 0) + (feedbackData.integrity_rate ?? 0) + (feedbackData.communication_rate ?? 0)) / 3;
+    ((feedbackData.format_rating ?? 0) + (feedbackData.accuracy_rating ?? 0) + (feedbackData.language_rating ?? 0)) / 3;
     
     onSave({ ...feedbackData, rating: Math.round(averageRating)});
     onClose();
@@ -104,18 +104,18 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({
               <IonIcon
                 key={starValue}
                 icon={
-                  starValue <= (hoveredRating.format_rate ?? feedbackData.format_rate ?? 0)
+                  starValue <= (hoveredRating.format_rating ?? feedbackData.format_rating ?? 0)
                     ? star
                     : starOutline
                 }
                 onMouseEnter={() =>
-                  setHoveredRating({ ...hoveredRating, format_rate: starValue })
+                  setHoveredRating({ ...hoveredRating, format_rating: starValue })
                 }
                 onMouseLeave={() =>
-                  setHoveredRating({ ...hoveredRating, format_rate: null })
+                  setHoveredRating({ ...hoveredRating, format_rating: null })
                 }
                 color="primary"
-                onClick={() => handleRatingChange("format_rate", starValue)}
+                onClick={() => handleRatingChange("format_rating", starValue)}
                 style={{ cursor: "pointer", fontSize: "24px" }}
               />
             ))}
@@ -135,18 +135,18 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({
               <IonIcon
                 key={starValue}
                 icon={
-                  starValue <= (hoveredRating.integrity_rate ?? feedbackData.integrity_rate ?? 0)
+                  starValue <= (hoveredRating.accuracy_rating ?? feedbackData.accuracy_rating ?? 0)
                     ? star
                     : starOutline
                 }
                 onMouseEnter={() =>
-                  setHoveredRating({ ...hoveredRating, integrity_rate: starValue })
+                  setHoveredRating({ ...hoveredRating, accuracy_rating: starValue })
                 }
                 onMouseLeave={() =>
-                  setHoveredRating({ ...hoveredRating, integrity_rate: null })
+                  setHoveredRating({ ...hoveredRating, accuracy_rating: null })
                 }
                 color="primary"
-                onClick={() => handleRatingChange("integrity_rate", starValue)}
+                onClick={() => handleRatingChange("accuracy_rating", starValue)}
                 style={{ cursor: "pointer", fontSize: "24px" }}
               />
             ))}
@@ -168,18 +168,18 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({
               <IonIcon
                 key={starValue}
                 icon={
-                  starValue <= (hoveredRating.communication_rate ?? feedbackData.communication_rate ?? 0)
+                  starValue <= (hoveredRating.language_rating ?? feedbackData.language_rating ?? 0)
                     ? star
                     : starOutline
                 }
                 onMouseEnter={() =>
-                  setHoveredRating({ ...hoveredRating, communication_rate: starValue })
+                  setHoveredRating({ ...hoveredRating, language_rating: starValue })
                 }
                 onMouseLeave={() =>
-                  setHoveredRating({ ...hoveredRating, communication_rate: null })
+                  setHoveredRating({ ...hoveredRating, language_rating: null })
                 }
                 color="primary"
-                onClick={() => handleRatingChange("communication_rate", starValue)}
+                onClick={() => handleRatingChange("language_rating", starValue)}
                 style={{ cursor: "pointer", fontSize: "24px" }}
               />
             ))}
