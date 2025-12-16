@@ -65,7 +65,6 @@ Each references secrets stored in AWS under paths like:
      - `api_key`
      - `azure_ad_client_id`
      - `azure_ad_tenant_id`
-     - `azure_ad_client_secret`
      - `react_app_url`
 
 2. **EKS Cluster Requirements**
@@ -112,7 +111,6 @@ kubectl create secret generic ai-optimus-gui-secrets \
   --from-literal=api_key='your-api-key' \
   --from-literal=azure_ad_client_id='your-client-id' \
   --from-literal=azure_ad_tenant_id='your-tenant-id' \
-  --from-literal=azure_ad_client_secret='your-secret' \
   --from-literal=react_app_url='your-url'
 ```
 
