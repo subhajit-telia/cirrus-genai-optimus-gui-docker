@@ -1,13 +1,15 @@
-import { IonButton, IonCard, IonCheckbox, IonCol, IonContent, IonGrid, IonIcon, IonInput, IonPage, IonPopover, IonProgressBar, IonRow, IonSpinner, IonSplitPane, IonToast } from '@ionic/react';
+import { IonButton, IonCard, IonCheckbox, IonCol, IonContent, IonGrid, IonIcon, IonInput, IonPage, IonPopover, IonProgressBar, IonRow, IonSelect, IonSelectOption, IonSpinner, IonSplitPane, IonToast } from '@ionic/react';
 import { useEffect, useState } from 'react';
 import AppHeader from '../../../components/header/Header';
 import Sidenav from '../../../components/sidenav/Sidenav';
 import { HTTPMethod, NetworkInfo } from '../../../routes/network';
 import { useForm } from 'react-hook-form';
-import { informationCircle, informationCircleOutline } from 'ionicons/icons';
+import { filter, informationCircle, informationCircleOutline } from 'ionicons/icons';
+import { getValue } from '@mdxeditor/editor';
 
 interface ConfigAddModel {
     llm_name: string;
+    reasoning_effort: string;
     wait_min: number;
     wait_increment: number;
     max_attempts: number;
@@ -37,6 +39,14 @@ const Config: React.FC = () => {
   const apiUrl = `${NetworkInfo.URL}`;
   const [isShowError, setIsShowError] = useState(false);
   const [isErrorMsg, setIsErrorMsg] = useState('');
+
+  const reasoningEfforts = [
+    { id: 1, data: 'none'},
+    { id: 1, data: 'low'},
+    { id: 1, data: 'medium'},
+    { id: 1, data: 'high'},
+    { id: 1, data: 'max'},
+  ]
 
   useEffect(() => {
 
@@ -71,6 +81,7 @@ const Config: React.FC = () => {
         setValue("quality_check_retry_count", configValue.quality_check_retry_count);
 
         setValue("llm_name", configValue.model.llm_name);
+        setValue("reasoning_effort", configValue.model.reasoning_effort);
         setValue("generation_max_"removed"s", configValue.model.generation_max_"removed"s);
         setValue("temperature", configValue.model.temperature);
 
@@ -112,6 +123,7 @@ const Config: React.FC = () => {
     payLoad.quality_check_retry_count = data.quality_check_retry_count;
 
     payLoad.model.llm_name = data.llm_name;
+    payLoad.model.reasoning_effort = data.reasoning_effort;
     payLoad.model.generation_max_"removed"s = data.generation_max_"removed"s;
     payLoad.model.temperature = data.temperature;
 
@@ -181,6 +193,7 @@ const Config: React.FC = () => {
     handleSubmit: handleSubmit,
     reset,
     setValue,
+    getValues,
     watch,
     formState: { errors }
   } = useForm<ConfigAddModel>({
@@ -211,7 +224,7 @@ const Config: React.FC = () => {
                     <IonGrid>
                         <p className='font-bold text-lg text-black mb-2.5'>Model Parameters</p>
                         <IonRow>
-                            <IonCol size="4">
+                            <IonCol size="3">
                                 <IonInput className='mb-4 text-sm' label="LLM Name" labelPlacement="floating" fill="outline" placeholder="Enter LLM"
                                 {...register("llm_name", {
                                     validate: {},
@@ -225,7 +238,26 @@ const Config: React.FC = () => {
                                     </IonContent>
                                 </IonPopover>
                             </IonCol>
-                            <IonCol size="4">
+                            <IonCol size="3">
+                                <div className='relative text-black'>
+                                    <IonSelect value={getValues('reasoning_effort')} placeholder="Select reasoning effort" className='field-item text-sm' label="Reasoning Effort" interface="popover" labelPlacement="stacked" fill="outline"
+                                    {...register("reasoning_effort", {
+                                        validate: {},
+                                    })}>
+                                    {reasoningEfforts.map((item, index) => (
+                                        <IonSelectOption key={index} value={item.data}>{item.data}</IonSelectOption>
+                                    ))}
+                                    </IonSelect>
+                                    <IonIcon id="reasoning" className="block absolute left-0 -top-1.5 z-10 cursor-pointer" slot="icon-only" icon={informationCircle}></IonIcon>
+                                </div>
+                                
+                                <IonPopover className="rating-popover" size="auto" trigger="reasoning" triggerAction="hover">
+                                    <IonContent class="ion-padding">
+                                        How much the LLM should think before responding. Less thinking gives faster responses, but may reduce output quality.
+                                    </IonContent>
+                                </IonPopover>
+                            </IonCol>
+                            <IonCol size="3">
                                 <IonInput type='number' step="0.1" className='mb-4 text-sm' label="Temperature" labelPlacement="floating" fill="outline" placeholder="Enter temperature"
                                     {...register("temperature", {
                                         validate: {},
@@ -238,7 +270,7 @@ const Config: React.FC = () => {
                                     </IonContent>
                                 </IonPopover>
                             </IonCol>
-                            <IonCol size="4" className='flex items-center'>
+                            <IonCol size="3" className='flex items-center'>
                                 <IonCheckbox 
                                 {...register("automatic_feedback_enabled", {
                                     validate: {},
