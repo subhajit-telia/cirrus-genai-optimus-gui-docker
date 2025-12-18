@@ -272,7 +272,7 @@ ion-toggle .label-text-wrapper {
     ion-segment ion-segment-button.segment-button-checked, ion-segment ion-segment-button:hover ion-label{
         color: var(--color-primary);
     }
-    .input-fill-outline.sc-ion-input-md-h {
+    .input-fill-outline.sc-ion-input-md-h, .input-fill-outline.sc-ion-input-md-h, .select-label-placement-stacked {
         --border-color: var(--ion-color-step-750, var(--ion-background-color-step-750, #404040));
     }
     ion-header, ion-toolbar, ion-item, ion-list {
