@@ -1603,29 +1603,6 @@ const B2C: React.FC = () => {
           }
         </div>
 
-        <IonFab slot="fixed" vertical="bottom" horizontal="end">
-          <IonFabButton size="small">
-            <IonIcon icon={information}></IonIcon>
-          </IonFabButton>
-          <IonFabList side="top">
-            <IonFabButton title='API' id="endpoint">
-              <IonIcon icon={globe}></IonIcon>
-            </IonFabButton>
-            <IonFabButton title='Version' id="app-version">
-              <IonIcon icon={link}></IonIcon>
-            </IonFabButton>
-          </IonFabList>
-        </IonFab>
-        <IonToast className='custom-toast' icon={globe} trigger="endpoint" message={import.meta.env.VITE_API_URL} buttons={[
-          {
-            text: 'Close',
-          },
-        ]} duration={3000}></IonToast>
-        <IonToast className='custom-toast' icon={link} trigger="app-version" message={`App Version: ${packageJson.version}`} buttons={[
-          {
-            text: 'Close',
-          },
-        ]} duration={3000}></IonToast>
         <IonToast
           className={`custom-toast ${isErrorType}`}
           isOpen={isShowError}
