@@ -4,22 +4,22 @@ import { HTTPMethod, NetworkInfo } from '../../routes/network';
 
 const FeedbackAlert = forwardRef((_, ref) => {
   const [showAlert, setShowAlert] = useState(false);
-  const [questionId, setQuestionId] = useState('');
+  const [copyVersionId, setCopyVersionId] = useState('');
   const [isShowError, setIsShowError] = useState(false);
   const [isErrorMsg, setIsErrorMsg] = useState('');
   const apiUrl = `${NetworkInfo.URL}`;
 
   useImperativeHandle(ref, () => ({
-    open: (qId: string) => {
-      console.log('qId', qId);
-      setQuestionId(qId);
+    open: (copyVerId: string) => {
+      console.log('copyVersionId', copyVerId);
+      setCopyVersionId(copyVerId);
       setShowAlert(true);
     },
   }));
 
   const handleFeedbackSubmit = async () => {
 
-    let formUrl = apiUrl + '/self_learning/submit_answer?qid='+ questionId;
+    let formUrl = apiUrl + '/self_learning/submit_answer?copy_version_id='+ copyVersionId;
     
     try {
       const response = await fetch(formUrl, {
