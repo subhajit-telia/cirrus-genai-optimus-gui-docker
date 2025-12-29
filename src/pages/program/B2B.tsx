@@ -1,4 +1,4 @@
-import { IonButton, IonButtons, IonCheckbox, IonChip, IonCol, IonContent, IonFab, IonFabButton, IonFabList, IonFooter, IonGrid, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonModal, IonPage, IonProgressBar, IonRow, IonSkeletonText, IonSpinner, IonText, IonTextarea, IonTitle, IonToast, IonToggle, IonToolbar, ToggleCustomEvent } from '@ionic/react';
+import { IonButton, IonButtons, IonCheckbox, IonChip, IonCol, IonContent, IonFab, IonFabButton, IonFabList, IonFooter, IonGrid, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonModal, IonPage, IonProgressBar, IonRow, IonSkeletonText, IonSpinner, IonSplitPane, IonText, IonTextarea, IonTitle, IonToast, IonToggle, IonToolbar, ToggleCustomEvent } from '@ionic/react';
 import AppHeader from '../../components/header/Header';
 import { attach, closeCircle, closeCircleOutline, closeOutline, documentAttach, documentAttachOutline, globe, information, informationCircle, link } from 'ionicons/icons';
 import { useEffect, useRef, useState } from 'react';
@@ -19,6 +19,7 @@ import { Tooltip } from 'react-tooltip';
 import { i } from 'vite/dist/node/types.d-aGj9QkWt';
 import template from '../../template.json'; // adjust path if needed
 import { v4 as uuidv4 } from 'uuid';
+import HistoryBar from '../../components/historybar/Historybar';
 
 type Tab = {
   answer: string;
@@ -1366,396 +1367,401 @@ const B2B: React.FC = () => {
   /* Set Knowledge Base Enabled end */
 
   return (
-    <IonPage>
-      <AppHeader/>
-      <IonContent className='page-body'>
-        <div className='max-w-[80%] m-auto relative'>
-          <div className='text-center relative'>
-            {tabs.length > 0 &&
-              <IonChip onClick={handleReset} className='absolute left-0 top-1/2 translate-x-0 text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Clear all</IonChip>
-            }
-              <img className='m-auto' src={optimusLogo} />
-            <p className="text-black">AI-assistance</p>
-          </div>
-          <form className='w-full' onSubmit={handleSubmit(handleFormSubmit)}>
-            
-            <IonGrid>
-              <IonRow>
-                <IonCol size="6" offset="6">
-                  <IonToggle
-                    class='float-right text-sm'
-                    enableOnOffLabels={true}
-                    checked={knowledgeBaseEnabled}
-                    onIonChange={(event) => changeKnowledgeBase(event)}
-                  >
-                    Connect to Knowledge Base
-                  </IonToggle>
-                </IonCol>
-                <IonCol
-                  size="12"
-                  size-lg={knowledgeBaseEnabled ? "3" : "4"}
-                  size-md={knowledgeBaseEnabled ? "3" : "4"}
-                  size-sm="12"
-                >
-                  <div className='rounded-xl text-[#000] bg-white shadow-md'>
-                    <div className='font-bold p-4 text-sm'>I want to create a...</div>
-                    <div className='px-4 pb-3.5'>
-                      <SelectDropdown
-                        options={formats}
-                        selectedOptions={selectedFormats}
-                        setSelectedOptions={setSelectedFormats}
-                        multiSelect={true}
-                        idKey="format_id"
-                        nameKey="format_name"
-                        tooltipKey="format_written_description"
-                        placeHolder='Select formats'
-                        label='Select desired format below'
-                      />
-                      {loadingFormats && (
-                        <IonProgressBar className='mt-0.5' type="indeterminate"></IonProgressBar>
-                      )}
-                    </div>
-                  </div>
-                </IonCol>
-                <IonCol
-                  size="12"
-                  size-lg={knowledgeBaseEnabled ? "3" : "4"}
-                  size-md={knowledgeBaseEnabled ? "3" : "4"}
-                  size-sm="12"
-                >
-                  <div className='rounded-xl text-[#000] bg-white shadow-md'>
-                    <div className='font-bold p-4 text-sm'>With the purpose...</div>
-                    <div className='px-4 pb-3.5'>
-                      <SelectDropdown
-                        options={purposes}
-                        selectedOptions={selectedPurpose}
-                        setSelectedOptions={setSelectedPurpose}
-                        multiSelect={false}
-                        idKey="purpose_id"
-                        nameKey="purpose_name"
-                        tooltipKey="purpose_written_description"
-                        placeHolder='Select purpose'
-                        label='Select desired purpose below'
-                      />
-                      {loadingPurposes && (
-                        <IonProgressBar className='mt-0.5' type="indeterminate"></IonProgressBar>
-                      )}
-                    </div>
-                  </div>
-                </IonCol>
-                <IonCol
-                  size="12"
-                  size-lg={knowledgeBaseEnabled ? "3" : "4"}
-                  size-md={knowledgeBaseEnabled ? "3" : "4"}
-                  size-sm="12"
-                >
-                  <div className='rounded-xl text-[#000] bg-white shadow-md'>
-                    <div className='font-bold p-4 text-sm'>About...</div>
-                    <div className='px-4 pb-3.5'>
-                      <ProductDropdown
-                        options={products}
-                        selectedOptions={selectedProducts}
-                        setSelectedOptions={setSelectedProducts}
-                        multiSelect={true}
-                        idKey="product_id"
-                        nameKey="product_name"
-                        categoryKey="category"
-                        tooltipKey="product_name"
-                        placeHolder='Select products'
-                        label='Which product/offer do you want to report on?'
-                      />
-                      {loadingPurposes && (
-                        <IonProgressBar className='mt-0.5' type="indeterminate"></IonProgressBar>
-                      )}
-                    </div>
-                  </div>
-                </IonCol>
-                {knowledgeBaseEnabled && (
-                  <IonCol
-                    size="12"
-                    size-lg="3"
-                    size-md="3"
-                    size-sm="12"
-                  >
-                    <div className='rounded-xl text-[#000] bg-white shadow-md pb-px'>
-                      <div className='font-bold p-4 text-sm'>Using information from...</div>
-                      <div className='mx-4 mb-3.5 p-1.5 border border-[#ccc] rounded'>
-                        {isKnowledgeBaseData.map((item, index) => (
-                          <IonChip key={index} onClick={() => handleRemoveKnowledgeBase(item.kb_number)} className='py-1 px-2 text-[10px] min-h-5'>
-                            <IonLabel>{item.title}</IonLabel>
-                            <IonIcon icon={closeCircle}></IonIcon>
-                          </IonChip>
-                        ))}
-                        <IonChip onClick={ handleClickKnowledgeBase } className='py-1 px-2 text-[10px] min-h-5 bg-primary'>
-                          <IonLabel className='!text-white'>ADD</IonLabel>
-                        </IonChip>
-                      </div>
-                    </div>
-                  </IonCol>
-                )}
-              </IonRow>
-            </IonGrid>
-            {
-              segments.length !== 0 &&
-              <div>
-                <p className='text-center mt-2.5 text-black'>I want to create versions for the following segments:</p>
-                <div className='segments text-center mt-2.5'>
-                  {segments.map((item, index) => (
-                    <IonChip key={index} onClick={() => onClickSegment(index)} className={`${item.isActive} text-center mx-2.5 min-h-6 py-0 bg-[#f5e0ff] text-[#4a2a59]`}>{item.segment_name}</IonChip>
-                  ))}
-                </div>
-              </div>
-            }
-            {loadingSegments &&
-            <div className='segments flex max-sm:flex-col max-md:flex-col items-center justify-center mt-2.5'>
-              <IonSkeletonText className='mx-2.5 min-h-6 py-0 bg-[#f5e0ff] rounded-xl' animated={true} style={{ width: '22%' }}></IonSkeletonText>
-              <IonSkeletonText className='mx-2.5 min-h-6 py-0 bg-[#f5e0ff] rounded-xl' animated={true} style={{ width: '22%' }}></IonSkeletonText>
-              <IonSkeletonText className='mx-2.5 min-h-6 py-0 bg-[#f5e0ff] rounded-xl' animated={true} style={{ width: '22%' }}></IonSkeletonText>
-              <IonSkeletonText className='mx-2.5 min-h-6 py-0 bg-[#f5e0ff] rounded-xl' animated={true} style={{ width: '22%' }}></IonSkeletonText>
-            </div>
-            }
-            
-            
-            
-            <IonGrid className='mt-7'>
-              <IonRow>
-                <IonCol>
-                  <div className='relative' onDrop={handleDrop} onDragOver={handleDragOver}>
-                    <IonTextarea
-                      className='bottom-textarea rounded-xl text-black'
-                      aria-label="Custom textarea"
-                      placeholder="Write your own prompt."
-                      autoGrow={true}
-                      counter={true}
-                      maxlength={6000}
-                      {...register("question", {
-                        validate: {},
-                      })}
-                    >
-                      
-                    </IonTextarea>
-                    <div className='flex items-center absolute bottom-0 left-0 z-10 w-full px-4 py-1'>
-                      {isUploadAttachement &&
-                        <IonSpinner name="lines-small" color="primary"></IonSpinner>
-                      }
-                      {isUploadAttachement === false && attachments ?
-                        <IonIcon onClick={handleIconClick} data-tooltip-id="attachment" data-tooltip-content="All text in the uploaded file will be processed." className='text-[20px] cursor-pointer' icon={documentAttach}></IonIcon>
-                      : (isUploadAttachement === false && !attachments) &&
-                        <IonIcon onClick={handleIconClick} data-tooltip-id="attachment" data-tooltip-content="All text in the uploaded file will be processed." className='text-[20px] cursor-pointer' icon={attach}></IonIcon>
-                      }
-                      
-                      
-                      <Tooltip id="attachment" />
-                      {selectedFile ? (
-                        <div className='flex items-center px-4 text-[14px] cursor-pointer'>
-                          <span>{selectedFile.name}</span>
-                          <IonIcon onClick={handleRemoveFile} className='text-[20px] cursor-pointer' icon={closeCircleOutline}></IonIcon>
-                        </div>
-                      )
-                      : 
-                        <input
-                          className='opacity-0 cursor-pointer'
-                          type="file"
-                          ref={fileInputRef}
-                          onChange={handleFileChange}
-                        />
-                      }
-                    </div>
-                  </div>
-                </IonCol>
-              </IonRow>
-            </IonGrid>
-            
-            <p className='p-4 italic mt-2.5'>Disclaimer: There may be risks associated with using AI-generated content. All content produced by this tool, i.e. Optimus, is for use at the user's discretion, and <u>the user is solely responsible for reviewing and approving any text before sharing it externally.</u></p>
-            
-              <div className='text-center mt-6'>
-                <IonButton type='submit' className='btn-primary' shape="round">
-                {loading && <IonSpinner className='mr-2' name="bubbles"></IonSpinner>}
-                {tabs.length === 0 && !loading ?
-                  'Generate'
-                : tabs.length !== 0 && loading ?
-                  'Generating...'
-                :
-                  'Regenerate all'
+    <>
+      <IonSplitPane contentId="main">
+        <HistoryBar/>
+        <IonPage id="main">
+          <AppHeader/>
+          <IonContent className='page-body ion-padding'>
+            <div className='m-auto relative'>
+              <div className='text-center relative'>
+                {tabs.length > 0 &&
+                  <IonChip onClick={handleReset} className='absolute left-0 top-1/2 translate-x-0 text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Clear all</IonChip>
                 }
-                </IonButton>
+                  <img className='m-auto' src={optimusLogo} />
+                <p className="text-black">AI-assistance</p>
               </div>
+              <form className='w-full' onSubmit={handleSubmit(handleFormSubmit)}>
                 
-          </form>
-
-          {tabs.length > 0 &&
-            <IonGrid>
-              <IonRow>
-                <IonCol>
-                  <div className="mx-2.5 mt-7">
-                    <Tabs tabs={tabs} regenarateItem={regenarateItem} discardEditedAnswer={discardEditedAnswer} genarateRefineCopy={genarateRefineCopy} contentfulData={sendTocontentful} isEditingMode={handleEditingMode}/>
-                    <div className="text-right mt-3">
-                      <IonChip onClick={() => handleFormSubmit(requestData)} className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Rewrite all suggestions</IonChip>
-                      <IonChip data-tooltip-id="contentful" data-tooltip-content="Save all content before sending it to Contentful." disabled={isOpenEditing || contentfulCopy.length === 0} onClick={ handleClickContentful } className='!pointer-events-auto text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Send to contentful</IonChip>
-                      <IonChip onClick={() => exportToDoc(tabs)} className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Save all suggestions to word.doc</IonChip>
-                      {/* <IonChip onClick={handleReset} className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Create new task</IonChip> */}
-                      <Tooltip className={`${!isOpenEditing ? 'hidden' : ''}`} id="contentful" />
-                    </div>
-                  </div>
-                </IonCol>
-              </IonRow>
-            </IonGrid>
-          }
-        </div>
-
-        <IonToast
-          className={`custom-toast ${isErrorType}`}
-          isOpen={isShowError}
-          message={isErrorMsg}
-          duration={5000}
-          onDidDismiss={() => {setIsErrorType(''), setIsShowError(false)}}
-        ></IonToast>
-
-        {/* self learning modal start */}
-        <IonModal className='self-learning-modal' isOpen={isOpenModal}  backdropDismiss={false}>
-          {feedbackCopy.length !== 0 &&
-            <>
-              <IonHeader>
-                <IonToolbar className='text-center'>
-                  <IonTitle className='font-bold'>Which copy is better?</IonTitle>
-                  {feedbackCopy[currentIndex].responses[0].input_params.format_name &&
-                    <IonChip color="primary"><b>Format:</b> {feedbackCopy[currentIndex].responses[0].input_params.format_name}</IonChip>
-                  }
-                  {feedbackCopy[currentIndex].responses[0].input_params.purpose_name &&
-                    <IonChip color="success"><b>Purpose:</b> {feedbackCopy[currentIndex].responses[0].input_params.purpose_name}</IonChip>
-                  }
-                  {feedbackCopy[currentIndex].responses[0].input_params.segment_name &&
-                    <IonChip color="warning"><b>Segment:</b> {feedbackCopy[currentIndex].responses[0].input_params.segment_name}</IonChip>
-                  }
-                  {feedbackCopy[currentIndex].responses[0].input_params.product_names.map((item:string, index:number) => (
-                    <IonChip color="secondary"><b>Product {index + 1}:</b> {item}</IonChip>
-                  ))}
-                </IonToolbar>
-              </IonHeader>
-              <div className="inner-content">
-                <IonGrid className='cursor-pointer'>
+                <IonGrid>
                   <IonRow>
-                    {feedbackCopy[currentIndex].responses.map((feedbackItem:any, tabIndex:number) => (
-                      <IonCol size="6">
-                        <div onClick={() =>{setSelectedDiv(tabIndex); setSelfLearningData(feedbackItem)}} className={`${selectedDiv === tabIndex ? 'border-primary border-2' : ''} hover:border-primary bg-white mb-5 tab-body rounded-md relative`}>
-                          {/* <h3 className='capitalize'>{feedbackItem.input_params.format_name}</h3> */}
-                          
-                          <div className='shadow-md rounded-md p-2 mb-1.5 relative'>
-                            <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} children={feedbackItem.answer}/>
+                    <IonCol size="6" offset="6">
+                      <IonToggle
+                        class='float-right text-sm'
+                        enableOnOffLabels={true}
+                        checked={knowledgeBaseEnabled}
+                        onIonChange={(event) => changeKnowledgeBase(event)}
+                      >
+                        Connect to Knowledge Base
+                      </IonToggle>
+                    </IonCol>
+                    <IonCol
+                      size="12"
+                      size-lg={knowledgeBaseEnabled ? "3" : "4"}
+                      size-md={knowledgeBaseEnabled ? "3" : "4"}
+                      size-sm="12"
+                    >
+                      <div className='rounded-xl text-[#000] bg-white shadow-md'>
+                        <div className='font-bold p-4 text-sm'>I want to create a...</div>
+                        <div className='px-4 pb-3.5'>
+                          <SelectDropdown
+                            options={formats}
+                            selectedOptions={selectedFormats}
+                            setSelectedOptions={setSelectedFormats}
+                            multiSelect={true}
+                            idKey="format_id"
+                            nameKey="format_name"
+                            tooltipKey="format_written_description"
+                            placeHolder='Select formats'
+                            label='Select desired format below'
+                          />
+                          {loadingFormats && (
+                            <IonProgressBar className='mt-0.5' type="indeterminate"></IonProgressBar>
+                          )}
+                        </div>
+                      </div>
+                    </IonCol>
+                    <IonCol
+                      size="12"
+                      size-lg={knowledgeBaseEnabled ? "3" : "4"}
+                      size-md={knowledgeBaseEnabled ? "3" : "4"}
+                      size-sm="12"
+                    >
+                      <div className='rounded-xl text-[#000] bg-white shadow-md'>
+                        <div className='font-bold p-4 text-sm'>With the purpose...</div>
+                        <div className='px-4 pb-3.5'>
+                          <SelectDropdown
+                            options={purposes}
+                            selectedOptions={selectedPurpose}
+                            setSelectedOptions={setSelectedPurpose}
+                            multiSelect={false}
+                            idKey="purpose_id"
+                            nameKey="purpose_name"
+                            tooltipKey="purpose_written_description"
+                            placeHolder='Select purpose'
+                            label='Select desired purpose below'
+                          />
+                          {loadingPurposes && (
+                            <IonProgressBar className='mt-0.5' type="indeterminate"></IonProgressBar>
+                          )}
+                        </div>
+                      </div>
+                    </IonCol>
+                    <IonCol
+                      size="12"
+                      size-lg={knowledgeBaseEnabled ? "3" : "4"}
+                      size-md={knowledgeBaseEnabled ? "3" : "4"}
+                      size-sm="12"
+                    >
+                      <div className='rounded-xl text-[#000] bg-white shadow-md'>
+                        <div className='font-bold p-4 text-sm'>About...</div>
+                        <div className='px-4 pb-3.5'>
+                          <ProductDropdown
+                            options={products}
+                            selectedOptions={selectedProducts}
+                            setSelectedOptions={setSelectedProducts}
+                            multiSelect={true}
+                            idKey="product_id"
+                            nameKey="product_name"
+                            categoryKey="category"
+                            tooltipKey="product_name"
+                            placeHolder='Select products'
+                            label='Which product/offer do you want to report on?'
+                          />
+                          {loadingPurposes && (
+                            <IonProgressBar className='mt-0.5' type="indeterminate"></IonProgressBar>
+                          )}
+                        </div>
+                      </div>
+                    </IonCol>
+                    {knowledgeBaseEnabled && (
+                      <IonCol
+                        size="12"
+                        size-lg="3"
+                        size-md="3"
+                        size-sm="12"
+                      >
+                        <div className='rounded-xl text-[#000] bg-white shadow-md pb-px'>
+                          <div className='font-bold p-4 text-sm'>Using information from...</div>
+                          <div className='mx-4 mb-3.5 p-1.5 border border-[#ccc] rounded'>
+                            {isKnowledgeBaseData.map((item, index) => (
+                              <IonChip key={index} onClick={() => handleRemoveKnowledgeBase(item.kb_number)} className='py-1 px-2 text-[10px] min-h-5'>
+                                <IonLabel>{item.title}</IonLabel>
+                                <IonIcon icon={closeCircle}></IonIcon>
+                              </IonChip>
+                            ))}
+                            <IonChip onClick={ handleClickKnowledgeBase } className='py-1 px-2 text-[10px] min-h-5 bg-primary'>
+                              <IonLabel className='!text-white'>ADD</IonLabel>
+                            </IonChip>
                           </div>
                         </div>
                       </IonCol>
-                    ))}
-                    <IonCol size="12" className="text-center">
-                      <IonButton disabled={selectedDiv === null} data-tooltip-id="feedbackCopy" data-tooltip-content="Please select the copy." onClick={() => submitSelfLearning()}>Submit Copy</IonButton>
-                      <Tooltip id="feedbackCopy" />
+                    )}
+                  </IonRow>
+                </IonGrid>
+                {
+                  segments.length !== 0 &&
+                  <div>
+                    <p className='text-center mt-2.5 text-black'>I want to create versions for the following segments:</p>
+                    <div className='segments text-center mt-2.5'>
+                      {segments.map((item, index) => (
+                        <IonChip key={index} onClick={() => onClickSegment(index)} className={`${item.isActive} text-center mx-2.5 min-h-6 py-0 bg-[#f5e0ff] text-[#4a2a59]`}>{item.segment_name}</IonChip>
+                      ))}
+                    </div>
+                  </div>
+                }
+                {loadingSegments &&
+                <div className='segments flex max-sm:flex-col max-md:flex-col items-center justify-center mt-2.5'>
+                  <IonSkeletonText className='mx-2.5 min-h-6 py-0 bg-[#f5e0ff] rounded-xl' animated={true} style={{ width: '22%' }}></IonSkeletonText>
+                  <IonSkeletonText className='mx-2.5 min-h-6 py-0 bg-[#f5e0ff] rounded-xl' animated={true} style={{ width: '22%' }}></IonSkeletonText>
+                  <IonSkeletonText className='mx-2.5 min-h-6 py-0 bg-[#f5e0ff] rounded-xl' animated={true} style={{ width: '22%' }}></IonSkeletonText>
+                  <IonSkeletonText className='mx-2.5 min-h-6 py-0 bg-[#f5e0ff] rounded-xl' animated={true} style={{ width: '22%' }}></IonSkeletonText>
+                </div>
+                }
+                
+                
+                
+                <IonGrid className='mt-7'>
+                  <IonRow>
+                    <IonCol>
+                      <div className='relative' onDrop={handleDrop} onDragOver={handleDragOver}>
+                        <IonTextarea
+                          className='bottom-textarea rounded-xl text-black'
+                          aria-label="Custom textarea"
+                          placeholder="Write your own prompt."
+                          autoGrow={true}
+                          counter={true}
+                          maxlength={6000}
+                          {...register("question", {
+                            validate: {},
+                          })}
+                        >
+                          
+                        </IonTextarea>
+                        <div className='flex items-center absolute bottom-0 left-0 z-10 w-full px-4 py-1'>
+                          {isUploadAttachement &&
+                            <IonSpinner name="lines-small" color="primary"></IonSpinner>
+                          }
+                          {isUploadAttachement === false && attachments ?
+                            <IonIcon onClick={handleIconClick} data-tooltip-id="attachment" data-tooltip-content="All text in the uploaded file will be processed." className='text-[20px] cursor-pointer' icon={documentAttach}></IonIcon>
+                          : (isUploadAttachement === false && !attachments) &&
+                            <IonIcon onClick={handleIconClick} data-tooltip-id="attachment" data-tooltip-content="All text in the uploaded file will be processed." className='text-[20px] cursor-pointer' icon={attach}></IonIcon>
+                          }
+                          
+                          
+                          <Tooltip id="attachment" />
+                          {selectedFile ? (
+                            <div className='flex items-center px-4 text-[14px] cursor-pointer'>
+                              <span>{selectedFile.name}</span>
+                              <IonIcon onClick={handleRemoveFile} className='text-[20px] cursor-pointer' icon={closeCircleOutline}></IonIcon>
+                            </div>
+                          )
+                          : 
+                            <input
+                              className='opacity-0 cursor-pointer'
+                              type="file"
+                              ref={fileInputRef}
+                              onChange={handleFileChange}
+                            />
+                          }
+                        </div>
+                      </div>
                     </IonCol>
                   </IonRow>
                 </IonGrid>
-              </div>
-            </>
-          }
-        </IonModal>
-        {/* self learning modal end */}
+                
+                <p className='p-4 italic mt-2.5'>Disclaimer: There may be risks associated with using AI-generated content. All content produced by this tool, i.e. Optimus, is for use at the user's discretion, and <u>the user is solely responsible for reviewing and approving any text before sharing it externally.</u></p>
+                
+                  <div className='text-center mt-6'>
+                    <IonButton type='submit' className='btn-primary' shape="round">
+                    {loading && <IonSpinner className='mr-2' name="bubbles"></IonSpinner>}
+                    {tabs.length === 0 && !loading ?
+                      'Generate'
+                    : tabs.length !== 0 && loading ?
+                      'Generating...'
+                    :
+                      'Regenerate all'
+                    }
+                    </IonButton>
+                  </div>
+                    
+              </form>
 
-        {/* send to contentful start */}
-        <IonModal id="example-modal" isOpen={isContentfulModal} onWillDismiss={() => {setIsContentfulModal(false); setIsCreateAssembly(false); setIsTroubleshooting(false);}}>
-          <IonHeader>
-            <IonToolbar>
-              <IonTitle className='text-sm font-bold'>Send to Contentful</IonTitle>
-              <IonButtons slot="end">
-                <IonButton size="small" shape="round" onClick={() => setIsContentfulModal(false)}>
-                  <IonIcon slot="icon-only" icon={closeOutline}></IonIcon>
-                </IonButton>
-              </IonButtons>
-            </IonToolbar>
-          </IonHeader>
-          <div className="ion-padding inner-content">
-            {!isTroubleshooting &&
-              <p className='text-sm text-center pb-8 tex'>Add an internal name to be added to the copies. Optimus will automatically apply the correct attributes based on the format. 
-                {isPersonalized ? 
-                  <IonIcon data-tooltip-id="contentfulInfo" data-tooltip-content="Example: If you enter 'Black Week 25 BB 100/100', Optimus might generate 'B2B - Xsell - Black Week 25 BB 100/100 - Seniors - SMS', depending on the format." icon={informationCircle}></IonIcon>
-                : 
-                  <IonIcon data-tooltip-id="contentfulInfo" data-tooltip-content="Example: If you enter 'mobilabonnemang', Optimus might generate 'B2B - Mobilabonnmemang - FAQ', depending on the format." icon={informationCircle}></IonIcon> 
-                }
-              </p>
-            }
-            {isTroubleshooting &&
-              <p className='text-sm text-center pb-8 tex'>Add the specific readableID to be added to the copies. <IonIcon data-tooltip-id="contentfulInfo" data-tooltip-content="Example: 'b2x-tsf-common-installationGuideForSpecificRouter'" icon={informationCircle}></IonIcon></p>
-            }
-            
-            <Tooltip id="contentfulInfo" />
-            <form onSubmit={handleSubmit(handleContentfulFormSubmit)} className="w-full">
-              <IonInput className={`mb-4 text-sm ${!contentError && 'ion-valid'} ${contentError && 'ion-invalid'}`} label={` ${isTroubleshooting ? "Readable ID" : "Internal Name"}`} labelPlacement="floating" fill="outline" placeholder={`Please add an ${isTroubleshooting ? "Readable ID" : "Internal name"}`}
-                value={contentName}
-                onIonInput={handleContentfulChange}
-                onIonBlur={handleContentfulBlur}
-                // helperText={contentError}
-              ></IonInput>
-              <div className={`flex ${isCreateAssembly ? 'justify-between' : 'justify-end'}`}>
-                {isCreateAssembly &&
-                  <IonCheckbox className='text-sm' labelPlacement="end"
-                    onIonChange={(event) => setValue("createAssembly", event.detail.checked)}
-                  >Create an Assembly</IonCheckbox>
+              {tabs.length > 0 &&
+                <IonGrid>
+                  <IonRow>
+                    <IonCol>
+                      <div className="mx-2.5 mt-7">
+                        <Tabs tabs={tabs} regenarateItem={regenarateItem} discardEditedAnswer={discardEditedAnswer} genarateRefineCopy={genarateRefineCopy} contentfulData={sendTocontentful} isEditingMode={handleEditingMode}/>
+                        <div className="text-right mt-3">
+                          <IonChip onClick={() => handleFormSubmit(requestData)} className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Rewrite all suggestions</IonChip>
+                          <IonChip data-tooltip-id="contentful" data-tooltip-content="Save all content before sending it to Contentful." disabled={isOpenEditing || contentfulCopy.length === 0} onClick={ handleClickContentful } className='!pointer-events-auto text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Send to contentful</IonChip>
+                          <IonChip onClick={() => exportToDoc(tabs)} className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Save all suggestions to word.doc</IonChip>
+                          {/* <IonChip onClick={handleReset} className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Create new task</IonChip> */}
+                          <Tooltip className={`${!isOpenEditing ? 'hidden' : ''}`} id="contentful" />
+                        </div>
+                      </div>
+                    </IonCol>
+                  </IonRow>
+                </IonGrid>
               }
-                <IonToggle 
-                  className='text-sm'
-                  checked={isPersonalized}
-                  onIonChange={(e) => setIsPersonalized(e.detail.checked)}
-                >{isPersonalized ? 'Personalized' : 'Generic'}</IonToggle>
-              </div>
-              
-              <div className='text-center mt-4'>
-                <IonText className='block text-sm mb-4'>{`A total ${contentfulCopy.length} copies will be sent to contentful.`}</IonText>
-                <IonButton disabled={loadingContentful} size='small' type='submit' className='btn-primary' shape="round">
-                  {loadingContentful && <IonSpinner className='mr-2' name="bubbles"></IonSpinner>}
-                  Save
-                </IonButton>
-                <IonButton onClick={() => setIsContentfulModal(false)} size='small' type='reset' fill='outline' shape="round">
-                  Cancel
-                </IonButton>
-              </div>
-            </form>
-          </div>
-        </IonModal>
-        {/* send to contentful end */}
+            </div>
 
-        {/* Knowledge Base start */}
-        <IonModal id="example-modal" isOpen={isKnowledgeBaseModal} onWillDismiss={() => setIsKnowledgeBaseModal(false)}>
-          <IonHeader>
-            <IonToolbar>
-              <IonTitle className='text-sm font-bold'>Add Knowledge Base page to Optimus</IonTitle>
-              <IonButtons slot="end">
-                <IonButton size="small" shape="round" onClick={() => setIsKnowledgeBaseModal(false)}>
-                  <IonIcon slot="icon-only" icon={closeOutline}></IonIcon>
-                </IonButton>
-              </IonButtons>
-            </IonToolbar>
-          </IonHeader>
-          <div className="ion-padding inner-content">
-            
-            <form onSubmit={handleSubmit(handleKnowledgeBaseForm)} className="w-full">
-              <IonInput className='mb-4 text-sm' label="Page Number" labelPlacement="floating" fill="outline" placeholder="e.g. KB0123456"
-                {...register("kb_number", {
-                  validate: {},
-                })}
-                required
-              ></IonInput>
-              <div className='text-center mt-4'>
-                <IonButton size='small' type='submit' className='btn-primary' shape="round">
-                  {loading && <IonSpinner className='mr-2' name="bubbles"></IonSpinner>}
-                  Add
-                </IonButton>
-                <IonButton onClick={() => setIsKnowledgeBaseModal(false)} size='small' type='reset' fill='outline' shape="round">
-                  Cancel
-                </IonButton>
+            <IonToast
+              className={`custom-toast ${isErrorType}`}
+              isOpen={isShowError}
+              message={isErrorMsg}
+              duration={5000}
+              onDidDismiss={() => {setIsErrorType(''), setIsShowError(false)}}
+            ></IonToast>
+
+            {/* self learning modal start */}
+            <IonModal className='self-learning-modal' isOpen={isOpenModal}  backdropDismiss={false}>
+              {feedbackCopy.length !== 0 &&
+                <>
+                  <IonHeader>
+                    <IonToolbar className='text-center'>
+                      <IonTitle className='font-bold'>Which copy is better?</IonTitle>
+                      {feedbackCopy[currentIndex].responses[0].input_params.format_name &&
+                        <IonChip color="primary"><b>Format:</b> {feedbackCopy[currentIndex].responses[0].input_params.format_name}</IonChip>
+                      }
+                      {feedbackCopy[currentIndex].responses[0].input_params.purpose_name &&
+                        <IonChip color="success"><b>Purpose:</b> {feedbackCopy[currentIndex].responses[0].input_params.purpose_name}</IonChip>
+                      }
+                      {feedbackCopy[currentIndex].responses[0].input_params.segment_name &&
+                        <IonChip color="warning"><b>Segment:</b> {feedbackCopy[currentIndex].responses[0].input_params.segment_name}</IonChip>
+                      }
+                      {feedbackCopy[currentIndex].responses[0].input_params.product_names.map((item:string, index:number) => (
+                        <IonChip color="secondary"><b>Product {index + 1}:</b> {item}</IonChip>
+                      ))}
+                    </IonToolbar>
+                  </IonHeader>
+                  <div className="inner-content">
+                    <IonGrid className='cursor-pointer'>
+                      <IonRow>
+                        {feedbackCopy[currentIndex].responses.map((feedbackItem:any, tabIndex:number) => (
+                          <IonCol size="6">
+                            <div onClick={() =>{setSelectedDiv(tabIndex); setSelfLearningData(feedbackItem)}} className={`${selectedDiv === tabIndex ? 'border-primary border-2' : ''} hover:border-primary bg-white mb-5 tab-body rounded-md relative`}>
+                              {/* <h3 className='capitalize'>{feedbackItem.input_params.format_name}</h3> */}
+                              
+                              <div className='shadow-md rounded-md p-2 mb-1.5 relative'>
+                                <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} children={feedbackItem.answer}/>
+                              </div>
+                            </div>
+                          </IonCol>
+                        ))}
+                        <IonCol size="12" className="text-center">
+                          <IonButton disabled={selectedDiv === null} data-tooltip-id="feedbackCopy" data-tooltip-content="Please select the copy." onClick={() => submitSelfLearning()}>Submit Copy</IonButton>
+                          <Tooltip id="feedbackCopy" />
+                        </IonCol>
+                      </IonRow>
+                    </IonGrid>
+                  </div>
+                </>
+              }
+            </IonModal>
+            {/* self learning modal end */}
+
+            {/* send to contentful start */}
+            <IonModal id="example-modal" isOpen={isContentfulModal} onWillDismiss={() => {setIsContentfulModal(false); setIsCreateAssembly(false); setIsTroubleshooting(false);}}>
+              <IonHeader>
+                <IonToolbar>
+                  <IonTitle className='text-sm font-bold'>Send to Contentful</IonTitle>
+                  <IonButtons slot="end">
+                    <IonButton size="small" shape="round" onClick={() => setIsContentfulModal(false)}>
+                      <IonIcon slot="icon-only" icon={closeOutline}></IonIcon>
+                    </IonButton>
+                  </IonButtons>
+                </IonToolbar>
+              </IonHeader>
+              <div className="ion-padding inner-content">
+                {!isTroubleshooting &&
+                  <p className='text-sm text-center pb-8 tex'>Add an internal name to be added to the copies. Optimus will automatically apply the correct attributes based on the format. 
+                    {isPersonalized ? 
+                      <IonIcon data-tooltip-id="contentfulInfo" data-tooltip-content="Example: If you enter 'Black Week 25 BB 100/100', Optimus might generate 'B2B - Xsell - Black Week 25 BB 100/100 - Seniors - SMS', depending on the format." icon={informationCircle}></IonIcon>
+                    : 
+                      <IonIcon data-tooltip-id="contentfulInfo" data-tooltip-content="Example: If you enter 'mobilabonnemang', Optimus might generate 'B2B - Mobilabonnmemang - FAQ', depending on the format." icon={informationCircle}></IonIcon> 
+                    }
+                  </p>
+                }
+                {isTroubleshooting &&
+                  <p className='text-sm text-center pb-8 tex'>Add the specific readableID to be added to the copies. <IonIcon data-tooltip-id="contentfulInfo" data-tooltip-content="Example: 'b2x-tsf-common-installationGuideForSpecificRouter'" icon={informationCircle}></IonIcon></p>
+                }
+                
+                <Tooltip id="contentfulInfo" />
+                <form onSubmit={handleSubmit(handleContentfulFormSubmit)} className="w-full">
+                  <IonInput className={`mb-4 text-sm ${!contentError && 'ion-valid'} ${contentError && 'ion-invalid'}`} label={` ${isTroubleshooting ? "Readable ID" : "Internal Name"}`} labelPlacement="floating" fill="outline" placeholder={`Please add an ${isTroubleshooting ? "Readable ID" : "Internal name"}`}
+                    value={contentName}
+                    onIonInput={handleContentfulChange}
+                    onIonBlur={handleContentfulBlur}
+                    // helperText={contentError}
+                  ></IonInput>
+                  <div className={`flex ${isCreateAssembly ? 'justify-between' : 'justify-end'}`}>
+                    {isCreateAssembly &&
+                      <IonCheckbox className='text-sm' labelPlacement="end"
+                        onIonChange={(event) => setValue("createAssembly", event.detail.checked)}
+                      >Create an Assembly</IonCheckbox>
+                  }
+                    <IonToggle 
+                      className='text-sm'
+                      checked={isPersonalized}
+                      onIonChange={(e) => setIsPersonalized(e.detail.checked)}
+                    >{isPersonalized ? 'Personalized' : 'Generic'}</IonToggle>
+                  </div>
+                  
+                  <div className='text-center mt-4'>
+                    <IonText className='block text-sm mb-4'>{`A total ${contentfulCopy.length} copies will be sent to contentful.`}</IonText>
+                    <IonButton disabled={loadingContentful} size='small' type='submit' className='btn-primary' shape="round">
+                      {loadingContentful && <IonSpinner className='mr-2' name="bubbles"></IonSpinner>}
+                      Save
+                    </IonButton>
+                    <IonButton onClick={() => setIsContentfulModal(false)} size='small' type='reset' fill='outline' shape="round">
+                      Cancel
+                    </IonButton>
+                  </div>
+                </form>
               </div>
-            </form>
-          </div>
-        </IonModal>
-        {/* Knowledge Base end */}
-      </IonContent>
-    </IonPage>
+            </IonModal>
+            {/* send to contentful end */}
+
+            {/* Knowledge Base start */}
+            <IonModal id="example-modal" isOpen={isKnowledgeBaseModal} onWillDismiss={() => setIsKnowledgeBaseModal(false)}>
+              <IonHeader>
+                <IonToolbar>
+                  <IonTitle className='text-sm font-bold'>Add Knowledge Base page to Optimus</IonTitle>
+                  <IonButtons slot="end">
+                    <IonButton size="small" shape="round" onClick={() => setIsKnowledgeBaseModal(false)}>
+                      <IonIcon slot="icon-only" icon={closeOutline}></IonIcon>
+                    </IonButton>
+                  </IonButtons>
+                </IonToolbar>
+              </IonHeader>
+              <div className="ion-padding inner-content">
+                
+                <form onSubmit={handleSubmit(handleKnowledgeBaseForm)} className="w-full">
+                  <IonInput className='mb-4 text-sm' label="Page Number" labelPlacement="floating" fill="outline" placeholder="e.g. KB0123456"
+                    {...register("kb_number", {
+                      validate: {},
+                    })}
+                    required
+                  ></IonInput>
+                  <div className='text-center mt-4'>
+                    <IonButton size='small' type='submit' className='btn-primary' shape="round">
+                      {loading && <IonSpinner className='mr-2' name="bubbles"></IonSpinner>}
+                      Add
+                    </IonButton>
+                    <IonButton onClick={() => setIsKnowledgeBaseModal(false)} size='small' type='reset' fill='outline' shape="round">
+                      Cancel
+                    </IonButton>
+                  </div>
+                </form>
+              </div>
+            </IonModal>
+            {/* Knowledge Base end */}
+          </IonContent>
+        </IonPage>
+      </IonSplitPane>
+    </>
   );
 };
 
