@@ -1369,7 +1369,7 @@ const B2B: React.FC = () => {
   return (
     <>
       <IonSplitPane contentId="main">
-        <HistoryBar/>
+        {/*<HistoryBar/> */}
         <IonPage id="main">
           <AppHeader/>
           <IonContent className='page-body ion-padding'>
