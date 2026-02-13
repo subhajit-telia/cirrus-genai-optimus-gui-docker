@@ -3,3 +3,5 @@ ingress:
     alb.ingress.kubernetes.io/group.name: cirrus-genai-optimus-gui-group
     alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:eu-north-1:076129519469:certificate/130becc9-0893-44db-b120-4b6f6626b59b
     external-dns.alpha.kubernetes.io/hostname: genai-optimus-gui.cirrus-stage.teliacompany.net
+    # Timeout settings for long-running AI requests
+    alb.ingress.kubernetes.io/load-balancer-attributes: idle_timeout.timeout_seconds=300

@@ -1627,27 +1627,47 @@ const B2C: React.FC = () => {
                   {feedbackCopy[currentIndex].responses[0].input_params.segment_name &&
                     <IonChip color="warning"><b>Segment:</b> {feedbackCopy[currentIndex].responses[0].input_params.segment_name}</IonChip>
                   }
-                  {feedbackCopy[currentIndex].responses[0].input_params.product_names.map((item:string, index:number) => (
-                    <IonChip color="secondary"><b>Product {index + 1}:</b> {item}</IonChip>
+                  {feedbackCopy[currentIndex].responses[0].input_params.product_names && feedbackCopy[currentIndex].responses[0].input_params.product_names.map((item:string, index:number) => (
+                    <IonChip key={index} color="secondary"><b>Product {index + 1}:</b> {item}
+                    </IonChip>
                   ))}
                 </IonToolbar>
               </IonHeader>
               <div className="inner-content">
                 <IonGrid className='cursor-pointer'>
                   <IonRow>
-                    {feedbackCopy[currentIndex].responses.map((feedbackItem:any, tabIndex:number) => (
-                      <IonCol size="6">
-                        <div onClick={() =>{setSelectedDiv(tabIndex); setSelfLearningData(feedbackItem)}} className={`${selectedDiv === tabIndex ? 'border-primary border-2' : ''} hover:border-primary bg-white mb-5 tab-body rounded-md relative`}>
+                    {feedbackCopy[currentIndex].responses.map(
+                      (feedbackItem:any, tabIndex:number) => (
+                      <IonCol key={tabIndex} size="6">
+                        <div 
+                          onClick={() =>{
+                            setSelectedDiv(tabIndex); 
+                            setSelfLearningData(feedbackItem);
+                          }} 
+                          className={`${selectedDiv === tabIndex ? 'border-primary border-2' : ''} hover:border-primary bg-white mb-5 tab-body rounded-md relative`}
+                          >
+                          
                           {/* <h3 className='capitalize'>{feedbackItem.input_params.format_name}</h3> */}
                           
                           <div className='shadow-md rounded-md p-2 mb-1.5 relative'>
-                            <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} children={feedbackItem.answer}/>
+                            <ReactMarkdown 
+                            remarkPlugins={[remarkGfm]} 
+                            rehypePlugins={[rehypeRaw]} 
+                            children={feedbackItem.answer}
+                            />
                           </div>
                         </div>
                       </IonCol>
                     ))}
                     <IonCol size="12" className="text-center">
-                      <IonButton disabled={selectedDiv === null} data-tooltip-id="feedbackCopy" data-tooltip-content="Please select the copy." onClick={() => submitSelfLearning()}>Submit Copy</IonButton>
+                      <IonButton 
+                        disabled={selectedDiv === null} 
+                        data-tooltip-id="feedbackCopy" 
+                        data-tooltip-content="Please select the copy." 
+                        onClick={() => submitSelfLearning()}
+                        >
+                          Submit Copy
+                        </IonButton>
                       <Tooltip id="feedbackCopy" />
                     </IonCol>
                   </IonRow>
