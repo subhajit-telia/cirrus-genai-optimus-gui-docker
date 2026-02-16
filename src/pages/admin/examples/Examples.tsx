@@ -172,11 +172,10 @@ const Examples: React.FC = () => {
   };
   const toggleSort = () => {
     const sorted = [...exampleList].sort((a, b) => {
-      const dateA = parseDate(a[sortField]).getTime();
-      const dateB = parseDate(b[sortField]).getTime();
+      const dateA = new Date(a[sortField]).getTime();
+      const dateB = new Date(b[sortField]).getTime();
       return isAscending ? dateA - dateB : dateB - dateA;
     });
-    console.log('sorted', sorted);
     setExampleList(sorted);
     setIsAscending(!isAscending); // Toggle the sorting direction
     console.log('toggleSort:', filterExampleList);
