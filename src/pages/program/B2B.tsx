@@ -1758,11 +1758,11 @@ const B2B: React.FC = () => {
                       }
                     </IonChip>
                   )}
-                  {feedbackCopy[
+                  {feedbackCopy[currentIndex].responses[0].input_params.product_names && feedbackCopy[
                     currentIndex
                   ].responses[0].input_params.product_names.map(
                     (item: string, index: number) => (
-                      <IonChip color="secondary">
+                      <IonChip key={index} color="secondary">
                         <b>Product {index + 1}:</b> {item}
                       </IonChip>
                     ),
@@ -1774,7 +1774,7 @@ const B2B: React.FC = () => {
                   <IonRow>
                     {feedbackCopy[currentIndex].responses.map(
                       (feedbackItem: any, tabIndex: number) => (
-                        <IonCol size="6">
+                        <IonCol key={tabIndex} size="6">
                           <div
                             onClick={() => {
                               setSelectedDiv(tabIndex);
