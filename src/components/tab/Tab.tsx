@@ -155,6 +155,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
   const [editInputValues, setEditInputValues] = useState(
     tabs.map(item => {
       if (item.outputs) {
+        // Keep ALL outputs to maintain index alignment (filter during render)
         return (item.outputs as { answer: string }[]).map(outputItem => outputItem.answer);
       } else if (item.data) {
         return item.data.map(innerItem => (innerItem.outputs as { answer: string }[]).map(outputItem => outputItem.answer));
@@ -239,30 +240,40 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
     console.log('currentEditingCopy', currentEditingCopy);
     console.log('value', value);
     console.log('copy_version_id', copy_version_id);
+    console.log('editorChangedText', editorChangedText);
     setIsRefineBox(false);
     setIsEditCopyVersionId(copy_version_id);
     setIsSaveChanges(true);
-    let data:any = {
-      copy_version_id: copy_version_id,
-      text: value.replace(/<span class="new_content">|<\/span>/g, '').replace(/<span class="cursor">|<\/span>/g, '')
-    }
+    
+    // Only call API if user made manual edits in the MDX editor
+    // If user only used UI buttons (refine/regenerate), those already called /chat/edit
+    if (editorChangedText && editorChangedText.trim() !== '') {
+      // User typed something manually in the editor
+      let data:any = {
+        copy_version_id: copy_version_id,
+        text: value.replace(/<span class="new_content">|<\/span>/g, '').replace(/<span class="cursor">|<\/span>/g, '')
+      }
 
-    // setCurrentEditCopy('');
-    // Remove last space from value if present
-    let trimmedValue = currentEditCopy.answer;
-    if(mode === 'editingMode'){ 
-      if (trimmedValue.endsWith(' ')) {
-        trimmedValue = trimmedValue.slice(0, -1);
+      // Remove last space from value if present
+      let trimmedValue = currentEditCopy.answer;
+      if(mode === 'editingMode'){ 
+        if (trimmedValue.endsWith(' ')) {
+          trimmedValue = trimmedValue.slice(0, -1);
+        }
+        if (trimmedValue.endsWith('\n')) {
+          trimmedValue = trimmedValue.slice(0, -1);
+        }
       }
-      if (trimmedValue.endsWith('\n')) {
-        trimmedValue = trimmedValue.slice(0, -1);
+      console.log('trimmedValue', trimmedValue);
+      console.log('Manual edit detected - calling API');
+      if (trimmedValue !== value) {
+        submitRefineQuestion('','edit_manual', data);
+      }else {
+        setIsSaveChanges(false);
       }
-    }
-    console.log('trimmedValue', trimmedValue);
-    if (trimmedValue !== value) {
-      // saveEditedAnswer(data);
-      submitRefineQuestion('','edit_manual', data);
-    }else {
+    } else {
+      // No manual edits, just UI button actions (refine/regenerate) that already updated via API
+      console.log('No manual edits detected - skipping API call');
       setIsSaveChanges(false);
     }
     
@@ -309,7 +320,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
   /* Discard edit answer copy end */
 
   useEffect(() => {
-    console.log('tabstabstabstabstabs', tabs);
+    // console.log('tabstabstabstabstabs', tabs);
     if (tabs[0].data && tabs.length === 1) {
       setActiveTab(tabs[0].segment_id)
     }
@@ -323,8 +334,8 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
       return [];
     })
     setEditInputValues(copyAnswer);
-    console.log('editInputValues', editInputValues);
-    console.log('editVisibility:', editVisibility);
+    // console.log('editInputValues', editInputValues);
+    // console.log('editVisibility:', editVisibility);
     if (editInputValues[0].length === 0) {
       setEditVisibility({ tabIndex: null, itemIndex: null, outputIndex: null, isEdit: false });
       setIsRefineBox(false);
@@ -332,7 +343,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
       setEditVisibility({ tabIndex: null, itemIndex: null, outputIndex: null, isEdit: false });
       setIsRefineBox(false);
     }
-    console.log('tabs>><<', tabs);
+    // console.log('tabs>><<', tabs);
 
     /* initialize the array for contentful start */
     const resultArray:any = [];
@@ -374,30 +385,43 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
         segment.data.forEach((dataItem: any) => {
 
           if (Array.isArray(dataItem.outputs) && dataItem.outputs.length > 0) {
-            const latestOutput = dataItem.outputs.reduce((latest: any, current: any) =>
-              current.timestamp > latest.timestamp ? current : latest
+            const activeOutputs = dataItem.outputs.filter((output: any) => 
+              output.input_params?.status !== 'discarded'
             );
-          
-            const { rating, ...outputWithoutRating } = latestOutput;
-            resultArray.push(outputWithoutRating);
+            
+            if (activeOutputs.length > 0) {
+              const latestOutput = activeOutputs.reduce((latest: any, current: any) =>
+                current.timestamp > latest.timestamp ? current : latest
+              );
+            
+              const { rating, ...outputWithoutRating } = latestOutput;
+              resultArray.push(outputWithoutRating);
+            }
           }
         });
       }
     
       // Handle flat structure (if 'outputs' is directly under segment)
       if (Array.isArray(segment.outputs) && segment.outputs.length > 0) {
-        const latestOutput = segment.outputs.reduce((latest: any, current: any) =>
-          current.timestamp > latest.timestamp ? current : latest
+        const activeOutputs = segment.outputs.filter((output: any) => 
+          output.input_params?.status !== 'discarded'
         );
-      
-        const { rating, ...outputWithoutRating } = latestOutput;
-        resultArray.push(outputWithoutRating);
+        
+        if (activeOutputs.length > 0) {
+          const latestOutput = activeOutputs.reduce((latest: any, current: any) =>
+            current.timestamp > latest.timestamp ? current : latest
+          );
+        
+          const { rating, ...outputWithoutRating } = latestOutput;
+          resultArray.push(outputWithoutRating);
+        }
       }
       
     });
 
     contentfulData(resultArray)
-    console.log(resultArray);
+    // console.log(resultArray);
+    
     /* initialize the array for contentful end */
 
     setIsSaveChanges(false);
@@ -415,9 +439,9 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
       isEditingMode(true);
     }
 
-    console.log('inputVisibility>>', inputVisibility);
+    // console.log('inputVisibility>>', inputVisibility);
     
-    console.log('inputValues>>', inputValues);
+    // console.log('inputValues>>', inputValues);
     
     setHighlightStartIndex(null);
     setHighlightEndIndex(null);
@@ -493,17 +517,17 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
     const container = containerRefs.current[outputIndex];
     if (!container) return;
 
-    console.log('tabs!!!!!!!!!>>>', tabs);
-    console.log('tabIndex!!!!!!!!!>>>', tabIndex);
-    console.log('itemIndex!!!!!!!!!>>>', itemIndex);
-    console.log('outputIndex!!!!!!!!!>>>', outputIndex);
+    // console.log('tabs!!!!!!!!!>>>', tabs);
+    // console.log('tabIndex!!!!!!!!!>>>', tabIndex);
+    // console.log('itemIndex!!!!!!!!!>>>', itemIndex);
+    // console.log('outputIndex!!!!!!!!!>>>', outputIndex);
     let fullString;
     if (itemIndex !== '' && itemIndex !== null) {
       fullString = currentEditingCopy.replace(/<span class="new_content">|<\/span>/g, '').replace(/<span class="cursor">|<\/span>/g, '');
     }else {
       fullString = currentEditingCopy.replace(/<span class="new_content">|<\/span>/g, '').replace(/<span class="cursor">|<\/span>/g, '');
     }
-    console.log('fullString>>>>>>>>>>>>>', fullString);
+    // console.log('fullString>>>>>>>>>>>>>', fullString);
 
     const selection = window.getSelection();
     if (!selection || selection.rangeCount === 0) return;
@@ -515,11 +539,9 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
 
     // Get start and end indexes in the rendered text
     const startIndexRendered = preSelectionRange.toString().length;
-    console.log('startIndexRendered:', startIndexRendered);
+    // console.log('startIndexRendered:', startIndexRendered);
     const endIndexRendered = startIndexRendered + range.toString().length;
-    console.log('charMaps:', charMaps);
-
-    console.log("charMaps[outputIndex]:", charMaps[outputIndex]);
+    // console.log('endIndexRendered:', endIndexRendered);
     // Convert to markdown indexes using charMaps
     const markdownStartIndex = charMaps[0]?.find((map) => map.renderedIndex === startIndexRendered)?.markdownIndex ?? -1;
     const markdownEndIndex = charMaps[0]?.find((map) => map.renderedIndex === endIndexRendered)?.markdownIndex ?? -1;
@@ -527,21 +549,21 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
     // Extract selected text from the original Markdown
     const selectedMarkdownText = fullString.slice(markdownStartIndex + 1, markdownEndIndex + 1);
 
-    console.log('Start Index in Markdown:', markdownStartIndex);
-    console.log('End Index in Markdown:', markdownEndIndex);
-    console.log('Selected Markdown Text:', selectedMarkdownText);
+    // console.log('Start Index in Markdown:', markdownStartIndex);
+    // console.log('End Index in Markdown:', markdownEndIndex);
+    // console.log('Selected Markdown Text:', selectedMarkdownText);
 
     if (markdownStartIndex === markdownEndIndex) {
       setIsRefineBox(false);
       const extractedText = fullString.substring(markdownStartIndex + 2, markdownStartIndex + 31);
       setClickedText(extractedText);
-      console.log('extractedText', extractedText);
+      // console.log('extractedText', extractedText);
       let clickedHtml;
       // Get the character at start index
       const charAfterStart = fullString[markdownStartIndex +1] || "";
       const charBeforeStart = fullString[markdownStartIndex] || "";
-      console.log('charAfterStart:', charAfterStart);
-      console.log('charBeforeStart:', charBeforeStart);
+      // console.log('charAfterStart:', charAfterStart);
+      // console.log('charBeforeStart:', charBeforeStart);
 
       console.log('before text:',`${fullString.slice(0, markdownStartIndex +1)}`);
       console.log('after text:',`${fullString.slice(markdownStartIndex + 2)}`);
@@ -576,7 +598,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
   };
 
   const handleMouseClick = (event: React.MouseEvent, tabIndex:number, itemIndex:any, outputIndex:number) => {
-    console.log('editInputValues 2:', editInputValues);
+    // console.log('editInputValues 2:', editInputValues);
     const container = containerRefs.current[outputIndex];
     if (!container) return;
     
@@ -592,12 +614,12 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
 
     const caretIndex = preCaretRange.toString().length;
 
-    console.log('caretIndex>>>>>>>', caretIndex);
-    console.log('charMaps>>>>>>>', charMaps);
+    // console.log('caretIndex>>>>>>>', caretIndex);
+    // console.log('charMaps>>>>>>>', charMaps);
     const markdownIndex = charMaps[outputIndex]?.find((map) => map.renderedIndex === caretIndex)?.markdownIndex ?? -1;
     const extractedText = currentEditingCopy.substring(markdownIndex + 1, markdownIndex + 30);
-    console.log("Mapped index in markdown:>>>>>>>>", markdownIndex);
-    console.log("Mapped extractedText:>>>>>>>>", extractedText);
+    // console.log("Mapped index in markdown:>>>>>>>>", markdownIndex);
+    // console.log("Mapped extractedText:>>>>>>>>", extractedText);
     setClickedText(extractedText);
     setIsTextIndex(markdownIndex + 1);
 
@@ -618,15 +640,13 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
     }
     const startIndex = fullString.indexOf(clickedWord, wordStart);
 
-
     const result:any = findMatch(fullString, clickedWord);
 
     // console.log('result>>>', result);
-
     // console.log('handleMouseClick startIndex', startIndex);
     // console.log('word index', Math.round(clickedWord.length/2));
-    console.log('clickedWord', clickedWord);
-    console.log('wordStart', wordStart);
+    // console.log('clickedWord', clickedWord);
+    // console.log('wordStart', wordStart);
     if (selection && selection.rangeCount > 0) {
       const range = selection.getRangeAt(0);
       const parentElement = range.startContainer.parentElement;
@@ -665,8 +685,8 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
           relativeCursorIndex + 20
         );
 
-        console.log('long index', fullString.length);
-        console.log('short index', (container.textContent || "".replace(/\n/g, ' ')).length);
+        // console.log('long index', fullString.length);
+        // console.log('short index', (container.textContent || "".replace(/\n/g, ' ')).length);
         
         if (afterText.length < 20) {
           const textContent2 = container.textContent || "";
@@ -676,10 +696,10 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
           if (firstIndex === -1) return ''; // Return empty string if 'textB' is not found
           const startPos = firstIndex + beforeText.length; // Get the index after 'textB'
           const secondAfterText = noNewlineContent.slice(startPos, startPos + 20);
-          console.log('secondAfterText', secondAfterText);
+          // console.log('secondAfterText', secondAfterText);
           // setClickedText(secondAfterText);
         }else {
-          console.log('afterText', afterText);
+          // console.log('afterText', afterText);
           if (result) {
             // setClickedText(afterText);
           }else {
@@ -696,7 +716,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
     //   setIsTextIndex(wordStart);
     // }
 
-    console.log('index>>', startIndex + Math.round(clickedWord.length/2))
+    // console.log('index>>', startIndex + Math.round(clickedWord.length/2))
     
     setSelectedText("");
   };
@@ -704,8 +724,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
 
   useEffect(() => {
     const processAnswer = async () => {
-      const answer = currentEditingCopy.replace(/<span class="new_content">|<\/span>/g, '').replace(/<span class="cursor">|<\/span>/g, ''); // Replace this with the actual answer variable
-      console.log('currentEditingCopy>>>>', answer);
+      const answer = currentEditingCopy.replace(/<span class="new_content">|<\/span>/g, '').replace(/<span class="cursor">|<\/span>/g, '');
   
       const tempMap: { renderedIndex: number; markdownIndex: number }[] = [];
       let mdIndex = 0; // Index in the original markdown
@@ -754,7 +773,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
     const preText = fullString.slice(0, start);
     const highlightedText = fullString.slice(start, end);
     const postText = fullString.slice(end);
-    console.log('highlightHTMLText:', highlightedText);
+    // console.log('highlightHTMLText:', highlightedText);
     // const highlightedWithSpans = highlightedText
     //   .split("\n")
     //   .map((line) => {
@@ -808,7 +827,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
     )
     .join("\n\n"); // Preserve paragraph breaks
   
-    console.log('highlightedWithSpans:', highlightedWithSpans);
+    // console.log('highlightedWithSpans:', highlightedWithSpans);
     return `${preText}${highlightedWithSpans}${postText}`;
   };
 
@@ -846,12 +865,12 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
   // /////////
   
   const handleChangeEditor = (updatedMarkdown: string) => {
-    console.log('handleChangeEditor', updatedMarkdown);
+    // console.log('handleChangeEditor', updatedMarkdown);
     document.querySelectorAll('._contentEditable_uazmk_379').forEach(element => {
       element.setAttribute('spellcheck', 'false');
     });
     const cleanedText = updatedMarkdown.replace(/\\_/g, "_").replace(/\n\n/g, "\n");
-    console.log('cleanedText', cleanedText);
+    // console.log('cleanedText', cleanedText);
     setEditorChangedText(cleanedText);
   }
   
@@ -887,18 +906,18 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
       // setIsRefineBox(true);
       setIsRefineBox(prevState => !prevState);
     }
-    console.log('_identifier', _identifier);
+    // console.log('_identifier', _identifier);
   }
   /* refine Selected Text end */
 
   /* --------refine Selected copy start-------- */
   const submitRefineQuestion = (data:any, identifier:any, selecteText:any) => {
-    console.log('submitRefineQuestion', data);
-    console.log('isRefineDetails', isRefineDetails);
-    console.log('isRefineText',isRefineText);
-    console.log('text>>>>>',selecteText);
-    console.log('selectedText>>>>>',selectedText);
-    console.log('isRefineType>>>>', isRefineType);
+    // console.log('submitRefineQuestion', data);
+    // console.log('isRefineDetails', isRefineDetails);
+    // console.log('isRefineText',isRefineText);
+    // console.log('text>>>>>',selecteText);
+    // console.log('selectedText>>>>>',selectedText);
+    // console.log('isRefineType>>>>', isRefineType);
     let refineData:any;
     if (identifier === 'edit_insert') {
       refineData = {
@@ -917,7 +936,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
         question: null
       }
     }else {
-      console.log('regenarate', selecteText);
+      // console.log('regenarate', selecteText);
       refineData = {
         copy_version_id: isRefineDetails.outputItem.input_params.copy_version_id,
         request_type: identifier,
@@ -927,6 +946,13 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
       }
     }
     console.log('refineData', refineData);
+    
+    // Clear manual edits when using UI buttons (refine/regenerate/insert)
+    // Don't clear for edit_manual as that's the save operation itself
+    if (identifier !== 'edit_manual') {
+      setEditorChangedText('');
+    }
+    
     genarateRefineCopy(refineData);
     // setIsRefineBox(false);
     // setSelectedText('');
@@ -979,7 +1005,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
   };
 
   const handleSubmitChatAnswer = (tabIndex:any, itemIndex:any) => {
-    console.log('Value for item', inputValues[tabIndex]);
+    // console.log('Value for item', inputValues[tabIndex]);
 
     if (itemIndex !== '') {
       let arrayItem = JSON.stringify(tabs[tabIndex].data[itemIndex]);
@@ -987,7 +1013,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
       let parseArrayItem:any =  JSON.parse(arrayItem);
       let inputParams = parseArrayItem.input_params;
       inputParams.question = inputValues[tabIndex][itemIndex];
-      console.log('a', inputParams);
+      // console.log('a', inputParams);
 
       handleButtonClick('chat_refine', tabIndex, itemIndex, parseArrayItem.input_params);
     }else {
@@ -996,7 +1022,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
       let parseArrayItem:any =  JSON.parse(arrayItem);
       let inputParams = parseArrayItem.input_params;
       inputParams.question = inputValues[tabIndex];
-      console.log('a', inputParams);
+      // console.log('a', inputParams);
 
       handleButtonClick('chat_refine', tabIndex, '', parseArrayItem.input_params);
     }
@@ -1008,25 +1034,25 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
     let content;
     if (identifier  === 'multiple') {
       content = text.map((item: { answer: any; }) => item.answer + '\n\n\n')
-      console.log('content>>', content);
+      // console.log('content>>', content);
     }else {
       content = text;
     }
     try {
       await navigator.clipboard.writeText(content);
     } catch (err) {
-      console.log('err', err);
+      console.error('Clipboard error:', err);
     }
   };
   /* Copy text to clipboard end */
 
   /* ---------------Export to doc start--------------- */
   const exportToDoc = (identifier:any, data:any) => {
-    console.log('data', data);
+    // console.log('data', data);
     let content;
     if (identifier  === 'multiple') {
       content = data.map((item: { answer: any; }) => item.answer + '\n\n\n')
-      console.log('content>>', content);
+      // console.log('content>>', content);
     }else {
       content = data;
     }
@@ -1051,10 +1077,10 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
   /* ----------------star rating start---------------- */
   const handleTotalRatingClick = async (tabIndex:number, itemIndex:any, outputIndex:number, copy_version_id:string, rating: number) => {
 
-    console.log('item', copy_version_id);
-    console.log('rating', rating);
+    // console.log('item', copy_version_id); 
+    // console.log('rating', rating); 
 
-    console.log(tabIndex +'/'+ itemIndex +'/'+ outputIndex)
+    // console.log(tabIndex +'/'+ itemIndex +'/'+ outputIndex)
     let starItem:any = {
       feedback_type: "user",
       copy_version_id: copy_version_id,
@@ -1079,16 +1105,16 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
     };
     if (itemIndex !== '' && itemIndex !== null) {
       tabs[tabIndex].data[itemIndex].outputs[outputIndex].rating = rating;
-      console.log('tabs@@@@', tabs)
+      //  console.log('tabs@@@@', tabs)
     }else {
       tabs[tabIndex].outputs[outputIndex].rating = rating;
     }
-    console.log('tabs', tabs);
+    //  console.log('tabs', tabs); 
     // Open the modal with the updated item
     setSelectedItem(starItem);
     setIsModalOpen(true);
 
-    console.log('selectedItem', selectedItem);
+    // console.log('selectedItem', selectedItem); 
 
     let formUrl = apiUrl + '/feedback/';
     try {
@@ -1102,7 +1128,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
       });
   
       const responseData = await response.json();
-      console.log('Success:', responseData);
+      // console.log('Success:', responseData);
 
       if (response.ok && !responseData.ErrorMessage) {
         // setIsShowError(true);
@@ -1115,7 +1141,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
   };
 
   const handleFeedbackSave = async (updatedItem: any) => {
-    console.log('updatedItem', updatedItem);
+    // console.log('updatedItem', updatedItem);
     setIsModalOpen(false);
     if (updatedItem.rating === 5) {
       openFeedbackAlert(updatedItem.copy_version_id);
@@ -1123,7 +1149,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
 
     if (updatedItem.itemIndex !== '' && updatedItem.itemIndex !== null) {
       tabs[updatedItem.tabIndex].data[updatedItem.itemIndex].outputs[updatedItem.outputIndex].rating = updatedItem.rating;
-      console.log('tabs@@@@', tabs)
+      // console.log('tabs@@@@', tabs)
     }else {
       tabs[updatedItem.tabIndex].outputs[updatedItem.outputIndex].rating = updatedItem.rating;
     }
@@ -1149,7 +1175,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
       });
   
       const responseData = await response.json();
-      console.log('Success:', responseData);
+      // console.log('Success:', responseData);
 
       if (response.ok && !responseData.ErrorMessage) {
         setIsShowError(true);
@@ -1199,7 +1225,11 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
 
                     {tabItem.outputs.length > 0 ?
                       <>
-                        {tabItem.outputs.map((outputItem:any, outputIndex) => (
+                        {tabItem.outputs.map((outputItem:any, outputIndex) => {
+                          if (outputItem.input_params?.status === 'discarded') {
+                            return null;
+                          }
+                          return (
                           <div onClick={() => selectCopyCopyVersionId(tabIndex, itemIndex, outputIndex, outputItem)} className='shadow-md rounded-md mb-1.5 relative' key={outputIndex}>
                             {/* Show the output copy */}
                             {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === itemIndex && editVisibility.outputIndex === outputIndex ?
@@ -1318,7 +1348,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
                                 </IonButton>
                                 {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === itemIndex && editVisibility.outputIndex === outputIndex ? 
                                   <>
-                                    <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Save answer' className='text-xs' onClick={() => {console.log('editorChangedText>>', editorChangedText); console.log('saveAnswerValue>>', editInputValues[tabIndex][itemIndex][outputIndex]), saveAnswerChange(editorChangedText || editInputValues[tabIndex][itemIndex][outputIndex], outputItem.input_params.copy_version_id, 'saveMode'); handleEditingMode(tabIndex, itemIndex, outputIndex, false)}} shape="round">
+                                    <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Save answer' className='text-xs' onClick={() => {saveAnswerChange(editorChangedText || editInputValues[tabIndex][itemIndex][outputIndex], outputItem.input_params.copy_version_id, 'saveMode'); handleEditingMode(tabIndex, itemIndex, outputIndex, false)}} shape="round">
                                       <IonIcon className='' slot="icon-only" icon={saveOutline}></IonIcon>
                                     </IonButton>
 
@@ -1342,7 +1372,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
                               </div>
                             </div>
                           </div>
-                        ))}
+                         );})}
                         {!tabItem.answer &&
                           <IonSpinner name="dots"></IonSpinner>
                         }
@@ -1438,6 +1468,9 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
               {tabItem.outputs.length !== 0 ?
                 <>
                   {tabItem.outputs.map((outputItem:any, outputIndex:number) => {
+                    if (outputItem.input_params?.status === 'discarded') {
+                      return null;
+                    }
                     const containerRef = React.createRef<HTMLDivElement>();
                     const boxIndex = tabIndex * 10 + outputIndex;
                     return (

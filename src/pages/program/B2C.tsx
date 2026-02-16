@@ -577,57 +577,124 @@ const B2C: React.FC = () => {
       });
   
       const responseData = await response.json();
-      console.log('Success:', responseData);
   
       if (response.ok && !responseData.ErrorMessage) {
         setNoSegmentArray(arrayNoSegment);
         setTabArray(arrayTab);
-        console.log('tabs>>>', tabs);
-        console.log('arrayTab>>>', arrayTab);
-        console.log('arrayNoSegment>>>', arrayNoSegment);
   
-        if (arrayTab !== undefined) {
+        const backendResponse = responseData.responses[0];
+        const responseFormatId = backendResponse.input_params.format_id;
+        const responseCopyId = backendResponse.input_params.copy_id;
+  
+        if (arrayTab !== undefined && arrayTab.length > 0) {
           arrayTab = arrayTab.map((segment: { segment_id: any; segment_name: any; data: any[] }) => {
-            if (segment.segment_id === responseData.responses[0].input_params.segment_id) {
-              segment.data = segment.data.map((format: any) => {
-                if (format.format_id === responseData.responses[0].input_params.format_id) {
-                  let replaceOutput = format.outputs.map((output:innerOutput) => 
-                    output.input_params.copy_version_id === data.copy_version_id 
-                    ? { 
-                        ...responseData.responses[0], 
-                        timestamp: Date.now() 
+            segment.data = segment.data.map((format: any) => {
+              // Match by format_id AND copy_id to ensure we're updating the right copy
+              const formatMatches = format.format_id === responseFormatId;
+              const copyMatches = format.input_params?.copy_id === responseCopyId;
+              
+              if (formatMatches && copyMatches) {
+                // Ensure the backend response (original version) exists in outputs as active
+                const originalExists = format.outputs.some((output: innerOutput) => 
+                  output.input_params.copy_version_id === backendResponse.input_params.copy_version_id
+                );
+                
+                let updatedOutputs;
+                if (!originalExists) {
+                  // Add the original version from backend response
+                  updatedOutputs = [
+                    ...format.outputs.map((output: innerOutput) => {
+                      if (output.input_params.copy_version_id === data.discard_copy_version_id) {
+                        return {
+                          ...output,
+                          input_params: {
+                            ...output.input_params,
+                            status: 'discarded'
+                          }
+                        };
                       }
-                    : output
-                  );
-                  return {
-                    ...format,
-                    answer: DOMPurify.sanitize(responseData.responses[0].answer),
-                    input_params: responseData.responses[0].input_params,
-                    outputs: replaceOutput
-                  };
+                      return output;
+                    }),
+                    backendResponse
+                  ];
+                } else {
+                  // Just mark the discarded one
+                  updatedOutputs = format.outputs.map((output: innerOutput) => {
+                    if (output.input_params.copy_version_id === data.discard_copy_version_id) {
+                      return {
+                        ...output,
+                        input_params: {
+                          ...output.input_params,
+                          status: 'discarded'
+                        }
+                      };
+                    }
+                    return output;
+                  });
                 }
-                return format;
-              });
-            }
+                
+                return {
+                  ...format,
+                  answer: DOMPurify.sanitize(backendResponse.answer),
+                  input_params: backendResponse.input_params,
+                  outputs: updatedOutputs
+                };
+              }
+              return format;
+            });
             return segment;
           });
           setTabs(arrayTab);
         } else {
-          arrayNoSegment = arrayNoSegment.map((format: { format_id: any; outputs: innerOutput[] }) => {
-            if (format.format_id === responseData.responses[0].input_params.format_id || format.format_id === 'customPrompts') {
-              let replaceOutput = format.outputs.map((output:innerOutput) => 
-                output.input_params.copy_version_id === data.copy_version_id 
-                ? { 
-                    ...responseData.responses[0], 
-                    timestamp: Date.now() 
-                  }
-                : output
+          arrayNoSegment = arrayNoSegment.map((format: { format_id: any; outputs: innerOutput[]; input_params?: any }) => {
+            const formatMatches = format.format_id === responseFormatId || format.format_id === 'customPrompts';
+            const copyMatches = format.input_params?.copy_id === responseCopyId;
+            
+            if (formatMatches && copyMatches) {
+              // Ensure the backend response (original version) exists in outputs as active
+              const originalExists = format.outputs.some((output: innerOutput) => 
+                output.input_params.copy_version_id === backendResponse.input_params.copy_version_id
               );
+              
+              let updatedOutputs;
+              if (!originalExists) {
+                // Add the original version from backend response
+                updatedOutputs = [
+                  ...format.outputs.map((output: innerOutput) => {
+                    if (output.input_params.copy_version_id === data.discard_copy_version_id) {
+                      return {
+                        ...output,
+                        input_params: {
+                          ...output.input_params,
+                          status: 'discarded'
+                        }
+                      };
+                    }
+                    return output;
+                  }),
+                  backendResponse
+                ];
+              } else {
+                // Just mark the discarded one
+                updatedOutputs = format.outputs.map((output: innerOutput) => {
+                  if (output.input_params.copy_version_id === data.discard_copy_version_id) {
+                    return {
+                      ...output,
+                      input_params: {
+                        ...output.input_params,
+                        status: 'discarded'
+                      }
+                    };
+                  }
+                  return output;
+                });
+              }
+              
               return {
                 ...format,
-                answer: DOMPurify.sanitize(responseData.responses[0].answer),
-                input_params: responseData.responses[0].input_params,
-                outputs: replaceOutput
+                answer: DOMPurify.sanitize(backendResponse.answer),
+                input_params: backendResponse.input_params,
+                outputs: updatedOutputs
               };
             }
             return format;
@@ -828,6 +895,13 @@ const B2C: React.FC = () => {
 
       // If no match found or type_of_content is null → exclude
       if (!format || format.type_of_content === null) return null;
+
+      // Check status - only include Active versions, exclude Discarded
+      const status = item.status || item.input_params?.status || item.copy_status;
+      if (status && status.toLowerCase() !== 'active') {
+        console.log(`Excluding copy version ${item.input_params?.copy_version_id} with status: ${status}`);
+        return null;
+      }
 
       // Add type_of_content to the item
       return {
