@@ -9,13 +9,15 @@ import SelectDropdown from '../../../components/dropdown/Dropdown';
 import { Tooltip } from 'react-tooltip';
 
 interface ExampleAddModel {
-  example: string;
+  json_answer: string;
   example_id: string;
   segment_id: string;
   purpose_id: string;
   format_id: string;
   user_prompt: string;
-  products: string;
+  product_names: string[];
+  product_ids: string[];
+  copy_version_id: string;
   status: string;
   test_results: number[] | null;
   created_at: string;
@@ -23,6 +25,7 @@ interface ExampleAddModel {
   b2b: number | boolean;
   b2c: number | boolean;
   example_type: string;
+  use_cases: string[];
 }
 
 interface FilterModel {
@@ -49,6 +52,7 @@ interface Formats {
   format_written_description: string;
   b2b: number;
   b2c: number;
+  use_cases: string[];
 }
 
 const Examples: React.FC = () => {
@@ -60,7 +64,7 @@ const Examples: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isOpenModal, setIsOpenModal] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
-  const [targetIndex, setTargetIndex] = useState<any>();
+  const [targetItem, setTargetItem] = useState<ExampleAddModel | string[] | undefined>();
   const [segments, setSegments] = useState<Segment[]>([]);
   const [purposes, setPurposes] = useState<Purposes[]>([]);
   const [formats, setFormats] = useState<Formats[]>([]);
@@ -78,6 +82,7 @@ const Examples: React.FC = () => {
 
   const isAllSelected = selectedIds.length === exampleList.length;
   const [isAlertHeader, setIsAlertHeader] = useState('');
+  const [isAlertType, setIsAlertType] = useState('');
   const [isAlertSubHeader, setIsAlertSubHeader] = useState('');
   const [isAscending, setIsAscending] = useState(true);
   const [sortField, setSortField] = useState<"created_at" | "updated_at">("created_at");
@@ -133,41 +138,29 @@ const Examples: React.FC = () => {
 
   /* ---------change data by select checkbox start--------- */
   const handleChangeData = (_identifier:string) => {
+    setIsEdit(true);
     console.log('_identifier', _identifier);
     if (_identifier === 'active') {
       setIsAlertHeader('Approve examples!');
       setIsAlertSubHeader('Do you want to approve this example/these examples?');
-
-      let updatedExamples = filterExampleList.map((item) =>
-        selectedIds.includes(item.example_id)
-          ? { ...item, status: "active", updated_at: getCurrentTimestamp()  }
-          : item
-      );
-
-      console.log('updatedExamples', updatedExamples);
-      handleAleart(true, updatedExamples);
+      setIsAlertType('active');
+      handleAleart(true, selectedIds, 'active');
     }else if (_identifier === 'discarded') {
       setIsAlertHeader('Reject examples!');
       setIsAlertSubHeader('Do you want to reject this example/these examples?');
-
-      let updatedExamples = filterExampleList.map((item) =>
-        selectedIds.includes(item.example_id)
-          ? { ...item, status: "discarded", updated_at: getCurrentTimestamp() }
-          : item
-      );
-
-      console.log('updatedExamples', updatedExamples);
-      handleAleart(true, updatedExamples);
+      setIsAlertType('discarded');
+      handleAleart(true, selectedIds, 'discarded');
     }else if (_identifier === 'delete') {
       setIsAlertHeader('Delete examples!');
       setIsAlertSubHeader('Do you want to delete this example/these examples?');
-
-      let updatedExamples = filterExampleList.filter(
-        (item) => !selectedIds.includes(item.example_id)
-      );
+      setIsAlertType('delete');
+      console.log('selectedIds', selectedIds);
+      // let updatedExamples = filterExampleList.filter(
+      //   (item) => !selectedIds.includes(item.example_id)
+      // );
   
-      console.log("Updated Examples:", updatedExamples);
-      handleAleart(true, updatedExamples);
+      // console.log("Updated Examples:", updatedExamples);
+      handleAleart(true, selectedIds, 'delete');
     }
   }
   /* change data by select checkbox end */
@@ -179,11 +172,10 @@ const Examples: React.FC = () => {
   };
   const toggleSort = () => {
     const sorted = [...exampleList].sort((a, b) => {
-      const dateA = parseDate(a[sortField]).getTime();
-      const dateB = parseDate(b[sortField]).getTime();
+      const dateA = new Date(a[sortField]).getTime();
+      const dateB = new Date(b[sortField]).getTime();
       return isAscending ? dateA - dateB : dateB - dateA;
     });
-    console.log('sorted', sorted);
     setExampleList(sorted);
     setIsAscending(!isAscending); // Toggle the sorting direction
     console.log('toggleSort:', filterExampleList);
@@ -194,7 +186,7 @@ const Examples: React.FC = () => {
   const getExamplesData = async () => {
     setLoading(true);
     try {
-      const urlData = apiUrl + '/resource/get?table=examples';
+      const urlData = apiUrl + '/example/';
       setValue("purpose_id", '');
       setValue("segment_id", '');
       setValue("format_id", '');
@@ -227,7 +219,7 @@ const Examples: React.FC = () => {
   /* -------------get segments data start------------- */
   const getSegmentsData = async () => {
     try {
-      const urlData = apiUrl + '/resource/get?table=segments&use_case=content_creation_b2c&columns=segment_id&columns=segment_name';
+      const urlData = apiUrl + '/resource/segment?filter=use_cases:b2c&filter=status:active&columns=segment_id&columns=segment_name';
 
       const response = await fetch(urlData, {
         method: 'GET',
@@ -251,7 +243,7 @@ const Examples: React.FC = () => {
   /* -------------get purposes data start------------- */
   const getPurposesData = async () => {
     try {
-      const urlData = apiUrl + '/resource/get?table=purposes&use_case=content_creation_b2c&columns=purpose_id&columns=purpose_name';
+      const urlData = apiUrl + '/resource/purpose?filter=use_cases:b2c&filter=status:active&columns=purpose_id&columns=purpose_name';
 
       const response = await fetch(urlData, {
         method: 'GET',
@@ -275,7 +267,7 @@ const Examples: React.FC = () => {
   /* -------------get formats data start------------- */
   const getFormatsData = async () => {
     try {
-      const urlData = apiUrl + '/resource/get?table=formats&columns=format_id&columns=format_name&columns=b2b&columns=b2c';
+      const urlData = apiUrl + '/resource/format?filter=use_cases:b2c&filter=use_cases:b2b&filter=status:active&columns=format_id&columns=format_name&columns=use_cases';
 
       const response = await fetch(urlData, {
         method: 'GET',
@@ -301,7 +293,7 @@ const Examples: React.FC = () => {
   const onModalDismiss = () => {
     setIsOpenModal(false);
     setIsEdit(false);
-    setValue("example", '');
+    setValue("json_answer", '');
     setValue("example_id", '');
     setValue("segment_id", '');
     setValue("purpose_id", '');
@@ -311,15 +303,35 @@ const Examples: React.FC = () => {
     setValue("b2c", false);
   }
 
-  const handleAleart = (_indicator: boolean, _value: any) => {
+  const handleAleart = (_indicator: boolean, _value: any, _type: string) => {
     if (_indicator === true) {
       setIsOpen(true);
-      setTargetIndex(_value);
+      setTargetItem(_value);
+      setIsAlertType(_type);
     } else if (_indicator === false) {
-
-      console.log('targetIndex', targetIndex);
+      
+      console.log('targetItem', targetItem);
+          
+      if (targetItem) {
+        // Filter exampleList to find matching example_id(s) from targetItem
+        const matchedExamples = exampleList.filter(item => 
+          Array.isArray(targetItem) ? targetItem.includes(item.example_id) : targetItem.example_id === item.example_id
+        );
+        
+        console.log('matchedExamples', matchedExamples);
+        
+        // Pass matched objects to handleExamplesUpdate
+        if (matchedExamples.length > 0) {
+          matchedExamples.forEach(matchedItem => {
+            if (_type !== 'delete') {
+              handleExamplesUpdate({...matchedItem, status: _type}, _type);
+            } else {
+              handleExamplesUpdate(matchedItem, _type);
+            }
+          });
+        }
+      }
       setIsOpen(false);
-      handleExamplesUpdate(targetIndex);
     }
 
   }
@@ -327,27 +339,30 @@ const Examples: React.FC = () => {
   /* modal functions end */
 
   /* handle edit start */
-  const handleEdit = (_value: any, _index: number) => {
+  const handleEdit = (_value: any) => {
     console.log('_value', _value);
-    setValue("example", _value.example);
+    setValue("json_answer", _value.json_answer);
     setValue("example_id", _value.example_id);
     setValue("example_type", _value.example_type);
     setValue("segment_id", _value.segment_id);
     setValue("purpose_id", _value.purpose_id);
+    setValue("product_ids", _value.product_ids);
+    setValue("product_names", _value.product_names);
+    setValue("copy_version_id", _value.copy_version_id);
     setValue("format_id", _value.format_id);
     setValue("user_prompt", _value.user_prompt);
     setValue("status", _value.status);
     setValue("test_results", _value.test_results);
-    setValue("products", _value.products);
+    // setValue("products", _value.products);
     setValue("created_at", _value.created_at);
     setValue("status", _value.status); 
 
-    if (_value.b2b === 1) {
+    if (_value.use_cases && _value.use_cases.includes("b2b")) {
       setValue("b2b", true);
     } else {
       setValue("b2b", false);
     }
-    if (_value.b2c === 1) {
+    if (_value.use_cases && _value.use_cases.includes("b2c")) {
       setValue("b2c", true);
     } else {
       setValue("b2c", false);
@@ -355,7 +370,7 @@ const Examples: React.FC = () => {
 
     setIsOpenModal(true);
     setIsEdit(true);
-    setTargetIndex(_index);
+    setTargetItem(_value);
     console.log('toggleSort:', filterExampleList);
   }
   /* handle edit end */
@@ -429,57 +444,38 @@ const Examples: React.FC = () => {
     console.log('handleFormSubmit', data);
 
     let payLoad: any = {};
-    payLoad.example = data.example;
+    payLoad.json_answer = data.json_answer;
     payLoad.example_type = data.example_type;
     payLoad.format_id = data.format_id;
-    payLoad.products = data.products;
+    payLoad.product_names = data.product_names;
+    payLoad.product_ids = data.product_ids;
     payLoad.purpose_id = data.purpose_id;
     payLoad.segment_id = data.segment_id;
+    payLoad.copy_version_id = data.copy_version_id;
     payLoad.user_prompt = data.user_prompt;
-    payLoad.example_id = data.example_id;
+    payLoad.example_id = data.example_id || (() => {
+      const maxNum = exampleList.reduce((max, item) => {
+      const match = item.example_id.match(/^ex(\d+)$/);
+      return match ? Math.max(max, parseInt(match[1], 10)) : max;
+      }, 0);
+      return `ex${maxNum + 1}`;
+    })();
     payLoad.test_results = data.test_results;
     payLoad.status = data.status;
     payLoad.created_at = data.created_at ? data.created_at : getCurrentTimestamp();
     payLoad.updated_at = getCurrentTimestamp();
 
+    payLoad.use_cases = [];
     if (data.b2b === true) {
-      payLoad.b2b = 1;
-    } else {
-      payLoad.b2b = 0;
+      payLoad.use_cases.push("b2b");
     }
-
     if (data.b2c === true) {
-      payLoad.b2c = 1;
-    } else {
-      payLoad.b2c = 0;
+      payLoad.use_cases.push("b2c");
     }
+    
 
-
-
-    let prevExampleList = filterExampleList;
-    let index: any = getExampleIdIndices(filterExampleList, payLoad.example_id);
-
-    console.log('finalData', payLoad);
-    console.log('targetIndex', index[0]);
-    console.log('index@@', );
-    if (isEdit === true) {
-      console.log('edit')
-      prevExampleList.splice(index[0], 1, payLoad);
-    } else {
-      console.log('no edit');
-      const maxExampleId = Math.max(
-        ...exampleList.map(item => parseInt(item.example_id.replace('ex', ''), 10))
-      );
-      console.log('maxExampleId', maxExampleId);
-      payLoad.example_id = `ex${maxExampleId + 1}`;
-      payLoad.test_results = [];
-      prevExampleList = [...filterExampleList, payLoad];
-    }
-
-
-    console.log('prevList', prevExampleList);
-
-    handleExamplesUpdate(prevExampleList);
+    console.log('payLoad', payLoad);
+    handleExamplesUpdate(payLoad, isEdit ? 'edit' : 'add');
   }
 
   const getExampleIdIndices = (arr: ExampleAddModel[], id: string): number[] => {
@@ -504,56 +500,48 @@ const Examples: React.FC = () => {
     return duplicates;
   };
 
-  const handleExamplesUpdate = async (allExample: ExampleAddModel[]) => {
+  const handleExamplesUpdate = async (exampleItem: any, type?: string) => {
     setLoading(true);
-    let formUrl = apiUrl + '/resource/put';
-    console.log('payload', allExample);
-
-    let updatedExamples = allExample;
-
-    console.log('Duplicates>>>>', getDuplicateExampleIds(allExample));
-
-    let finalPayload = {
-      table: "examples",
-      json_obj: updatedExamples
-    }
+    console.log('payload', exampleItem);
+    console.log('type', type);
+    console.log('isEdit', isEdit);
 
     try {
-      const response = await fetch(formUrl, {
-        method: HTTPMethod.PUT,
-        headers: {
-          '"removed"': `${NetworkInfo.ACCESSTOKEN}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(finalPayload),
-      });
-      const responseData = await response.json();
-      console.log("Success:", responseData);
+        const response = await fetch(isEdit ? NetworkInfo.URL + '/example/'+exampleItem.example_id : NetworkInfo.URL + '/example/', {
+          method: isEdit && type === 'delete' ? HTTPMethod.DELETE : isEdit && type !== 'delete' ? HTTPMethod.PATCH  : HTTPMethod.POST,
+          headers: {
+            '"removed"': `${NetworkInfo.ACCESSTOKEN}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(exampleItem),
+        });
+        const responseData = await response.json();
+        console.log("Success:", responseData);
 
-      if (response.ok) {
-
-        if (responseData.ErrorMessage) {
-          console.error("Error response:", responseData);
-          setIsShowError(true);
-          setIsErrorMsg(responseData.ErrorMessage);
-          setLoading(false);
-
-        } else {
-          setIsShowError(true);
-          setIsErrorMsg(responseData);
-          reset();
-          setLoading(false);
-          setIsEdit(false);
-          setTargetIndex(-1);
-          getExamplesData();
-          onModalDismiss();
+        if (response.ok) {
+          if (responseData.ErrorMessage) {
+            console.error("Error response:", responseData);
+            setIsShowError(true);
+            setIsErrorMsg(responseData.ErrorMessage);
+            setLoading(false);
+          } else {
+            setIsShowError(true);
+            setIsErrorMsg(responseData.message || 'Example saved successfully');
+            reset();
+            setLoading(false);
+            setIsEdit(false);
+            setTargetItem(undefined);
+            getExamplesData();
+            onModalDismiss();
+            setSelectedIds([]);
+          }
         }
+      } catch (error: any) {
+        console.error("Failed:", error);
+        setLoading(false);
+        setIsShowError(true);
+        setIsErrorMsg(error.message || "Request failed");
       }
-
-    } catch (error: any) {
-      console.error("Login failed:", error);
-      setLoading(false);
-    }
   };
   /* Handle form submit end */
 
@@ -646,7 +634,7 @@ const Examples: React.FC = () => {
                           validate: {},
                         })}>
                         {formats.map((item, index) => (
-                          <IonSelectOption key={index} value={item.format_id}>{item.format_name} ({getLabel(item.b2b, item.b2c)})</IonSelectOption>
+                          <IonSelectOption key={index} value={item.format_id}>{item.format_name} ({item.use_cases && item.use_cases.includes("b2b") && 'B2B'} {item.use_cases && item.use_cases.includes("b2c") && 'B2C'})</IonSelectOption>
                         ))}
                       </IonSelect>
                     </IonCol>
@@ -793,23 +781,23 @@ const Examples: React.FC = () => {
                           <IonCol size='4'><p><b>Format Id:</b> {item.format_id}</p></IonCol>
                           <IonCol size='4'>
                             <p>
-                              <b>B2B:</b> {item.b2b === 1 ? 'Yes' : item.b2b === 0 ? 'No' : 'invalid value'} | <b>B2C:</b> {item.b2c === 1 ? 'Yes' : item.b2c === 0 ? 'No' : 'invalid value'}
+                              <b>B2B:</b> {item.use_cases && item.use_cases.includes("b2b") ? 'Yes' : 'No'} | <b>B2C:</b> {item.use_cases && item.use_cases.includes("b2c") ? 'Yes' : 'No'}
                             </p>
                           </IonCol>
-                          <IonCol size='4'><p><b>Products:</b> {item.products}</p></IonCol>
+                          <IonCol size='4'><p><b>Products:</b> {item.product_names?.join(', ') || 'N/A'}</p></IonCol>
                           <IonCol size='12'><p><b>Example Type:</b> {item.example_type}</p></IonCol>
                           <IonCol size='12'><p><b>User Prompt:</b> {item.user_prompt}</p></IonCol>
-                          <IonCol size='12'><p><b>Example:</b> {item.example}</p></IonCol>
+                          <IonCol size='12'><p><b>Example:</b> {item.json_answer}</p></IonCol>
                           <IonCol size='4'><p className='italic'><b>Created at:</b> {item.created_at}</p></IonCol>
                           <IonCol size='4'></IonCol>
                           <IonCol size='4'><p className='italic'><b>Updated at:</b> {item.updated_at}</p></IonCol>
                         </IonRow>
                       </IonLabel>
-                      <IonButton id="open-modal" onClick={() => handleEdit(item, index)} slot="end" size="small" color="warning">
+                      <IonButton id="open-modal" onClick={() => handleEdit(item)} slot="end" size="small" color="warning">
                         <IonIcon icon={createOutline}></IonIcon>
                       </IonButton>
                       <div className='absolute top-0 right-0 flex flex-col'>
-                        <IonChip className='capitalize h-7 min-h-7 font-bold flex items-center justify-center' color={statusColors[item.status] || "primary"}>
+                        <IonChip className='capitalize h-7 min-h-7 font-bold flex items-center justify-center max-w-[100px] self-end' color={statusColors[item.status] || "primary"}>
                           <IonLabel>{item.status}</IonLabel>
                         </IonChip>
                         <IonChip className='h-7 min-h-7'>
@@ -874,7 +862,7 @@ const Examples: React.FC = () => {
                       validate: {},
                     })}>
                     {formats.map((item, index) => (
-                      <IonSelectOption key={index} value={item.format_id}>{item.format_name} ({getLabel(item.b2b, item.b2c)})</IonSelectOption>
+                      <IonSelectOption key={index} value={item.format_id}>{item.format_name} ({item.use_cases && item.use_cases.includes("b2b") && 'B2B'} {item.use_cases && item.use_cases.includes("b2c") && 'B2C'})</IonSelectOption>
                     ))}
                   </IonSelect>
 
@@ -914,11 +902,11 @@ const Examples: React.FC = () => {
                     ))}
                   </IonSelect>
 
-                  <IonInput className='mb-4 text-sm' label="Product Name" labelPlacement="floating" fill="outline" placeholder="Enter Product Name"
+                  {/* <IonInput className='mb-4 text-sm' label="Product Name" labelPlacement="floating" fill="outline" placeholder="Enter Product Name"
                     {...register("products", {
                       validate: {},
                     })}
-                  ></IonInput>
+                  ></IonInput> */}
 
                   <IonTextarea
                     className='mb-4 text-sm'
@@ -939,7 +927,7 @@ const Examples: React.FC = () => {
                     fill="outline"
                     placeholder="Enter Example"
                     autoGrow={true}
-                    {...register("example", {
+                    {...register("json_answer", {
                       validate: {},
                     })}
                   ></IonTextarea>
@@ -994,6 +982,7 @@ const Examples: React.FC = () => {
                   role: 'cancel',
                   handler: () => {
                     setIsOpen(false)
+                    setIsEdit(false);
                     console.log('Alert canceled');
                   },
                 },
@@ -1001,7 +990,7 @@ const Examples: React.FC = () => {
                   text: 'Yes',
                   role: 'confirm',
                   handler: () => {
-                    handleAleart(false, 0);
+                    handleAleart(false, targetItem, isAlertType);
                     console.log('Alert confirmed');
                   },
                 },

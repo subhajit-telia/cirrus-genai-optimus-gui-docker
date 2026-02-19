@@ -1,6 +1,7 @@
 import {
   IonButton,
     IonContent,
+    IonHeader,
     IonIcon,
     IonItem,
     IonLabel,
@@ -9,6 +10,8 @@ import {
     IonMenu,
     IonMenuToggle,
     IonSpinner,
+    IonTitle,
+    IonToolbar,
   } from '@ionic/react';
   
   import { useLocation } from 'react-router-dom';
@@ -17,6 +20,7 @@ import {
 import { NetworkInfo } from '../../routes/network';
 import { useState } from 'react';
 import logo from '../../theme/assets/logo.png'
+import teliaOptimus from '../../theme/assets/telia-optimus.png'
   
   interface AppPage {
     url: string;
@@ -107,11 +111,13 @@ import logo from '../../theme/assets/logo.png'
   
     return (
       <IonMenu className='md:max-w-48' contentId="main" type="overlay">
+        <IonHeader className="ion-no-border px-5">
+          <IonToolbar>
+            <img src={teliaOptimus} />
+          </IonToolbar>
+        </IonHeader>
         <IonContent>
           <IonList id="inbox-list">
-            <IonListHeader className='mb-8'>
-              <img className="w-20" src={logo}/>
-            </IonListHeader>
             {appPages.map((appPage, index) => {
               return (
                 <IonMenuToggle key={index} autoHide={false}>

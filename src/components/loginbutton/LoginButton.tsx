@@ -13,6 +13,9 @@ const LoginButton = () => {
   const handleLogin = async () => {
     const currentUrl = window.location.href;
     console.log("Current URL:", currentUrl);
+    console.log("ACCESSTOKEN:", NetworkInfo.ACCESSTOKEN);
+    console.log("REACT_APP_URL:", NetworkInfo.REACT_APP_URL);
+    console.log("URL:", NetworkInfo.URL);
     let reactAppUrl;
     if (currentUrl.toLowerCase().includes('dev')) {
       reactAppUrl = 'https://genai-optimus-gui.cirrus-dev.teliacompany.net';

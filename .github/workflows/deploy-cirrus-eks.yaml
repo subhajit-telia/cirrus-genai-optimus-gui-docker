@@ -7,7 +7,7 @@ on:
         required: true
         description: "Tenant in Cirrus platform"
         type: string
-        default: "stallions"
+        default: "stallions"   # Please change to your tenant name, 'cirrus' here means the GenAI platform team.
       cirrus_env:
         required: true
         type: choice
@@ -31,6 +31,21 @@ on:
         type: string
         description: "cirrus-genai-application-helm-template chart's version, if not specified the latest version will be used"
         default: ""
+      aws_secret_id:
+        required: true
+        type: string
+        description: "AWS Secrets Manager secret name (name only, not full ARN)"
+        default: "stallions/optimus_prime_se/webapp"  # tenant-specific secret id looks like tenant-name/genai/application-name
+      aws_secret_version_id:
+        required: true  # enforced to ensure smooth rollback
+        type: string
+        description: "AWS Secrets Manager secret VersionId, get from AWS console in Versions tab"
+        default: "d2639697-c237-4219-8fae-05920ae59422"  # modify when you change the secret, leave empty, hard code in the workflow, ... do as you prefer
+      k8s_secret_name:
+        required: true
+        type: string
+        description: "Kubernetes Secret name to create/update from AWS secret"
+        default: "optimus-gui-config"  # modify as you need
 
 jobs:
   Deploy:
@@ -42,7 +57,7 @@ jobs:
       image: cirrus-docker.jfrog.teliacompany.io/cirrus-cicd-base:0.0.9
       credentials:
         username: ${{ secrets.CIRRUS_JFROG_READER_USERNAME }}
-        password:  ${{ secrets.CIRRUS_JFROG_READER_PASSWORD }}
+        password: ${{ secrets.CIRRUS_JFROG_READER_PASSWORD }}
     
     steps:
       - name: Checkout
@@ -54,6 +69,50 @@ jobs:
           CIRRUS_ENV: ${{ github.event.inputs.cirrus_env }}
           ROLE_NAME: cirrus-platform-${{ github.event.inputs.cirrus_env }}-deployment-role
 
+      - name: Generate secretStore values from AWS Secrets Manager
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # hard-code the specific version to ensure rollback robustness
+          # make sure to REFRESH the page after editing the secret in the AWS console 
+          # to get the latest version id
+          # as it does not update automatically
+          # NOTE: all versions (up to 500) are kept in Secrets Manager,
+          # even if you can't see them in the console UI any longer they can be accessed via CLI
+          AWS_SECRET_ID="${{ github.event.inputs.aws_secret_id }}"
+          AWS_SECRET_VERSION="${{ github.event.inputs.aws_secret_version_id }}"
+          K8S_SECRET_NAME="${{ github.event.inputs.k8s_secret_name }}"
+
+          SECRET_JSON=$(aws secretsmanager get-secret-value \
+            --secret-id "$AWS_SECRET_ID" \
+            --version-id "$AWS_SECRET_VERSION" \
+            --query SecretString \
+            --output text)
+
+          # Build /tmp/secretstore-values.yaml without heredoc (so YAML linter stays happy)
+          {
+            echo "secretStore:"
+            echo "  enabled: true"
+            echo "  region: eu-north-1"
+            echo "  objects:"
+            echo "    - objectName: \"${AWS_SECRET_ID}\""
+            echo "      objectType: \"secretsmanager\""
+            echo "      objectVersion: \"${AWS_SECRET_VERSION}\""
+            echo "      jmesPath:"
+            echo "$SECRET_JSON" | jq -r 'to_entries[] |
+              "        - path: \"\(.key)\"\n          objectAlias: \"\(.key)\""'
+            echo "  secretObjects:"
+            echo "    - secretName: ${K8S_SECRET_NAME}"
+            echo "      type: Opaque"
+            echo "      data:"
+            echo "$SECRET_JSON" | jq -r 'to_entries[] |
+              "      - objectName: \(.key)\n        key: \(.key)"'
+          } > /tmp/secretstore-values.yaml
+
+          echo "Generated /tmp/secretstore-values.yaml:"
+          cat /tmp/secretstore-values.yaml
+
       - name: Add helm repo
         env:
             REPO_USERNAME: ${{ secrets.CIRRUS_JFROG_READER_USERNAME }}
@@ -61,14 +120,19 @@ jobs:
             REPO_URL: "https://jfrog.teliacompany.io/artifactory/cirrus-helm/"
         shell: bash
         run: |
-            echo "$REPO_PASSWORD" | helm repo add helm-remote-repo "$REPO_URL" --username "$REPO_USERNAME" --password-stdin && \
+            echo "$REPO_PASSWORD" | helm repo add helm-remote-repo "$REPO_URL" --username "$REPO_USERNAME" --password-stdin
             helm repo update
+
       - name: Install/upgrade helm chart
         shell: bash
         run: |
+          set -euo pipefail
+
             IMG_TAG=""
             if [ -n "${{ github.event.inputs.helm_chart_version }}" ]; then
               HELM_CHART_VERSION_OPTION="--version ${{ github.event.inputs.helm_chart_version }}"
+          else
+            HELM_CHART_VERSION_OPTION=""              
             fi
 
             if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
@@ -80,14 +144,21 @@ jobs:
 
             IMAGE_TAG_OPTIONS="--set image.tag=$IMG_TAG"
 
-            HELM_CHART_VERSION_OPTION=""
-            if [ -n "${{ github.event.inputs.helm_chart_version }}" ]; then
-              HELM_CHART_VERSION_OPTION="--version ${{ github.event.inputs.helm_chart_version }}"
-            fi
-
             aws eks update-kubeconfig --name cirrus-${{ github.event.inputs.cirrus_env }}-eks --region eu-north-1
+            
+          # Force refresh of K8s secret
+          kubectl delete secret ${{ github.event.inputs.k8s_secret_name }} -n ${{ github.event.inputs.cirrus_tenant }} --ignore-not-found
 
-            HELM_COMMAND="helm upgrade --install --atomic --timeout 15m0s ${{ github.event.inputs.application_name }} helm-remote-repo/${{ github.event.inputs.helm_chart_name }} -n ${{ github.event.inputs.cirrus_tenant }} $HELM_CHART_VERSION_OPTION -f helm/values.yaml -f helm/env_values/${{ github.event.inputs.cirrus_env }}.yaml $IMAGE_TAG_OPTIONS"
+          HELM_COMMAND="helm upgrade --install --atomic --timeout 10m0s \
+            ${{ github.event.inputs.application_name }} \
+            helm-remote-repo/${{ github.event.inputs.helm_chart_name }} \
+            -n ${{ github.event.inputs.cirrus_tenant }} \
+            $HELM_CHART_VERSION_OPTION \
+            -f helm/cirrus/values.yaml \
+            -f helm/cirrus/env_values/${{ github.event.inputs.cirrus_env }}.yaml \
+            -f /tmp/secretstore-values.yaml \
+            --set k8sSecretName=${{ github.event.inputs.k8s_secret_name }} \
+            $IMAGE_TAG_OPTIONS"
 
-            echo "Executing Helm command: $HELM_COMMAND"
-            eval $HELM_COMMAND
+          echo "Executing Helm command: $HELM_COMMAND"
+          eval "$HELM_COMMAND"
