@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.0.1](https://github.com/telia-company/cirrus-genai-optimus-gui-docker/compare/v2.0.0...v2.0.1) (2026-02-19)
+
+
+### Bug Fixes
+
+* add timeout settings for long-running requests and remove unused reasoning effort ([c04490f](https://github.com/telia-company/cirrus-genai-optimus-gui-docker/commit/c04490febb1fd400db19f34ee48a89f7cda8fcb9))
+* add timeout settings for long-running requests and remove unused reasoning efforts array ([1bc25b9](https://github.com/telia-company/cirrus-genai-optimus-gui-docker/commit/1bc25b9a0f880ab146fd5f240c954abdef614ece))
+* Merge pull request [#100](https://github.com/telia-company/cirrus-genai-optimus-gui-docker/issues/100) from telia-company/fix/reasoning-effort ([c04490f](https://github.com/telia-company/cirrus-genai-optimus-gui-docker/commit/c04490febb1fd400db19f34ee48a89f7cda8fcb9))
+
 ## [2.0.0](https://github.com/telia-company/cirrus-genai-optimus-gui-docker/compare/v1.7.8...v2.0.0) (2026-02-19)
 
 
