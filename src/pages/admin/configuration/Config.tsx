@@ -48,6 +48,14 @@ const Config: React.FC = () => {
     { id: 1, data: 'max'},
   ]
 
+  const reasoningEfforts = [
+    { id: 1, data: 'none'},
+    { id: 1, data: 'low'},
+    { id: 1, data: 'medium'},
+    { id: 1, data: 'high'},
+    { id: 1, data: 'max'},
+  ]
+
   useEffect(() => {
 
     getConfigData();
