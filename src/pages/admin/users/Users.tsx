@@ -7,7 +7,7 @@ import { HTTPMethod, NetworkInfo } from '../../../routes/network';
 import { useForm } from 'react-hook-form';
 
 interface UserAddModel {
-  username: string;
+  user_id: string;
   password: string;
   newPassword: string;
   role: string;
@@ -22,7 +22,7 @@ const Users: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isOpenModal, setIsOpenModal] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
-  const [targetIndex, setTargetIndex] = useState<number>();
+  const [targetItem, setTargetItem] = useState<UserAddModel>();
   const [isShowError, setIsShowError] = useState(false);
   const [isErrorMsg, setIsErrorMsg] = useState('');
   const apiUrl = `${NetworkInfo.URL}`;
@@ -36,7 +36,7 @@ const Users: React.FC = () => {
   const getUsersData = async () => {
     setLoading(true);
     try {
-      const urlData = apiUrl + '/resource/get?table=users';
+      const urlData = apiUrl + '/user/';
 
       const response = await fetch(urlData, {
         method: 'GET',
@@ -65,38 +65,34 @@ const Users: React.FC = () => {
   const onModalDismiss = () => {
     setIsOpenModal(false);
     setIsEdit(false);
-    setValue("username", '');
+    setValue("user_id", '');
     setValue("password", '');
   }
 
-  const handleDeleteAleart = (_indicator:boolean, _value:number) => {
+  const handleDeleteAleart = (_indicator:boolean, _value:UserAddModel) => {
+    setIsEdit(true);
     if (_indicator === true) {
       setIsOpen(true);
-      setTargetIndex(_value);
+      setTargetItem(_value);
     }else if (_indicator === false) {
-      let updatedUsers = userList;
-
-      let delIndex:any = targetIndex;
-      updatedUsers.splice(delIndex, 1);
-
-      console.log('updatedUsers', updatedUsers);
+      
+      console.log('updatedUsers', targetItem);
       setIsOpen(false);
-      handleUsersUpdate(updatedUsers);
+      handleUsersUpdate(targetItem as UserAddModel, 'delete');
     }
-
   }
   
   /* modal functions end */
 
   /* handle edit start */
-  const handleEdit = (_value:any, _index:number) => {
+  const handleEdit = (_value:any) => {
     console.log('_value', _value);
-    setValue("username", _value.username);
+    setValue("user_id", _value.user_id);
     setValue("password", _value.password);
     setValue("role", 'admin');
     setIsOpenModal(true);
     setIsEdit(true);
-    setTargetIndex(_index);
+    setTargetItem(_value);
   }
   /* handle edit end */
   
@@ -113,47 +109,24 @@ const Users: React.FC = () => {
       data.password = data.newPassword;
     }
     let formData:any = {
-      username: data.username,
+      user_id: data.user_id,
       role: data.role,
       password: data.password,
     };
-
-    let prevUserList = userList;
-    let index:any = targetIndex;
-    if (isEdit === true) {
-      prevUserList.splice(index, 1, formData);
-    }else {
-      prevUserList = [...userList, formData];
-    }
-
-    
-    console.log('prevList', prevUserList);
-
-    handleUsersUpdate(prevUserList);
+    handleUsersUpdate(formData, isEdit ? 'edit' : 'add');
   }
-  const handleUsersUpdate = async (allUser: UserAddModel[]) => {
+  const handleUsersUpdate = async (userItem: UserAddModel, type:string) => {
+    console.log('payload', userItem);
+    console.log('type', type + ':', isEdit);
     setLoading(true);
-    let formUrl = NetworkInfo.URL + '/login/put';
-    console.log('payload', allUser);
-
-    let updatedUsers = allUser.map(user => {
-      return {
-        ...user,
-        hashed: isBcryptHash(user.password) ? 1 : 0
-      };
-    });
-
-    let finalPayload = {
-      json_obj: updatedUsers
-    }
     
     try {
-      const response = await fetch(formUrl, {
-        method: HTTPMethod.PUT,
+      const response = await fetch( isEdit ? NetworkInfo.URL + '/user/' + userItem.user_id : NetworkInfo.URL + '/user/', {
+        method: isEdit && type === 'delete' ? HTTPMethod.DELETE : isEdit && type === 'edit' ? HTTPMethod.PATCH : HTTPMethod.POST,
         headers: {
-            'Content-Type': 'application/json'
+        'Content-Type': 'application/json'
           },
-        body: JSON.stringify(finalPayload),
+        body: JSON.stringify(userItem),
       });
       const responseData = await response.json();
       console.log("Success:", responseData);
@@ -168,11 +141,11 @@ const Users: React.FC = () => {
           
         }else {
           setIsShowError(true);
-          setIsErrorMsg(responseData);
+          setIsErrorMsg(responseData.message ||'User data saved successfully');
           reset();
           setLoading(false);
           setIsEdit(false);
-          setTargetIndex(-1);
+          setTargetItem(undefined);
           getUsersData();
           onModalDismiss();
         }
@@ -222,19 +195,19 @@ const Users: React.FC = () => {
                 <IonItemSliding>
                   <IonItem button={true}>
                     <IonLabel>
-                      <p className='font-bold'>Username: {item.username}</p>
+                      <p className='font-bold'>Username: {item.user_id}</p>
                       <p>Role: {item.role}</p>
                     </IonLabel>
-                    <IonButton id="open-modal" onClick={() => handleEdit(item, index)} slot="end" size="small" color="warning">
+                    <IonButton id="open-modal" onClick={() => handleEdit(item)} slot="end" size="small" color="warning">
                       <IonIcon icon={createOutline}></IonIcon>
                     </IonButton>
-                    <IonButton onClick={() => handleDeleteAleart(true, index)} color="danger" slot="end" size="small">
+                    <IonButton onClick={() => handleDeleteAleart(true, item)} color="danger" slot="end" size="small">
                       <IonIcon icon={trashOutline}></IonIcon>
                     </IonButton>
                   </IonItem>
                   <IonItemOptions>
-                    <IonItemOption id="open-modal" onClick={() => handleEdit(item, index)} color="warning">Edit</IonItemOption>
-                    <IonItemOption onClick={() => handleDeleteAleart(true, index)} color="danger">Delete</IonItemOption>
+                    <IonItemOption id="open-modal" onClick={() => handleEdit(item)} color="warning">Edit</IonItemOption>
+                    <IonItemOption onClick={() => handleDeleteAleart(true, item)} color="danger">Delete</IonItemOption>
                   </IonItemOptions>
                 </IonItemSliding>
               </IonCard>
@@ -270,8 +243,8 @@ const Users: React.FC = () => {
                       <IonLabel className='m-0 text-xs'>Admin</IonLabel>
                   </IonSegmentButton>
                 </IonSegment>
-                <IonInput className='mb-4 text-sm' label="Username" labelPlacement="floating" fill="outline" placeholder="Enter Username"
-                  {...register("username", {
+                <IonInput disabled={isEdit} className='mb-4 text-sm' label="Username" labelPlacement="floating" fill="outline" placeholder="Enter Username"
+                  {...register("user_id", {
                     validate: {},
                   })}
                 ></IonInput>
@@ -329,7 +302,7 @@ const Users: React.FC = () => {
                 text: 'Delete',
                 role: 'confirm',
                 handler: () => {
-                  handleDeleteAleart(false, 0);
+                  handleDeleteAleart(false,   targetItem as UserAddModel);
                   console.log('Alert confirmed');
                 },
               },

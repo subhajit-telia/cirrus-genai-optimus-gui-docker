@@ -18,6 +18,7 @@ import ProductDropdown from '../../components/dropdown/productDropdown/ProductDr
 import { Tooltip } from 'react-tooltip';
 import { i } from 'vite/dist/node/types.d-aGj9QkWt';
 import template from '../../template.json'; // adjust path if needed
+import { v4 as uuidv4 } from 'uuid';
 
 type Tab = {
   answer: string;
@@ -105,8 +106,8 @@ const B2C: React.FC = () => {
   const storedVersion = localStorage.getItem("app_version");
   const [isContentfulModal, setIsContentfulModal] = useState(false);
   const [contentfulCopy, setContentfulCopy] = useState<any[]>([]);
-  const [qidHistory, setQidHistory] = useState<{ id: string; parent_id: string }[]>([]);
-  const [sessionId, setSessionId] = useState<string>('');
+  const [copyVersionIdHistory, setCopyVersionIdHistory] = useState<{ id: string; parent_id: string }[]>([]);
+  const [familyId, setFamilyId] = useState<string>('');
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -150,7 +151,7 @@ const B2C: React.FC = () => {
 
   useEffect(() => {
     console.log('loading......');
-    setSessionId(generateDateTimeString());
+    setFamilyId(uuidv4());
   }, []);
 
   const onSelect = (selectedList:any, selectedItem:any) => {
@@ -170,7 +171,7 @@ const B2C: React.FC = () => {
   const getSegmentsData = async () => {
     setLoadingSegments(true);
     try {
-      const urlData =apiUrl + '/resource/get?table=segments&use_case=content_creation_b2c&columns=segment_id&columns=segment_name';
+      const urlData =apiUrl + '/resource/segment?filter=use_cases:b2c&filter=status:active&columns=segment_id&columns=segment_name';
 
       const response = await fetch(urlData, {
         method: 'GET',
@@ -197,7 +198,7 @@ const B2C: React.FC = () => {
   const getPurposesData = async () => {
     setLoadingPurposes(true);
     try {
-      const urlData =apiUrl + '/resource/get?table=purposes&use_case=content_creation_b2c&columns=purpose_id&columns=purpose_name&columns=purpose_written_description';
+      const urlData =apiUrl + '/resource/purpose?filter=use_cases:b2c&filter=status:active&columns=purpose_id&columns=purpose_name&columns=purpose_written_description';
 
       const response = await fetch(urlData, {
         method: 'GET',
@@ -224,7 +225,7 @@ const B2C: React.FC = () => {
   const getProductsData = async () => {
     setLoadingProducts(true);
     try {
-      const urlData =apiUrl + '/resource/get?table=products_b2c&columns=product_id&columns=product_name&columns=category';
+      const urlData =apiUrl + '/product/get?table=products_b2c&columns=product_id&columns=product_name&columns=category';
 
       const response = await fetch(urlData, {
         method: 'GET',
@@ -251,7 +252,7 @@ const B2C: React.FC = () => {
   const getFormatsData = async () => {
     setLoadingFormats(true);
     try {
-      const urlData =apiUrl + '/resource/get?table=formats&use_case=content_creation_b2c&columns=format_id&columns=format_name&columns=format_written_description';
+      const urlData =apiUrl + '/resource/format?filter=use_cases:b2c&filter=status:active&columns=format_id&columns=format_name&columns=format_written_description';
 
       const response = await fetch(urlData, {
         method: 'GET',
@@ -313,141 +314,90 @@ const B2C: React.FC = () => {
   let arrayNoSegment: any;
 
   const handleFormSubmit = (data: any) => {
-    console.log('selectedPurpose', selectedPurpose);
-    setQidHistory([]);
+    setCopyVersionIdHistory([]);
     setIsTroubleshooting(false);
     setFeedbackCopy([]);
-    data.format = selectedFormats.map(format => format.format_id);
-    data.purpose = selectedPurpose.length > 0 && selectedPurpose[0].purpose_id 
-      ? selectedPurpose[0].purpose_id 
-      : '';
     
+    const formatIds = selectedFormats.map(f => f.format_id);
+    const purposeId = selectedPurpose[0]?.purpose_id || null;
+    const productIds = selectedProducts.map(p => p.product_id);
+    const segmentIds = segments.filter(s => s.isActive).map(s => s.segment_id);
+    const hasFormats = formatIds.length > 0;
+    const hasSegments = segmentIds.length > 0;
+    const hasQuestion = !!data.question;
+
+    data.format = formatIds;
+    data.purpose = purposeId;
+    data.segment = segmentIds;
     setRequestData(data);
-    let productIds = selectedProducts.map(product => product.product_id);
-    data.segment = segments.filter(segment => segment.isActive).map(segment => segment.segment_id);
 
-    console.log('data', data);
+    // Helper to find names
+    const getSegmentName = (id: string) => segments.find(s => s.segment_id === id)?.segment_name;
+    const getFormatName = (id: string) => formats.find(f => f.format_id === id)?.format_name;
 
-    if (data.segment.length !== 0 && data.format !== undefined && data.format !== '') {
-      console.log('>>>A');
-      arrayTab  =  data.segment.map((segment: any) => ({
-        segment_id: segment,
-        segment_name: segments.find(s => s.segment_id === segment)?.segment_name,
-        data: data.format.map((format: any) => ({
-          format_id: format,
-          format_name: formats.find(f => f.format_id === format)?.format_name,
-          answer: '',
-          outputs: []
-        }))
+    // Helper to create copy item
+    const createCopyItem = (segmentId = '', formatId = '') => ({
+      copy_id: uuidv4(),
+      copy_group_id: uuidv4(),
+      request_type: 'chat_request',
+      copy_family_id: familyId,
+      product_ids: productIds.length === 0 ? null : productIds,
+      question: data.question || null,
+      purpose_id: purposeId,
+      segment_id: segmentId || null,
+      format_id: formatId || null,
+    });
+
+    // Build array structures
+    if (hasSegments) {
+      const dataFormats = hasFormats 
+        ? formatIds.map(id => ({ format_id: id, format_name: getFormatName(id), answer: '', outputs: [] }))
+        : [{ format_id: 'customPrompts', format_name: data.question, answer: '', outputs: [] }];
+      
+      arrayTab = segmentIds.map(id => ({
+        segment_id: id,
+        segment_name: getSegmentName(id),
+        data: dataFormats
       }));
-    } else if (data.segment.length !== 0 && (data.format === undefined || data.format === '') && data.question !== '') {
-      console.log('>>>B');
-      arrayTab  =  data.segment.map((segment: any) => ({
-        segment_id: segment,
-        segment_name: segments.find(s => s.segment_id === segment)?.segment_name,
-        data: [{
-          format_id: 'customPrompts',
-          format_name: data.question,
-          answer: '',
-          outputs: []
-        }]
-      }));
-    } else if (data.segment.length === 0 && data.format !== undefined && data.format !== '' && data.format.length !== 0) {
-      console.log('>>>C');
-      arrayNoSegment = data.format.map((format: any) => ({
-        format_id: format,
-        format_name: formats.find(f => f.format_id === format)?.format_name,
+    } else if (hasFormats) {
+      arrayNoSegment = formatIds.map(id => ({
+        format_id: id,
+        format_name: getFormatName(id),
         answer: '',
         outputs: []
       }));
-    } else if ((data.format === undefined || data.format === '') && data.segment.length !== 0 && data.question !== '') {
-      console.log('>>>3');
-      data.segment.forEach((segment: any) => {
-        let eachItem = {
-          user: userName,
-          session_id: generateDateTimeString(),
-          session_family_id: sessionId,
-          use_case: 'content_creation_b2c',
-          product_ids: productIds,
-          question: data.question,
-          purpose_id: data.purpose,
-          segment_id: segment,
-          format_id: ''
-        };
-        handleApiCall(eachItem);
-      });
-      setTabs(arrayTab);
-    } else {
-      console.log('>>>4');
-      if ((data.format === undefined || data.format === '' || data.format.length === 0) && data.question === '') {
-        setIsShowError(true);
-        setIsErrorMsg('You have to choose any format or write any prompts.');
-      } else {
-        let eachItem = {
-          user: userName,
-          session_id: generateDateTimeString(),
-          session_family_id: sessionId,
-          use_case: 'content_creation_b2c',
-          product_ids: productIds,
-          question: data.question,
-          purpose_id: data.purpose,
-          segment_id: '',
-          format_id: ''
-        };
-        arrayNoSegment = [
-          {
-            format_id: 'customPrompts',
-            format_name: data.question,
-            answer: '',
-            outputs: []
-          }
-        ];
-        handleApiCall(eachItem);
-        setTabs(arrayNoSegment);
-      }
+    } else if (hasQuestion) {
+      arrayNoSegment = [{ format_id: 'customPrompts', format_name: data.question, answer: '', outputs: [] }];
     }
 
-    // Trigger API call based on the conditions
-    if (data.format !== undefined && data.format !== '' && data.segment.length > 0) {
-      console.log('>>>1');
-      data.format.forEach((format: any) => {
-        data.segment.forEach((segment: any) => {
-          let eachItem = {
-            user: userName,
-            session_id: generateDateTimeString(),
-            session_family_id: sessionId,
-            use_case: 'content_creation_b2c',
-            product_ids: productIds,
-            question: data.question,
-            purpose_id: data.purpose,
-            segment_id: segment,
-            format_id: format
-          };
-          handleApiCall(eachItem);
+    // Validation and API calls
+    if (!hasFormats && !hasQuestion) {
+      setIsShowError(true);
+      setIsErrorMsg('You have to choose any format or write any prompts.');
+      return;
+    }
+
+    if (hasSegments && hasFormats) {
+      formatIds.forEach(formatId => {
+        segmentIds.forEach(segmentId => {
+          handleApiCall(createCopyItem(segmentId, formatId));
         });
       });
       setTabs(arrayTab);
-    } else if (data.format !== undefined && data.format !== '' && data.format.length !== 0 && data.segment.length === 0) {
-      console.log('>>>2');
-      data.format.forEach((format: any) => {
-        let eachItem = {
-          user: userName,
-          session_id: generateDateTimeString(),
-          session_family_id: sessionId,
-          use_case: 'content_creation_b2c',
-          product_ids: productIds,
-          question: data.question,
-          purpose_id: data.purpose,
-          segment_id: '',
-          format_id: format
-        };
-        handleApiCall(eachItem);
+    } else if (hasFormats) {
+      formatIds.forEach(formatId => {
+        handleApiCall(createCopyItem('', formatId));
       });
       setTabs(arrayNoSegment);
+    } else if (hasSegments && hasQuestion) {
+      segmentIds.forEach(segmentId => {
+        handleApiCall(createCopyItem(segmentId, ''));
+      });
+      setTabs(arrayTab);
+    } else {
+      handleApiCall(createCopyItem());
+      setTabs(arrayNoSegment);
     }
-
-    console.log('arrayTab', arrayTab);
-    console.log('arrayNoSegment', arrayNoSegment);
   };
 
 
@@ -458,8 +408,10 @@ const B2C: React.FC = () => {
     console.log('payload', data);
     console.log('arrayTab>>>', arrayTab);
     console.log('arrayNoSegment', arrayNoSegment);
-    data.attached_text = attachments;
-    data.kb_pages = isKnowledgeBaseData;
+    data.user_id = userName;
+    data.attached_text = attachments || null;
+    data.knowledge_base_docs = isKnowledgeBaseData.length === 0 ? null : isKnowledgeBaseData;
+    data.use_case = 'b2c';
     try {
       const response = await fetch(formUrl, {
         method: HTTPMethod.POST,
@@ -574,7 +526,7 @@ const B2C: React.FC = () => {
   /* ---------------Reset form start--------------- */
   const handleReset = () => {
     reset();
-    setSessionId(generateDateTimeString());
+    setFamilyId(uuidv4());
     const updatedSegments = segments.map(segment => ({
       ...segment,
       isActive: false
@@ -593,7 +545,7 @@ const B2C: React.FC = () => {
     setValue("products", '');
     setValue("question", '');
     handleRemoveFile();
-    setQidHistory([]);
+    setCopyVersionIdHistory([]);
     setIsTroubleshooting(false);
   };
   /*  Reset form end */
@@ -601,21 +553,19 @@ const B2C: React.FC = () => {
   /* ---------------Regenarate item start--------------- */
   const regenarateItem = (data: any): void => {
     console.log('tabArray', tabArray);
-    
-    data.user = userName;
     arrayNoSegment = tabs;
     arrayTab = tabArray;
     handleApiCall(data);
   };
   /* Regenarate item end */
 
-  /* ----------Save edit answer copy start---------- */
-  const saveEditedAnswer = async (data: any): Promise<void> => {
-    console.log('saveEditedAnswer', data);
+  /* ----------Discard edit answer copy start---------- */
+  const discardEditedAnswer = async (data: any): Promise<void> => {
+    console.log('discardEditedAnswer', data);
     arrayNoSegment = tabs;
     arrayTab = tabArray;
     console.log('arrayTab>>', arrayTab);
-    let formUrl = apiUrl + '/chat/save';
+    let formUrl = apiUrl + '/chat/discard';
     try {
       const response = await fetch(formUrl, {
         method: HTTPMethod.POST,
@@ -627,57 +577,124 @@ const B2C: React.FC = () => {
       });
   
       const responseData = await response.json();
-      console.log('Success:', responseData);
   
       if (response.ok && !responseData.ErrorMessage) {
         setNoSegmentArray(arrayNoSegment);
         setTabArray(arrayTab);
-        console.log('tabs>>>', tabs);
-        console.log('arrayTab>>>', arrayTab);
-        console.log('arrayNoSegment>>>', arrayNoSegment);
   
-        if (arrayTab !== undefined) {
+        const backendResponse = responseData.responses[0];
+        const responseFormatId = backendResponse.input_params.format_id;
+        const responseCopyId = backendResponse.input_params.copy_id;
+  
+        if (arrayTab !== undefined && arrayTab.length > 0) {
           arrayTab = arrayTab.map((segment: { segment_id: any; segment_name: any; data: any[] }) => {
-            if (segment.segment_id === responseData.responses[0].input_params.segment_id) {
-              segment.data = segment.data.map((format: any) => {
-                if (format.format_id === responseData.responses[0].input_params.format_id) {
-                  let replaceOutput = format.outputs.map((output:innerOutput) => 
-                    output.input_params.qid === data.qid 
-                    ? { 
-                        ...responseData.responses[0], 
-                        timestamp: Date.now() 
+            segment.data = segment.data.map((format: any) => {
+              // Match by format_id AND copy_id to ensure we're updating the right copy
+              const formatMatches = format.format_id === responseFormatId;
+              const copyMatches = format.input_params?.copy_id === responseCopyId;
+              
+              if (formatMatches && copyMatches) {
+                // Ensure the backend response (original version) exists in outputs as active
+                const originalExists = format.outputs.some((output: innerOutput) => 
+                  output.input_params.copy_version_id === backendResponse.input_params.copy_version_id
+                );
+                
+                let updatedOutputs;
+                if (!originalExists) {
+                  // Add the original version from backend response
+                  updatedOutputs = [
+                    ...format.outputs.map((output: innerOutput) => {
+                      if (output.input_params.copy_version_id === data.discard_copy_version_id) {
+                        return {
+                          ...output,
+                          input_params: {
+                            ...output.input_params,
+                            status: 'discarded'
+                          }
+                        };
                       }
-                    : output
-                  );
-                  return {
-                    ...format,
-                    answer: DOMPurify.sanitize(responseData.responses[0].answer),
-                    input_params: responseData.responses[0].input_params,
-                    outputs: replaceOutput
-                  };
+                      return output;
+                    }),
+                    backendResponse
+                  ];
+                } else {
+                  // Just mark the discarded one
+                  updatedOutputs = format.outputs.map((output: innerOutput) => {
+                    if (output.input_params.copy_version_id === data.discard_copy_version_id) {
+                      return {
+                        ...output,
+                        input_params: {
+                          ...output.input_params,
+                          status: 'discarded'
+                        }
+                      };
+                    }
+                    return output;
+                  });
                 }
-                return format;
-              });
-            }
+                
+                return {
+                  ...format,
+                  answer: DOMPurify.sanitize(backendResponse.answer),
+                  input_params: backendResponse.input_params,
+                  outputs: updatedOutputs
+                };
+              }
+              return format;
+            });
             return segment;
           });
           setTabs(arrayTab);
         } else {
-          arrayNoSegment = arrayNoSegment.map((format: { format_id: any; outputs: innerOutput[] }) => {
-            if (format.format_id === responseData.responses[0].input_params.format_id || format.format_id === 'customPrompts') {
-              let replaceOutput = format.outputs.map((output:innerOutput) => 
-                output.input_params.qid === data.qid 
-                ? { 
-                    ...responseData.responses[0], 
-                    timestamp: Date.now() 
-                  }
-                : output
+          arrayNoSegment = arrayNoSegment.map((format: { format_id: any; outputs: innerOutput[]; input_params?: any }) => {
+            const formatMatches = format.format_id === responseFormatId || format.format_id === 'customPrompts';
+            const copyMatches = format.input_params?.copy_id === responseCopyId;
+            
+            if (formatMatches && copyMatches) {
+              // Ensure the backend response (original version) exists in outputs as active
+              const originalExists = format.outputs.some((output: innerOutput) => 
+                output.input_params.copy_version_id === backendResponse.input_params.copy_version_id
               );
+              
+              let updatedOutputs;
+              if (!originalExists) {
+                // Add the original version from backend response
+                updatedOutputs = [
+                  ...format.outputs.map((output: innerOutput) => {
+                    if (output.input_params.copy_version_id === data.discard_copy_version_id) {
+                      return {
+                        ...output,
+                        input_params: {
+                          ...output.input_params,
+                          status: 'discarded'
+                        }
+                      };
+                    }
+                    return output;
+                  }),
+                  backendResponse
+                ];
+              } else {
+                // Just mark the discarded one
+                updatedOutputs = format.outputs.map((output: innerOutput) => {
+                  if (output.input_params.copy_version_id === data.discard_copy_version_id) {
+                    return {
+                      ...output,
+                      input_params: {
+                        ...output.input_params,
+                        status: 'discarded'
+                      }
+                    };
+                  }
+                  return output;
+                });
+              }
+              
               return {
                 ...format,
-                answer: DOMPurify.sanitize(responseData.responses[0].answer),
-                input_params: responseData.responses[0].input_params,
-                outputs: replaceOutput
+                answer: DOMPurify.sanitize(backendResponse.answer),
+                input_params: backendResponse.input_params,
+                outputs: updatedOutputs
               };
             }
             return format;
@@ -704,7 +721,7 @@ const B2C: React.FC = () => {
     }
 
   };
-  /* Save edit answer copy end */
+  /* Discard edit answer copy end */
 
   /* ----------genarate Refine Copy start---------- */
   const genarateRefineCopy = async (data: any): Promise<void> => {
@@ -737,7 +754,7 @@ const B2C: React.FC = () => {
               segment.data = segment.data.map((format: any) => {
                 if (format.format_id === responseData.responses[0].input_params.format_id) {
                   let replaceOutput = format.outputs.map((output:innerOutput) => 
-                    output.input_params.qid === data.qid ? responseData.responses[0] : output
+                    output.input_params.copy_version_id === data.copy_version_id ? responseData.responses[0] : output
                   );
                   return {
                     ...format,
@@ -756,7 +773,7 @@ const B2C: React.FC = () => {
           arrayNoSegment = arrayNoSegment.map((format: { format_id: any; outputs: innerOutput[] }) => {
             if (format.format_id === responseData.responses[0].input_params.format_id || format.format_id === 'customPrompts') {
               let replaceOutput = format.outputs.map((output:innerOutput) => 
-                output.input_params.qid === data.qid ? responseData.responses[0] : output
+                output.input_params.copy_version_id === data.copy_version_id ? responseData.responses[0] : output
               );
               return {
                 ...format,
@@ -782,7 +799,7 @@ const B2C: React.FC = () => {
         //           segment.data = segment.data.map((format: any) => {
         //             if (format.format_id === currentResponse.input_params.format_id) {
         //               let replaceOutput = format.outputs.map((output:innerOutput) => 
-        //                 output.input_params.qid === data.qid ? currentResponse : output
+        //                 output.input_params.copy_version_id === data.copy_version_id ? currentResponse : output
         //               );
                       
         //               return {
@@ -803,7 +820,7 @@ const B2C: React.FC = () => {
         //       arrayNoSegment = arrayNoSegment.map((format: { format_id: any; outputs: innerOutput[] }) => {
         //         if (format.format_id === currentResponse.input_params.format_id || format.format_id === 'customPrompts') {
         //           let replaceOutput = format.outputs.map((output:innerOutput) => 
-        //             output.input_params.qid === data.qid ? currentResponse : output
+        //             output.input_params.copy_version_id === data.copy_version_id ? currentResponse : output
         //           );
                   
         //           return {
@@ -879,6 +896,13 @@ const B2C: React.FC = () => {
       // If no match found or type_of_content is null → exclude
       if (!format || format.type_of_content === null) return null;
 
+      // Check status - only include Active versions, exclude Discarded
+      const status = item.status || item.input_params?.status || item.copy_status;
+      if (status && status.toLowerCase() !== 'active') {
+        console.log(`Excluding copy version ${item.input_params?.copy_version_id} with status: ${status}`);
+        return null;
+      }
+
       // Add type_of_content to the item
       return {
         ...item,
@@ -903,55 +927,55 @@ const B2C: React.FC = () => {
     });
     let contentAction = 'NEW'
 
-    // Build qid arrays for Generic and Personalized
-    let genericQids: { id: string; parent_id: string }[] = [];
-    let personalizedQids: { id: string; parent_id: string }[] = [];
+    // Build copy_version_id arrays for Generic and Personalized
+    let genericCopyVersionIds: { id: string; parent_id: string }[] = [];
+    let personalizedCopyVersionIds: { id: string; parent_id: string }[] = [];
 
     contentfulCopy.forEach((item, idx) => {
       const formatName = item.input_params.format_name || "";
-      const newId = item.input_params.qid;
-      const prev = qidHistory.find(q => q.id === newId);
+      const newId = item.input_params.copy_version_id;
+      const prev = copyVersionIdHistory.find(q => q.id === newId);
       let parent_id = "";
       if (prev) {
         contentAction = 'UPDATE';
         parent_id = prev.parent_id;
       } else {
-        const prevQidObj = qidHistory[idx];
-        parent_id = prevQidObj ? prevQidObj.id : "";
+        const prevCopyVersionIdObj = copyVersionIdHistory[idx];
+        parent_id = prevCopyVersionIdObj ? prevCopyVersionIdObj.id : "";
       }
-      const qidObj = { id: newId, parent_id };
+      const copyVersionIdObj = { id: newId, parent_id };
       console.log('formatName', formatName);
       if (isPersonalizedChanged === isPersonalized) {
         if (
           formatName === "Sms" ||
           formatName.startsWith("Email") || formatName.startsWith("Banner")
         ) {
-          personalizedQids.push(qidObj);
+          personalizedCopyVersionIds.push(copyVersionIdObj);
         } else {
-          genericQids.push(qidObj);
+          genericCopyVersionIds.push(copyVersionIdObj);
         }
       }else if (isPersonalized) {
-        personalizedQids.push(qidObj);
+        personalizedCopyVersionIds.push(copyVersionIdObj);
       }else {
-        genericQids.push(qidObj);
+        genericCopyVersionIds.push(copyVersionIdObj);
       }
     });
 
-    // Final qid object
-    let allQids = {
-      Generic: genericQids,
-      Personalized: personalizedQids
+    // Final copy_version_id object
+    let allCopyVersionIds = {
+      Generic: genericCopyVersionIds,
+      Personalized: personalizedCopyVersionIds
     };
 
-    // Update the qidHistory for next time (flatten both arrays)
-    setQidHistory([...genericQids, ...personalizedQids]);
-    console.log('qids', allQids);
+    // Update the copyVersionIdHistory for next time (flatten both arrays)
+    setCopyVersionIdHistory([...genericCopyVersionIds, ...personalizedCopyVersionIds]);
+    console.log('copy_version_ids', allCopyVersionIds);
     // Determine which types to include in the array
     let types: string[] = [];
-    if (genericQids.length > 0) {
+    if (genericCopyVersionIds.length > 0) {
       types.push("Generic");
     }
-    if (personalizedQids.length > 0 && isPersonalized) {
+    if (personalizedCopyVersionIds.length > 0 && isPersonalized) {
       types.push("Personalized");
     }
 
@@ -959,7 +983,7 @@ const B2C: React.FC = () => {
       targetEnv: targetEnv,
       contentName: contentName,
       action: contentAction,
-      qid: allQids,
+      copy_version_id: allCopyVersionIds,
       typeOfContent: types,
       createAssembly: data.createAssembly,
     };
@@ -1008,7 +1032,7 @@ const B2C: React.FC = () => {
   /* -------------get Config data start------------- */
   const getConfigData = async () => {
     try {
-      const urlData = apiUrl + '/config/get';
+      const urlData = apiUrl + '/config/';
 
       const response = await fetch(urlData, {
         method: 'GET',
@@ -1022,7 +1046,7 @@ const B2C: React.FC = () => {
       console.log("Success setConfigData:", responseData);
 
       if (response.ok) {
-        setConfigData(responseData);
+        setConfigData(responseData[0].config_value);
       }
       
     } catch (error: any) {
@@ -1139,7 +1163,7 @@ const B2C: React.FC = () => {
     setLoading(false);
     showLoadingIndicator(false);
 
-    let formUrl = apiUrl + '/self_learning/select_answer?qid='+selfLearningData.input_params.qid;
+    let formUrl = apiUrl + '/self_learning/select_answer?copy_version_id='+selfLearningData.input_params.copy_version_id;
     try {
       const response = await fetch(formUrl, {
         method: HTTPMethod.PUT,
@@ -1638,7 +1662,7 @@ const B2C: React.FC = () => {
               <IonRow>
                 <IonCol>
                   <div className="mx-2.5 mt-7">
-                    <Tabs tabs={tabs} regenarateItem={regenarateItem} saveEditedAnswer={saveEditedAnswer} genarateRefineCopy={genarateRefineCopy} contentfulData={sendTocontentful} isEditingMode={handleEditingMode}/>
+                    <Tabs tabs={tabs} regenarateItem={regenarateItem} discardEditedAnswer={discardEditedAnswer} genarateRefineCopy={genarateRefineCopy} contentfulData={sendTocontentful} isEditingMode={handleEditingMode}/>
                     <div className="text-right mt-3">
                       <IonChip onClick={() => handleFormSubmit(requestData)} className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Rewrite all suggestions</IonChip>
                       <IonChip data-tooltip-id="contentful" data-tooltip-content="Save all content before sending it to Contentful." disabled={isOpenEditing || contentfulCopy.length === 0} onClick={ handleClickContentful } className='!pointer-events-auto text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Send to contentful</IonChip>
@@ -1653,29 +1677,6 @@ const B2C: React.FC = () => {
           }
         </div>
 
-        <IonFab slot="fixed" vertical="bottom" horizontal="end">
-          <IonFabButton size="small">
-            <IonIcon icon={information}></IonIcon>
-          </IonFabButton>
-          <IonFabList side="top">
-            <IonFabButton title='API' id="endpoint">
-              <IonIcon icon={globe}></IonIcon>
-            </IonFabButton>
-            <IonFabButton title='Version' id="app-version">
-              <IonIcon icon={link}></IonIcon>
-            </IonFabButton>
-          </IonFabList>
-        </IonFab>
-        <IonToast className='custom-toast' icon={globe} trigger="endpoint" message={import.meta.env.VITE_API_URL} buttons={[
-          {
-            text: 'Close',
-          },
-        ]} duration={3000}></IonToast>
-        <IonToast className='custom-toast' icon={link} trigger="app-version" message={`App Version: ${packageJson.version}`} buttons={[
-          {
-            text: 'Close',
-          },
-        ]} duration={3000}></IonToast>
         <IonToast
           className={`custom-toast ${isErrorType}`}
           isOpen={isShowError}
@@ -1700,27 +1701,47 @@ const B2C: React.FC = () => {
                   {feedbackCopy[currentIndex].responses[0].input_params.segment_name &&
                     <IonChip color="warning"><b>Segment:</b> {feedbackCopy[currentIndex].responses[0].input_params.segment_name}</IonChip>
                   }
-                  {feedbackCopy[currentIndex].responses[0].input_params.product_names.map((item:string, index:number) => (
-                    <IonChip color="secondary"><b>Product {index + 1}:</b> {item}</IonChip>
+                  {feedbackCopy[currentIndex].responses[0].input_params.product_names && feedbackCopy[currentIndex].responses[0].input_params.product_names.map((item:string, index:number) => (
+                    <IonChip key={index} color="secondary"><b>Product {index + 1}:</b> {item}
+                    </IonChip>
                   ))}
                 </IonToolbar>
               </IonHeader>
               <div className="inner-content">
                 <IonGrid className='cursor-pointer'>
                   <IonRow>
-                    {feedbackCopy[currentIndex].responses.map((feedbackItem:any, tabIndex:number) => (
-                      <IonCol size="6">
-                        <div onClick={() =>{setSelectedDiv(tabIndex); setSelfLearningData(feedbackItem)}} className={`${selectedDiv === tabIndex ? 'border-primary border-2' : ''} hover:border-primary bg-white mb-5 tab-body rounded-md relative`}>
+                    {feedbackCopy[currentIndex].responses.map(
+                      (feedbackItem:any, tabIndex:number) => (
+                      <IonCol key={tabIndex} size="6">
+                        <div 
+                          onClick={() =>{
+                            setSelectedDiv(tabIndex); 
+                            setSelfLearningData(feedbackItem);
+                          }} 
+                          className={`${selectedDiv === tabIndex ? 'border-primary border-2' : ''} hover:border-primary bg-white mb-5 tab-body rounded-md relative`}
+                          >
+                          
                           {/* <h3 className='capitalize'>{feedbackItem.input_params.format_name}</h3> */}
                           
                           <div className='shadow-md rounded-md p-2 mb-1.5 relative'>
-                            <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} children={feedbackItem.answer}/>
+                            <ReactMarkdown 
+                            remarkPlugins={[remarkGfm]} 
+                            rehypePlugins={[rehypeRaw]} 
+                            children={feedbackItem.answer}
+                            />
                           </div>
                         </div>
                       </IonCol>
                     ))}
                     <IonCol size="12" className="text-center">
-                      <IonButton disabled={selectedDiv === null} data-tooltip-id="feedbackCopy" data-tooltip-content="Please select the copy." onClick={() => submitSelfLearning()}>Submit Copy</IonButton>
+                      <IonButton 
+                        disabled={selectedDiv === null} 
+                        data-tooltip-id="feedbackCopy" 
+                        data-tooltip-content="Please select the copy." 
+                        onClick={() => submitSelfLearning()}
+                        >
+                          Submit Copy
+                        </IonButton>
                       <Tooltip id="feedbackCopy" />
                     </IonCol>
                   </IonRow>

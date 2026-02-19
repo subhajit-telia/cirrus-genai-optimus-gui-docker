@@ -250,6 +250,25 @@ ion-toggle .label-text-wrapper {
 .tab-body ol li::marker {
     font-weight: bold;
 }
+ion-item.text-green ion-radio {
+    color: #006f6c !important;
+}
+ion-toolbar.header-toolbar {
+    display: none;
+}
+
+/* Hide scrollbar in side menu only */
+ion-menu ion-content::part(scroll) {
+  scrollbar-width: none;        /* Firefox */
+  -ms-overflow-style: none;     /* IE & Edge */
+}
+
+ion-menu ion-content::part(scroll)::-webkit-scrollbar {
+  display: none;                /* Chrome, Safari */
+}
+
+
+
 @media (prefers-color-scheme: dark) {
     :root.md {
         --checkbox-background: #fff;

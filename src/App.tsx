@@ -63,7 +63,7 @@ if (storedVersion === null || storedVersion !== packageJson.version) {
 const App: React.FC = () => (
   <IonApp>
     <IonReactRouter>
-      <IonRouterOutlet>
+      <IonRouterOutlet id="main">
         <AuthProvider>
             <Switch>
               <AuthGuard path="/b2c" component={B2C}/>

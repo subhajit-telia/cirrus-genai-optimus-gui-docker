@@ -1,12 +1,13 @@
-import { IonAvatar, IonButtons, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonMenuButton, IonPopover, IonRouterLink, IonTitle, IonToolbar } from '@ionic/react';
+import { IonAvatar, IonButton, IonButtons, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonMenuButton, IonPopover, IonRouterLink, IonTitle, IonToolbar } from '@ionic/react';
 import './Header.css';
-import { person, power } from 'ionicons/icons';
+import { menuOutline, person, power } from 'ionicons/icons';
 import { useHistory, useLocation } from 'react-router-dom';
 import logo from '../../theme/assets/logo.png'
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../config/AuthContext';
 import LogoutButton from '../logoutbutton/LogoutButton';
 import { useMsal } from '@azure/msal-react';
+import { menuController } from "@ionic/core";
 
 interface ContainerProps { }
 
@@ -52,13 +53,19 @@ const AppHeader: React.FC<ContainerProps> = () => {
       return { success: false, message: "Logout failed", error };
     }
   };
+
+  const toggleMenu = async () => {
+    await menuController.toggle();
+  };
     
   return (
     <IonHeader className='flex px-5 items-center justify-between'>
         <div>
-            <IonToolbar>
+            <IonToolbar className='header-toolbar'>
                 {(userData) && (currentPath === 'b2c' || currentPath === 'b2b') ?
-                    <IonTitle className='cursor-pointer'><IonRouterLink routerLink={currentPath} routerDirection="none"><img className="w-20" src={logo}/></IonRouterLink></IonTitle>
+                    <IonTitle className='cursor-pointer'>
+                        <IonRouterLink routerLink={currentPath} routerDirection="none"></IonRouterLink>
+                    </IonTitle>
                 : 
                 <IonTitle className='capitalize p-0'>{currentPath} List</IonTitle>
                 }
