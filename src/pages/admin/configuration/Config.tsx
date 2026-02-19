@@ -1,10 +1,11 @@
-import { IonButton, IonCard, IonCheckbox, IonCol, IonContent, IonGrid, IonIcon, IonInput, IonPage, IonPopover, IonProgressBar, IonRow, IonSelect, IonSelectOption, IonSpinner, IonSplitPane } from '@ionic/react';
+import { IonButton, IonCard, IonCheckbox, IonCol, IonContent, IonGrid, IonIcon, IonInput, IonPage, IonPopover, IonProgressBar, IonRow, IonSelect, IonSelectOption, IonSpinner, IonSplitPane, IonToast } from '@ionic/react';
 import { useEffect, useState } from 'react';
 import AppHeader from '../../../components/header/Header';
 import Sidenav from '../../../components/sidenav/Sidenav';
 import { HTTPMethod, NetworkInfo } from '../../../routes/network';
 import { useForm } from 'react-hook-form';
-import { informationCircle, informationCircleOutline } from 'ionicons/icons';
+import { filter, informationCircle, informationCircleOutline } from 'ionicons/icons';
+import { getValue } from '@mdxeditor/editor';
 
 interface ConfigAddModel {
     llm_name: string;
@@ -36,6 +37,16 @@ const Config: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [loadingForm, setLoadingForm] = useState<boolean>(false);
   const apiUrl = `${NetworkInfo.URL}`;
+  const [isShowError, setIsShowError] = useState(false);
+  const [isErrorMsg, setIsErrorMsg] = useState('');
+
+  const reasoningEfforts = [
+    { id: 1, data: 'none'},
+    { id: 1, data: 'low'},
+    { id: 1, data: 'medium'},
+    { id: 1, data: 'high'},
+    { id: 1, data: 'max'},
+  ]
 
   const reasoningEfforts = [
     { id: 1, data: 'none'},
@@ -54,7 +65,7 @@ const Config: React.FC = () => {
   const getConfigData = async () => {
     setLoading(true);
     try {
-      const urlData = apiUrl + '/config/get';
+      const urlData = apiUrl + '/config/?filters=status:active';
 
       const response = await fetch(urlData, {
         method: 'GET',
@@ -65,35 +76,41 @@ const Config: React.FC = () => {
       });
       
       const responseData = await response.json();
-      console.log("Success:", responseData);
+    console.log("Success:", responseData);
+          
+          // Find the active config and extract config_value
+          const activeConfig = responseData.find((config: any) => config.status === 'active');
+          const configValue = activeConfig?.config_value;
+          
+          console.log("Active Config Value:", configValue);
 
       if (response.ok) {
-        setValue("quality_check_enabled", responseData.quality_check_enabled);
-        setValue("quality_check_retry_count", responseData.quality_check_retry_count);
+        setValue("quality_check_enabled", configValue.quality_check_enabled);
+        setValue("quality_check_retry_count", configValue.quality_check_retry_count);
 
-        setValue("llm_name", responseData.model.llm_name);
-        setValue("reasoning_effort", responseData.model.reasoning_effort);
-        setValue("generation_max_"removed"s", responseData.model.generation_max_"removed"s);
-        setValue("temperature", responseData.model.temperature);
+        setValue("llm_name", configValue.model.llm_name);
+        setValue("reasoning_effort", configValue.model.reasoning_effort);
+        setValue("generation_max_"removed"s", configValue.model.generation_max_"removed"s);
+        setValue("temperature", configValue.model.temperature);
 
-        setValue("wait_min", responseData.retry.wait_min);
-        setValue("wait_increment", responseData.retry.wait_increment);
-        setValue("max_attempts", responseData.retry.max_attempts);
+        setValue("wait_min", configValue.retry.wait_min);
+        setValue("wait_increment", configValue.retry.wait_increment);
+        setValue("max_attempts", configValue.retry.max_attempts);
 
-        setValue("history_unit_test", responseData.history_unit_test);
+        setValue("history_unit_test", configValue.history_unit_test);
 
-        setValue("edit_max_attempts", responseData.retry.edit_max_attempts);
-        setValue("test_example_chance", responseData.example_validation.test_example_chance);
-        setValue("example_validation_steps", responseData.example_validation.example_validation_steps);
-        setValue("max_file_size_mb", responseData.attachment.max_file_size_mb);
-        setValue("generic_env", responseData.contentful.generic_env);
-        setValue("personalized_env", responseData.contentful.personalized_env);
-        setValue("max_"removed"_length", responseData.attachment.max_"removed"_length);
-        setValue("example_acceptance_threshold", responseData.example_validation.example_acceptance_threshold);
-        setValue("example_automatic_approval", responseData.example_validation.example_automatic_approval);
-        setValue("automatic_feedback_enabled", responseData.automatic_feedback_enabled);
+        setValue("edit_max_attempts", configValue.retry.edit_max_attempts);
+        setValue("test_example_chance", configValue.example_validation.test_example_chance);
+        setValue("example_validation_steps", configValue.example_validation.example_validation_steps);
+        setValue("max_file_size_mb", configValue.attachment.max_file_size_mb);
+        setValue("generic_env", configValue.contentful.generic_env);
+        setValue("personalized_env", configValue.contentful.personalized_env);
+        setValue("max_"removed"_length", configValue.attachment.max_"removed"_length);
+        setValue("example_acceptance_threshold", configValue.example_validation.example_acceptance_threshold);
+        setValue("example_automatic_approval", configValue.example_validation.example_automatic_approval);
+        setValue("automatic_feedback_enabled", configValue.automatic_feedback_enabled);
         
-        setConfigList(responseData);
+        setConfigList(configValue);
         setLoading(false);
       }
       
@@ -140,23 +157,33 @@ const Config: React.FC = () => {
     handleConfigUpdate(payLoad);
   }
   const handleConfigUpdate = async (allConfig: ConfigAddModel[]) => {
+    let userLocalData:any = localStorage.getItem('user');
+    let userData = JSON.parse(userLocalData);
     setLoadingForm(true);
-    let formUrl = apiUrl + '/config/put';
-    console.log('allConfig', allConfig);
+    let formUrl = apiUrl + '/config/';
+    
+    const finalPayload = {
+      config_value: allConfig,
+      status: 'active',
+      user_id: userData.username
+    };
+    console.log('finalPayload', finalPayload);
     
     try {
       const response = await fetch(formUrl, {
-        method: HTTPMethod.PUT,
+        method: HTTPMethod.POST,
         headers: {
           '"removed"': `${NetworkInfo.ACCESSTOKEN}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(allConfig),
+        body: JSON.stringify(finalPayload),
       });
       const responseData = await response.json();
       console.log("Success:", responseData);
 
-      if (response.ok && responseData === true) {
+      if (response.ok) {
+        setIsShowError(true);
+        setIsErrorMsg(responseData.message || 'Configuration updated successfully');
         setLoadingForm(false);
         getConfigData();
       }
@@ -516,7 +543,13 @@ const Config: React.FC = () => {
                     </div>
                 </form>
             </IonCard>
-            
+            <IonToast
+                className='custom-toast'
+                isOpen={isShowError}
+                message={isErrorMsg}
+                duration={3000}
+                onDidDismiss={() => setIsShowError(false)}
+            ></IonToast>
       </IonContent>
     </IonPage>
     </IonSplitPane>

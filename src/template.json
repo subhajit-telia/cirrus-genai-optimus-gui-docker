@@ -97,7 +97,7 @@
             "format_id": "BannerWebB2B",
             "format_name": "Banner (Web)",
             "format_written_description": "Often a catchy headline followed by a short description of the subject. May include price point and terms and conditions in some cases, which should be specified in free text prompt.",
-            "type_of_content": ["generic", "personalized"],
+            "type_of_content": ["generic"],
             "cvm_content": "optional", 
             "content_type": "teaser"
         },
@@ -113,7 +113,7 @@
             "format_id": "Pitch",
             "format_name": "Pitch",
             "format_written_description": "A catchy headline referring to the product, with a short description that explains the product and it's benefits for businesses.",
-            "type_of_content": ["generic", "personalized"],
+            "type_of_content": ["generic"],
             "cvm_content": "false", 
             "content_type": "teaser"
         },
@@ -129,7 +129,7 @@
             "format_id": "Standalone",
             "format_name": "Standalone",
             "format_written_description": "A compact text about the product and what it offers. Presents a light version of the problem the customer might have and how our product or service will provide a solution.",
-            "type_of_content": ["generic", "personalized"],
+            "type_of_content": ["generic"],
             "cvm_content": "false", 
             "content_type": "teaser"
         },
@@ -137,7 +137,7 @@
             "format_id": "Campaign",
             "format_name": "Campaign",
             "format_written_description": "A block of content, consisting of a catchy headline, short description ending with a clear call to action.",
-            "type_of_content": ["generic", "personalized"],
+            "type_of_content": ["generic"],
             "cvm_content": "false", 
             "content_type": ["teaser", "ctaButton"]
         },
@@ -145,7 +145,7 @@
             "format_id": "KeyFeature",
             "format_name": "Key Feature",
             "format_written_description": "Longer description of a key feature in running text, including general areas of applicability. ",
-            "type_of_content": ["generic", "personalized"],
+            "type_of_content": ["generic"],
             "cvm_content": "false", 
             "content_type": "teaser"
         },
@@ -193,7 +193,7 @@
             "format_id": "TeaserCards",
             "format_name": "Teaser cards",
             "format_written_description": "A way to promote a certain product, service or section within the support. Usually with a short headline, description and CTA.  Approx. 160 characters.",
-            "type_of_content": ["generic", "personalized"],
+            "type_of_content": ["generic"],
             "cvm_content": "false", 
             "content_type": ["teaser", "ctaButton"]
         },
