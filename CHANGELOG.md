@@ -1,5 +1,21 @@
 # Changelog
 
+## [2.0.0](https://github.com/telia-company/cirrus-genai-optimus-gui-docker/compare/v1.7.8...v2.0.0) (2026-02-19)
+
+
+### ⚠ BREAKING CHANGES
+
+* BREAKING CHANGE redesign API + database schema migration
+
+### Features
+
+* BREAKING CHANGE redesign API + database schema migration ([3c7e7dc](https://github.com/telia-company/cirrus-genai-optimus-gui-docker/commit/3c7e7dc3c04ecaa2eec74bf97824143f5fe9535d))
+
+
+### Bug Fixes
+
+* simplify date parsing in toggleSort function for Admin:Examples ([0964505](https://github.com/telia-company/cirrus-genai-optimus-gui-docker/commit/09645050b4fe29090fde1b9e7c6fc14090fd8b35))
+
 ## [1.2.4](https://github.com/telia-company/cirrus-genai-optimus-gui-docker/compare/v1.2.3...v1.2.4) (2025-02-27)
 
 
