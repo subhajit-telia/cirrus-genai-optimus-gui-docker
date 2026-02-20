@@ -36,7 +36,7 @@ const AppHeader: React.FC<ContainerProps> = () => {
     useEffect(() => {
         let userLocalData:any = localStorage.getItem('user');
         setUserData(JSON.parse(userLocalData));
-        console.log('userData', JSON.parse(userLocalData));
+        // console.log('userData', JSON.parse(userLocalData));
     }, []);
 
     /* handleLogout start */
