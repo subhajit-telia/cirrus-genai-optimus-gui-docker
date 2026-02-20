@@ -20,7 +20,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const storedUser:any = localStorage.getItem('user');
     const parsedUser = JSON.parse(storedUser);
-    console.log('parsedUser', parsedUser);
+    // console.log('parsedUser', parsedUser);
     if (parsedUser && parsedUser.roles.admin) {
       setIsAuthenticated(true);
       setRole('admin');
