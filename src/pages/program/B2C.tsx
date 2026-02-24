@@ -129,7 +129,7 @@ const B2C: React.FC = () => {
     let userData = JSON.parse(userLocalData);
     setUserName(userData.username);
     setTigaRoles(userData.tiga_roles || []);
-    console.log('userData', userData);
+    // console.log('userData', userData);
     
     getSegmentsData();
     getPurposesData();

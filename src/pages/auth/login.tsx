@@ -38,8 +38,8 @@ const Login: React.FC = () => {
   const handleFormSubmit = async (data: any) => {
     setLoading(true);
     let formUrl:any;
-    console.log('payload', data);
-    console.log('segmentValue', segmentValue);
+    // console.log('payload', data);
+    // console.log('segmentValue', segmentValue);
 
     if (segmentValue === 'tcad') {
       formUrl = apiUrl + '/tcad_login/check';
@@ -56,12 +56,12 @@ const Login: React.FC = () => {
         body: JSON.stringify(data),
       });
       const responseData = await response.json();
-      console.log("Success:", responseData);
+      // console.log("Success:", responseData);
 
       if (response.ok) {
         setLoading(false);
         if (responseData.verification === true) {
-          console.log('login');
+          // console.log('login');
           localStorage.setItem('user', JSON.stringify(responseData));
           setIsShowError(true);
           if (responseData.roles.admin === true && responseData.roles.user === true) {
@@ -77,7 +77,7 @@ const Login: React.FC = () => {
             setIsErrorMsg('Please check your credential.');
           }
         }else {
-          console.log('login faild');
+          // console.log('login faild');
           setIsShowError(true);
           setIsErrorMsg('Please check your credential.');
         }
@@ -106,7 +106,7 @@ const Login: React.FC = () => {
 
   /* ------------handleSegmentChange start------------ */
   const handleSegmentChange = (event:any) => {
-    console.log("handleSegmentChange", event.detail.value);
+    // console.log("handleSegmentChange", event.detail.value);
     setSegmentValue(event.detail.value);
   };
   /* handleSegmentChange end */

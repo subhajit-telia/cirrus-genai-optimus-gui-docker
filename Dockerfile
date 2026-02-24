@@ -8,9 +8,11 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies
-RUN npm install
-RUN npm i -D -E vite
-RUN npm install -g @ionic/cli
+# Increased fetch-timeout to handle slow QEMU-emulated arm64 builds
+RUN npm install --fetch-timeout=600000
+# Comment out additional npm install, as the previous command should install all dependencies including devDependencies
+# RUN npm i -D -E vite 
+RUN npm install -g @ionic/cli --fetch-timeout=600000
 
 # Copy the rest of the application code
 COPY . .
