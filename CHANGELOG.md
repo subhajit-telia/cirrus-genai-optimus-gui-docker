@@ -5,7 +5,6 @@
 
 ### Bug Fixes
 
-* downgrade version from 2.0.2 to 2.0.1 in package.json and package-lock.json to match latest version ([afbc89f](https://github.com/telia-company/cirrus-genai-optimus-gui-docker/commit/afbc89f4330c918900ca3356700d1e57f88f6202))
 * update package versions and increase fetch-timeout for dependencies ([61e2169](https://github.com/telia-company/cirrus-genai-optimus-gui-docker/commit/61e2169d27e46f8d4592e07cb5af6a4700836843))
 * update vite version to 5.4.21 and comment out redundant npm install ([e800cfb](https://github.com/telia-company/cirrus-genai-optimus-gui-docker/commit/e800cfbdbca85d90dfe00d13a2604d8a202e17a0))
 
