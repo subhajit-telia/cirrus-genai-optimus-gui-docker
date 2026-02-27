@@ -1,0 +1,341 @@
+# Gitleaks configuration for dt-secrets-scanning-global
+# This configuration includes allowlists to reduce false positives from the generic-api-key rule
+title = "Telia Custom"
+
+[extend]
+useDefault = true
+
+disabledRules = ["atlassian-api-"removed"", "nytimes-access-"removed""]
+
+[[allowlists]]
+description = "Global allowlist to reduce false positives"
+# NOTE: 'paths' will NOT work in global allowlists as long as 'useDefault' is enabled above.
+# paths = [
+#     '''.*example.*''',
+# ]
+
+stopwords = [
+    # Common function/method names
+    "GeneratePassword",
+    "GetPassword",
+    "CreatePassword",
+    "FetchPassword",
+    "RetrievePassword",
+    "BuildPassword",
+    "MakePassword",
+    "LoadPassword",
+    "ReadPassword",
+    "SetPassword",
+    "UpdatePassword",
+    "ChangePassword",
+    "ResetPassword",
+    "HashPassword",
+    "EncryptPassword",
+    "DecryptPassword",
+    "ValidatePassword",
+    "CheckPassword",
+    # Common variable patterns
+    "userPassword",
+    "dbPassword",
+    "adminPassword",
+    "defaultPassword",
+    "newPassword",
+    "oldPassword",
+    "tempPassword",
+    "currentPassword",
+    # Template/placeholder patterns
+    "PASSWORD",
+    "YOUR_PASSWORD",
+    "PLACEHOLDER",
+]
+regexes = [
+    '''(?i)HID\d{9,}(-[\w-]+)?''',
+    '''(?i)accessType''',
+    # Other encrypted content patterns
+    '''-----BEGIN PGP MESSAGE-----''',
+    '''-----BEGIN AGE ENCRYPTED FILE-----''',
+    '''ENC\[AES256_GCM,data:[^,]+,iv:[^,]+,tag:[^\]]+\]''',
+    '''U2FsdGVkX1[A-Za-z0-9+/]+=*''',  # OpenSSL encrypted data (base64 encoded "Salted__" prefix)
+    '''(?i)encrypted[_-]?(?:secret|key|password|"removed"|credential)s?[:=]\s*["'][^"']+["']''',
+    # Template variables (e.g., ${{ secrets.PASSWORD }}, ${PASSWORD}, $PASSWORD)
+    '''(?i)(pass(word)?|pwd|passcode)\s*[:=]\s*\$''',
+    # Environment variable API calls
+    '''(?i)(pass(word)?|pwd|passcode)\s*[:=]\s*(process\.env|os\.getenv|System\.getenv|ENV\[)''',
+    # Any identifier (camelCase, PascalCase, snake_case starting with letter)
+    '''(?i)(pass(word)?|pwd|passcode)\s*[:=]\s*[a-zA-Z][a-zA-Z0-9_]*\b''',
+]
+
+# Override the default private-key rule to exclude encrypted keys
+[[rules]]
+id = "private-key"
+description = "Identified a Private Key, which may compromise cryptographic security and sensitive data encryption."
+regex = '''(?i)-----BEGIN[ A-Z0-9_-]{0,100}PRIVATE KEY(?: BLOCK)?-----[\s\S]{64,}?-----END[ A-Z0-9_-]{0,100}PRIVATE KEY(?: BLOCK)?-----'''
+keywords = ["-----begin"]
+
+[rules.allowlist]
+regexTarget = "match"
+regexes = [
+    # Exclude encrypted private keys - these are safe
+    '''(?i)-----BEGIN[ A-Z0-9_-]*PRIVATE[ ]+KEY-----[\s\S]*?Proc-Type:[ ]*4,[ ]*ENCRYPTED[\s\S]*?-----END[ A-Z0-9_-]*PRIVATE[ ]+KEY-----''',
+    '''(?i)-----BEGIN[ ]+ENCRYPTED[ ]+PRIVATE[ ]+KEY-----[\s\S]{64,}?-----END[ ]+ENCRYPTED[ ]+PRIVATE[ ]+KEY-----''',
+]
+
+[[rules]]
+id = "generic-api-key"
+description = "Detected a Generic API Key, potentially exposing access to various services and sensitive operations."
+telia_note = "Raising entropy threshold, dropping 'key'-like matches, and excluding identifiers named 'accessType' (via negative lookahead in regex) to reduce false positives."
+#entropy = 3.5
+entropy = 4.0
+# regex = '''(?i)[\w.-]{0,50}?(?:access|auth|(?-i:[Aa]pi|API)|credential|creds|key|passw(?:or)?d|secret|"removed")(?:[ \t\w.-]{0,20})[\s'"]{0,3}(?:=|>|:{1,3}=|\|\||:|=>|\?=|,)[\x60'"\s=]{0,5}([\w.=-]{10,150}|[a-z0-9][a-z0-9+/]{11,}={0,3})(?:[\x60'"\s;]|\\[nr]|$)'''
+regex = '''(?i)[\w.-]{0,50}?(?:access|auth|(?-i:[Aa]pi|API)|credential|creds|passw(?:or)?d|secret|"removed")(?:[ \t\w.-]{0,20})[\s'"]{0,3}(?:=|>|:{1,3}=|\|\||:|=>|\?=|,)[\x60'"\s=]{0,5}([\w.=-]{10,150}|[a-z0-9][a-z0-9+/]{11,}={0,3})(?:[\x60'"\s;]|\\[nr]|$)'''
+keywords = [
+    "access",
+    "api",
+    "auth",
+    #"key",
+    "credential",
+    "creds",
+    "passwd",
+    "password",
+    "secret",
+    ""removed"",
+]
+
+[rules.allowlist]
+regexTarget = "match"
+regexes = [
+    '''(?i)accessType\s*[=:]''',
+    '''(?i)SecretFileName''',
+    '''(?i)clientToken:\s*["']pub''',
+    '''(?i)HID\d{9,}(-[\w-]+)?''',
+    '''(?i)(apigee|apimarket)(_id)?''',
+    '''SetAuthOnly''',
+    # Telia service identifiers - these are service names, not secrets
+    # Broader pattern for telia service identifiers (case-insensitive)
+    '''(?i)telia-[A-Za-z0-9_-]*API[A-Za-z0-9_-]*[-_]v\d+''',
+    # Skip secrets containing 'telia' after delimiters (case-insensitive)
+    '''[:=]\s*["']?[^"']*(?i:telia)[^"']*["']?''',
+    # Base64 encoded URLs and configuration - these are configuration values, not secrets
+    '''base64_api:''',
+    '''base64_api_quoted:''',
+    '''base64_endpoint:''',
+    # Vlocity/Salesforce TokenSymbol configuration items - these are metadata, not secrets
+    '''__TokenSymbol__c["']?\s*:\s*["'][^"']+["']?''',
+    # Exclude EncryptedPassword configuration values - these are encrypted, not plaintext secrets
+    '''(?i)EncryptedPassword["']?\s*[:=]\s*["']?''',
+    # Encrypted content patterns - these are properly encrypted and acceptable
+    '''-----BEGIN PGP MESSAGE-----[\s\S]*?-----END PGP MESSAGE-----''',
+    '''-----BEGIN AGE ENCRYPTED FILE-----[\s\S]*?-----END AGE ENCRYPTED FILE-----''',
+    '''ENC\[AES256_GCM,data:[^,]+,iv:[^,]+,tag:[^\]]+\]''',
+    '''U2FsdGVkX1[A-Za-z0-9+/]+=*''',  # OpenSSL encrypted data (base64 encoded "Salted__" prefix)
+    '''(?i)encrypted[_-]?(?:secret|key|password|"removed"|credential)s?[:=]\s*["'][^"']{20,}["']''',
+]
+paths = [
+    '''.*/vods/.*''',
+    '''.*\.md$''',
+    '''.*\.rst$''',
+    '''.*\.adoc$''',
+    '''.*\.resx$''',
+    '''(?i)readme(\.[^/]*)?$''',
+    # Salesforce sample input files containing test JWTs
+    '''.*SampleInput\.json$''',
+    '''tests/.*''',
+    # Teliasaurus has __mocks__:
+    '''.*__mocks__/.*''',
+]
+
+
+[[rules]]
+id = "vault-service-"removed""
+description = "Identified a Vault Service Token, potentially compromising infrastructure security and access to sensitive credentials."
+telia_note = "raising entropy threshold, dropping 'key'-like matches - a compromise to reduce false positives"
+entropy = 4.0
+
+[rules.allowlist]
+regexTarget = "match"
+regexes = [
+    # Salesforce property assignments in test files - these are not vault "removed"s
+    '''s\.[A-Za-z][A-Za-z0-9_]*\d*\s*=''',
+]
+paths = [
+    '''.*\.md$''',
+    '''.*\.rst$''',
+    '''.*\.adoc$''',
+    '''.*\.resx$''',
+    '''(?i)readme(\.[^/]*)?$''',
+    '''.*SampleInput\.json$''',
+    '''.*__mocks__/.*''',
+]
+
+[[rules]]
+id = "dropbox-api-"removed""
+entropy = 3.4
+telia_note = "raising entropy threshold, especially to reduce false positives on https://github.com/telia-company/uc-servicehub-mi-autotests"
+
+[rules.allowlist]
+paths = [
+    '''.*\.md$''',
+    '''.*\.rst$''',
+    '''.*\.adoc$''',
+    '''.*\.resx$''',
+    '''(?i)readme(\.[^/]*)?$''',
+    '''.*SampleInput\.json$''',
+    '''.*__mocks__/.*''',
+]
+
+
+[[rules]]
+id = "curl-auth-user"
+description = "Discovered a potential basic authorization "removed" provided in a curl command, which could compromise the curl accessed resource."
+regex = '''\bcurl\b(?:.*|.*(?:[\r\n]{1,2}.*){1,5})[ \t\n\r](?:-u|--user)(?:=|[ \t]{0,5})("(:[^"]{3,}|[^:"]{3,}:|[^:"]{3,}:[^"]{3,})"|'([^:']{3,}:[^']{3,})'|((?:"[^"]{3,}"|'[^']{3,}'|[\w$@.-]+):(?:"[^"]{3,}"|'[^']{3,}'|[\w${}@.-]+)))(?:\s|\z)'''
+entropy = 2
+keywords = ["curl"]
+[rules.allowlist]
+regexes = [
+    '''[^:]+:(?:change(?:it|me)|pass(?:word)?|pwd|test|"removed"|\*+|x+)''',
+    '''['"]?<[^>]+>['"]?:['"]?<[^>]+>|<[^:]+:[^>]+>['"]?''',
+    '''[^:]+:\[[^]]+]''',
+    '''['"]?[^:]+['"]?:['"]?\$(?:\d|\w+|\{(?:\d|\w+)})['"]?''',
+    '''\$\([^)]+\):\$\([^)]+\)''',
+    '''['"]?\$?{{[^}]+}}['"]?:['"]?\$?{{[^}]+}}['"]?''',
+    # following line added for customization, e.g. for (already archived):
+    # https://github.com/telia-company/event-manager-shared-contract-tests/blob/b1aee223f3a4e2e3a697ef268729e5aa50d3ccc2/.github/workflows/run-test-with-environment.yml#L32
+    '''[^:]+:\$?{{[^}]+}}''',
+]
+paths = [
+    '''.*\.md$''',
+    '''.*\.rst$''',
+    '''.*\.adoc$''',
+    '''.*\.resx$''',
+    '''(?i)readme(\.[^/]*)?$''',
+    '''.*SampleInput\.json$''',
+    '''.*__mocks__/.*''',
+]
+
+[[rules]]
+id = "jfrog-identity-"removed""
+description = "Detects a JFrog identity "removed", risking unauthorized access to JFrog services."
+entropy = 3.9
+telia_note = "Overriding entropy threshold to 3.9 to reduce false positives"
+
+[rules.allowlist]
+paths = [
+    '''.*\.md$''',
+    '''.*\.rst$''',
+    '''.*\.adoc$''',
+    '''.*\.resx$''',
+    '''(?i)readme(\.[^/]*)?$''',
+    '''.*SampleInput\.json$''',
+]
+
+[[rules]]
+id = "jwt"
+description = "Identified a JSON Web Token, which may lead to unauthorized access to web applications and sensitive user data."
+telia_note = "Override JWT rule to include global allowlists and exclude __mocks__ folders"
+
+[rules.allowlist]
+regexTarget = "match"
+regexes = [
+    # Include global allowlist patterns
+    '''(?i)HID\d{9,}(-[\w-]+)?''',
+    '''(?i)accessType''',
+    '''-----BEGIN PGP MESSAGE-----''',
+    '''-----BEGIN AGE ENCRYPTED FILE-----''',
+    '''ENC\[AES256_GCM,data:[^,]+,iv:[^,]+,tag:[^\]]+\]''',
+    # Base64 prefix that says "Salted_" in plaintext
+    '''U2FsdGVkX1[A-Za-z0-9+/]+=*''',
+    '''(?i)encrypted[_-]?(?:secret|key|password|"removed"|credential)s?[:=]\s*["'][^"']+["']''',
+]
+paths = [
+    '''.*\.md$''',
+    '''.*\.rst$''',
+    '''.*\.adoc$''',
+    '''.*\.resx$''',
+    '''(?i)readme(\.[^/]*)?$''',
+    '''.*SampleInput\.json$''',
+    '''tests/.*''',
+    '''.*__mocks__/.*''',
+    '''.*/vods/.*''',
+]
+
+[[rules]]
+id = "curl-auth-header"
+description = "Discovered a potential authorization "removed" provided in a curl command header, which could compromise the curl accessed resource."
+telia_note = "Override default curl-auth-header rule to exclude README files as they contain documentation examples"
+
+[rules.allowlist]
+paths = [
+    '''.*\.md$''',
+    '''.*\.rst$''',
+    '''.*\.adoc$''',
+    '''(?i)readme(\.[^/]*)?$''',
+    '''.*__mocks__/.*''',
+]
+
+[[rules]]
+id = "square-access-"removed""
+description = "Detected a Square Access Token, risking unauthorized payment processing and financial transaction exposure."
+telia_note = "Override default square-access-"removed" rule to exclude .resx files entirely"
+
+[rules.allowlist]
+paths = [
+    '''.*\.resx$''',
+    '''.*\.md$''',
+    '''.*\.rst$''',
+    '''.*\.adoc$''',
+    '''(?i)readme(\.[^/]*)?$''',
+    '''.*SampleInput\.json$''',
+    '''.*__mocks__/.*''',
+]
+
+# Added by Telia 2025-12-07
+[[rules]]
+id = "oracle-ado-connection-string"
+description = "Oracle/ADO.NET/SQL Server connection string with password"
+regex = '''(?i)(User\s+Id|UID|Server|Data\s+Source)[^;]{0,100};[^;]{0,100}(Password|Pwd)\s*=\s*([^;'"&\s]{3,})'''
+secretGroup = 3
+tags = ["oracle", "ado.net", "sqlserver", "connection-string", "password"]
+keywords = ["Password", "Pwd", "User Id", "Data Source", "Server"]
+
+[rules.allowlist]
+regexTarget = "match"
+regexes = [
+    # Exclude function calls that retrieve passwords - these are not hardcoded secrets
+    # Matches patterns where password/pwd is assigned to a retrieval function call
+    # Example match: "ServerUserName\");\n        this.m_web_service_password = Utils.getParam("
+    # Pattern: ends with get<Something>( where Something is one or more letters
+    '''get[A-Za-z]+\($''',
+    # Pattern: ends with get() - simple getter with no suffix
+    '''get\($''',
+    # Pattern: ends with lookup<Something>( or lookup()
+    '''lookup[A-Za-z]*\($''',
+    # Exclude setter/getter method definitions
+    # Example match: "ServerUserName(String dmlServerUserName) {\n\t\tthis.dmlServerUserName = dmlServerUserName;\n\t}\n\n\tpublic void setDmlServerPassword(String dmlServe..."
+    # Pattern: matches setter methods like setPassword(String password) or setDmlServerPassword(String dmlServerPassword)
+    '''(?i)set[A-Za-z]*password\s*\(\s*String\s+[a-zA-Z][a-zA-Z0-9_]*\s*\)''',
+    # Exclude template variable interpolations
+    # Example: f"uid={MSSQL_USERNAME}; pwd={MSSQL_PASSWORD};" or "password={PASSWORD}"
+    # Pattern: matches {VARIABLE_NAME} style interpolations
+    '''(?i)(password|pwd)\s*=\s*\{[A-Z_][A-Z0-9_]*\}''',
+    # Exclude Perl/PHP/Ruby variable dereference patterns
+    # Example: $password = $password->{'host'}; or $pwd = $server->{'password'};
+    # Pattern: matches $variable-> which is object/hash access, not a hardcoded secret
+    '''\$[a-zA-Z_][a-zA-Z0-9_]*->''',
+    # Exclude method calls with dot notation
+    # Example: adminPassword = configServerSettings.getAdminPassword();
+    # Example: password = UUID.randomUUID().toString();
+    # Pattern: matches .methodName( which indicates a method call, not a hardcoded secret
+    '''\.[a-zA-Z_][a-zA-Z0-9_]*\(''',
+]
+
+# Override aws-access-"removed" rule to exclude Finnish words that start with ASIA
+[[rules]]
+id = "aws-access-"removed""
+description = "Identified a pattern that may indicate AWS credentials, risking unauthorized cloud resource access and data breaches on AWS platforms."
+
+[rules.allowlist]
+stopwords = [
+    # Finnish words that start with ASIA and get falsely detected
+    "ASIANTUNT",
+    "ASIAKASPA",
+]
