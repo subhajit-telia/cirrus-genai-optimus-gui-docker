@@ -27,5 +27,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+report.json
+
 # Optional eslint cache
 .eslintcache
