@@ -53,5 +53,27 @@ docker run -ti -p 8000:80 -e API_ENDPOINT="genai-optimus-api.cirrus-dev.teliacom
 ```
 
 
+## Secret Scanning (Gitleaks)
+
+This repo uses [gitleaks](https://github.com/gitleaks/gitleaks) to detect secrets committed to git history.
+
+**Run a scan:**
+```bash
+gitleaks detect --config gitleaks.toml --report-format json --report-path report.json
+```
+
+**If a leak is found:**
+1. Check whether the secret is still live in `HEAD` (current files). If it has been removed or overwritten with an empty/placeholder value, it is a historical finding.
+2. If the secret is still live — rotate it immediately in the relevant service.
+3. Once confirmed safe, add the fingerprint from the report to `.gitleaksignore`:
+```
+# .gitleaksignore
+<commit>:<file>:<rule-id>:<line>
+```
+
+> For more details see the [internal gitleaks cheat sheet](https://github.com/telia-company/dt-secrets-scanning-global/blob/main/docs/gitleaks-cheat-sheet.md).
+
+
+
 ## Further Documentation
-For more details check this https://itwiki.atlassian.teliacompany.net/display/AI/GUI
+For more details check this https://itwiki.atlassian.teliacompany.net/spaces/NBA/pages/1255902391/GUI+Front-end
