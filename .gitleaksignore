@@ -33,8 +33,9 @@ fa42de0fae4b9b6c9aeb70ab120bd35492c1031a:.env:generic-api-key:2
 # src/pages/admin/configuration/Config.tsx - hardcoded "removed"
 c73eb8e2563f32fa4092420035acf818c215d6bc:src/pages/admin/configuration/Config.tsx:generic-api-key:48
 
-# src/pages/home/Home.tsx - hardcoded AWS accessKeyId
+# src/pages/home/Home.tsx - hardcoded AWS accessKeyId which is already expired/changed
 90b020c15e2c1aebfc3120bfddf696f319ebb936:src/pages/home/Home.tsx:generic-api-key:15
+90b020c15e2c1aebfc3120bfddf696f319ebb936:src/pages/home/Home.tsx:aws-access-"removed":15
 
 # .github/workflows/build.yaml - hardcoded JF_PASSWORD
 3d20af5916e11bd78f90a8aac151e557d7fa1a79:.github/workflows/build.yaml:generic-api-key:26
