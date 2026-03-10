@@ -625,13 +625,35 @@ const B2C: React.FC = () => {
         if (workingTabs[0]?.data) {
           workingTabs = workingTabs.map((tab: any) => {
             if (tab.segment_id === result.input_params.segment_id) {
-              return { ...tab, data: [...tab.data, result.entry] };
+              // Insert reminder immediately after its parent base copy (same copy_group_id)
+              const parentIdx = tab.data.findIndex(
+                (d: any) =>
+                  d.input_params?.copy_group_id === result.entry.input_params?.copy_group_id &&
+                  (d.input_params?.copy_variant || 'base') === 'base'
+              );
+              if (parentIdx === -1) {
+                return { ...tab, data: [...tab.data, result.entry] };
+              }
+              const updated = [...tab.data];
+              updated.splice(parentIdx + 1, 0, result.entry);
+              return { ...tab, data: updated };
             }
             return tab;
           });
           arrayTab = workingTabs;
         } else {
-          workingTabs = [...workingTabs, result.entry];
+          // Insert reminder immediately after its parent base copy (same copy_group_id)
+          const parentIdx = workingTabs.findIndex(
+            (d: any) =>
+              d.input_params?.copy_group_id === result.entry.input_params?.copy_group_id &&
+              (d.input_params?.copy_variant || 'base') === 'base'
+          );
+          if (parentIdx === -1) {
+            workingTabs = [...workingTabs, result.entry];
+          } else {
+            workingTabs = [...workingTabs];
+            workingTabs.splice(parentIdx + 1, 0, result.entry);
+          }
           arrayNoSegment = workingTabs;
         }
         // Update state for visible incremental progress
@@ -905,24 +927,13 @@ const B2C: React.FC = () => {
                 // while the backend always returns the base format_id, which would also match the base copy entry
                 const fmtMatch = format.input_params?.copy_id === responseData.responses[0].input_params.copy_id;
                 if (fmtMatch) {
-                  // Preserve copy_variant and copy_group_id from the original card — the backend's
-                  // /chat/edit endpoint always returns copy_variant="base" regardless of which variant was edited.
-                  // TO-DO-UPDATE-AFTER-BACKEND-FIX: Remove this preservation logic once the backend returns the correct copy_variant
-                  const preservedVariant = format.input_params?.copy_variant || format.copy_variant || responseData.responses[0].input_params.copy_variant;
-                  const preservedGroupId = format.input_params?.copy_group_id || responseData.responses[0].input_params.copy_group_id;
-                  const correctedParams = {
-                    ...responseData.responses[0].input_params,
-                    copy_variant: preservedVariant,
-                    copy_group_id: preservedGroupId,
-                  };
-                  const correctedResponse = { ...responseData.responses[0], input_params: correctedParams };
                   let replaceOutput = format.outputs.map((output:innerOutput) => 
-                    output.input_params.copy_version_id === data.copy_version_id ? correctedResponse : output
+                    output.input_params.copy_version_id === data.copy_version_id ? responseData.responses[0] : output
                   );
                   return {
                     ...format,
                     answer: DOMPurify.sanitize(responseData.responses[0].answer),
-                    input_params: correctedParams,
+                    input_params: responseData.responses[0].input_params,
                     outputs: replaceOutput
                   };
                 }
@@ -937,24 +948,13 @@ const B2C: React.FC = () => {
             // Match by copy_id only — format_id matching would hit both base and reminder entries
             const fmtMatch = format.input_params?.copy_id === responseData.responses[0].input_params.copy_id;
             if (fmtMatch) {
-              // Preserve copy_variant and copy_group_id from the original card — the backend's
-              // /chat/edit endpoint always returns copy_variant="base" regardless of which variant was edited.
-              // TO-DO-UPDATE-AFTER-BACKEND-FIX: Remove this preservation logic once the backend returns the correct copy_variant
-              const preservedVariant = format.input_params?.copy_variant || (format as any).copy_variant || responseData.responses[0].input_params.copy_variant;
-              const preservedGroupId = format.input_params?.copy_group_id || responseData.responses[0].input_params.copy_group_id;
-              const correctedParams = {
-                ...responseData.responses[0].input_params,
-                copy_variant: preservedVariant,
-                copy_group_id: preservedGroupId,
-              };
-              const correctedResponse = { ...responseData.responses[0], input_params: correctedParams };
               let replaceOutput = format.outputs.map((output:innerOutput) => 
-                output.input_params.copy_version_id === data.copy_version_id ? correctedResponse : output
+                output.input_params.copy_version_id === data.copy_version_id ? responseData.responses[0] : output
               );
               return {
                 ...format,
                 answer: DOMPurify.sanitize(responseData.responses[0].answer),
-                input_params: correctedParams,
+                input_params: responseData.responses[0].input_params,
                 outputs: replaceOutput
               };
             }
@@ -1399,11 +1399,15 @@ const B2C: React.FC = () => {
     });
     console.log('emailItems:', emailItems);
 
-    // Step 2: Group by (segment_id, copy_variant) — allows max 1 base + 1 reminder per segment
+    // Step 2: Group by (segment_id, base_format_id, copy_variant) — allows max 1 base + 1 reminder
+    // per unique (segment, format) combination. Email S base and Email M base are different formats
+    // so they must NOT be grouped together.
     const grouped = emailItems.reduce((acc, item) => {
       const segmentId = item.input_params.segment_id || 'noSegment';
       const variant = item.input_params.copy_variant || 'base';
-      const key = `${segmentId}::${variant}`;
+      const rawFid = item.input_params.format_id || '';
+      const baseFid = rawFid.replace(/_reminder_.*$/, '');
+      const key = `${segmentId}::${baseFid}::${variant}`;
       if (!acc[key]) {
         acc[key] = [];
       }
