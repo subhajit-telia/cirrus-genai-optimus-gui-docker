@@ -126,15 +126,15 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
   };
 
   const handleButtonClick = (identifier:any, tabIndex:any, itemIndex:any, data:any) => {
-    console.log(tabIndex+'/'+itemIndex+'/'+data);
+    // console.log(tabIndex+'/'+itemIndex+'/'+data);
     if (identifier === 'chat_regenerate') {
-      console.log('chat_regenerate:', data);
+      // console.log('chat_regenerate:', data);
       data.copy_id = uuidv4();
       data.request_type = 'chat_regenerate';
       if (itemIndex !== '') {
         tabs[tabIndex].data[itemIndex].answer = '';
         regenarateItem(data); 
-        console.log('tabs@@@@', tabs)
+        // console.log('tabs@@@@', tabs)
       }else {
         tabs[tabIndex].answer = '';
         regenarateItem(data);  
@@ -169,11 +169,11 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
 
   const handleEditingMode = (tabIndex:any, itemIndex:any, outputIndex:any, isEdit: boolean) => {
     // Check if the currently active input is the same as the one being clicked
-    console.log('editVisibility', editVisibility);
-    console.log('inputVisibility>>', inputVisibility);
+    // console.log('editVisibility', editVisibility);
+    // console.log('inputVisibility>>', inputVisibility);
 
     if (Array.isArray(inputVisibility[0])) {
-      console.log('innnnnn');
+      // console.log('innnnnn');
       const clearedInputVisibility:any = inputVisibility.map(innerArray => {
         if (Array.isArray(innerArray)) {
           return innerArray.map(() => false); 
@@ -182,7 +182,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
       });
       setInputVisibility(clearedInputVisibility);
     }else {
-      console.log('Onnnnnn');
+      // console.log('Onnnnnn');
       const clearedInputVisibility:any = inputVisibility.map(() => false);
       setInputVisibility(clearedInputVisibility);
     }
@@ -203,12 +203,12 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
       setEditVisibility({ tabIndex, itemIndex, outputIndex, isEdit });
     }
 
-    console.log('editVisibility>>>>', editVisibility)
+    // console.log('editVisibility>>>>', editVisibility)
   };
 
   const handleEditAnswer = (tabIndex:any, itemIndex:any, outputIndex:any) => {
     // Check if the currently active input is the same as the one being clicked
-    console.log('editVisibility>>>>>', editVisibility);
+    // console.log('editVisibility>>>>>', editVisibility);
     setSelectedText(null);
     if (
       editVisibility.tabIndex === tabIndex &&
@@ -222,7 +222,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
       setEditVisibility({ tabIndex: tabIndex, itemIndex: itemIndex, outputIndex: outputIndex, isEdit: true });
     }
 
-    console.log('editVisibility>>>>', editVisibility);
+    // console.log('editVisibility>>>>', editVisibility);
     document.querySelectorAll('._contentEditable_uazmk_379').forEach(element => {
       element.setAttribute('spellcheck', 'false');
     });
@@ -238,12 +238,12 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
 
   /* ----------Save edit answer copy start---------- */
   const saveAnswerChange = async (value:any, copy_version_id:any, mode:any) => {
-    console.log('editInputValues', editInputValues);
-    console.log('currentEditCopy', currentEditCopy);
-    console.log('currentEditingCopy', currentEditingCopy);
-    console.log('value', value);
-    console.log('copy_version_id', copy_version_id);
-    console.log('editorChangedText', editorChangedText);
+    // console.log('editInputValues', editInputValues);
+    // console.log('currentEditCopy', currentEditCopy);
+    // console.log('currentEditingCopy', currentEditingCopy);
+    // console.log('value', value);
+    // console.log('copy_version_id', copy_version_id);
+    // console.log('editorChangedText', editorChangedText);
     setIsRefineBox(false);
     setIsEditCopyVersionId(copy_version_id);
     setIsSaveChanges(true);
@@ -267,8 +267,8 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
           trimmedValue = trimmedValue.slice(0, -1);
         }
       }
-      console.log('trimmedValue', trimmedValue);
-      console.log('Manual edit detected - calling API');
+      // console.log('trimmedValue', trimmedValue);
+      // console.log('Manual edit detected - calling API');
       if (trimmedValue !== value) {
         submitRefineQuestion('','edit_manual', data);
       }else {
@@ -276,7 +276,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
       }
     } else {
       // No manual edits, just UI button actions (refine/regenerate) that already updated via API
-      console.log('No manual edits detected - skipping API call');
+      // console.log('No manual edits detected - skipping API call');
       setIsSaveChanges(false);
     }
     
@@ -287,9 +287,9 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
 
   /* ----------Discard edit answer copy start---------- */
   const discardAnswerChange = async (lastChangeItem:any) => {
-    console.log('currentEditCopy', currentEditCopy);
-    console.log('lastChangeItem', lastChangeItem);
-    console.log('isRefineDetails', isRefineDetails);
+    // console.log('currentEditCopy', currentEditCopy);
+    // console.log('lastChangeItem', lastChangeItem);
+    // console.log('isRefineDetails', isRefineDetails);
     // if (currentEditCopy.answer) {
     //   if (isRefineDetails.itemIndex !== '' && isRefineDetails.itemIndex !== null) {
     //     if (tabs[isRefineDetails.tabIndex].data[isRefineDetails.itemIndex].outputs[isRefineDetails.outputIndex].answer !== currentEditCopy.answer) {
@@ -600,8 +600,8 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
       // console.log('charAfterStart:', charAfterStart);
       // console.log('charBeforeStart:', charBeforeStart);
 
-      console.log('before text:',`${fullString.slice(0, markdownStartIndex +1)}`);
-      console.log('after text:',`${fullString.slice(markdownStartIndex + 2)}`);
+      // console.log('before text:',`${fullString.slice(0, markdownStartIndex +1)}`);
+      // console.log('after text:',`${fullString.slice(markdownStartIndex + 2)}`);
       // If the character is `#` or `-`, insert a new line before it and place cursor after `#` or `-` with a space
       if (charAfterStart === "#" || charAfterStart === "-") {
         clickedHtml = `${fullString.slice(0, markdownStartIndex +1)}\n ${charAfterStart} <span class="cursor"></span>${fullString.slice(markdownStartIndex + 2)}`;
@@ -911,25 +911,25 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
   
   /* ----------select Copy CopyVersionId start---------- */
   const selectCopyCopyVersionId = async (tabIndex:number, itemIndex:any, outputIndex:number, outputItem:any) => {
-    console.log(tabIndex +'/'+ itemIndex +'/'+ outputItem);
+    // console.log(tabIndex +'/'+ itemIndex +'/'+ outputItem);
     let selectedItem:RefineAnswer = {
       tabIndex: tabIndex,
       itemIndex: itemIndex,
       outputIndex: outputIndex,
       outputItem: outputItem
     }
-    console.log('selectedItem', selectedItem);
+    // console.log('selectedItem', selectedItem);
     setIsRefineDetails(selectedItem);
   }
   /* select Copy CopyVersionId end */
 
   /* --------refine Selected Text start-------- */
   const refineSelectedText = (_identifier:any, _text:any) => {
-    console.log('_text', _text);
+    // console.log('_text', _text);
     // setIsRefineText(_text);
     setIsRefineType(_identifier);
-    console.log('selectedText', selectedText);
-    console.log('clickedText', clickedText);
+    // console.log('selectedText', selectedText);
+    // console.log('clickedText', clickedText);
     if (_identifier === 'edit_refine') {
       setIsRefineBox(prevState => !prevState);
     }else if (_identifier === 'edit_regenerate'){
@@ -980,7 +980,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
         question: data || null
       }
     }
-    console.log('refineData', refineData);
+    // console.log('refineData', refineData);
     
     // Clear manual edits when using UI buttons (refine/regenerate/insert)
     // Don't clear for edit_manual as that's the save operation itself
@@ -992,15 +992,15 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
     // setIsRefineBox(false);
     // setSelectedText('');
 
-    console.log('isRefineDetails', isRefineDetails);
+    // console.log('isRefineDetails', isRefineDetails);
     // handleEditingMode(isRefineDetails.tabIndex, isRefineDetails.itemIndex, isRefineDetails.outputIndex);
 
     if (isRefineDetails.itemIndex !== '' && isRefineDetails.itemIndex !== null) {
       tabs[isRefineDetails.tabIndex].data[isRefineDetails.itemIndex].answer = '';
-      console.log('tabs@@@@', tabs)
+      // console.log('tabs@@@@', tabs)
     }else {
       tabs[isRefineDetails.tabIndex].answer = '';
-      console.log('tabs####', tabs)
+      // console.log('tabs####', tabs)
     }
   }
   /* refine Selected copy end */
@@ -1110,7 +1110,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
   };
 
   /* ----------------star rating start---------------- */
-  const handleTotalRatingClick = async (tabIndex:number, itemIndex:any, outputIndex:number, copy_version_id:string, rating: number) => {
+  const handleTotalRatingClick = async (tabIndex:number, itemIndex:any, outputIndex:number, copy_version_id:string, rating: number, copy_variant?: string) => {
 
     // console.log('item', copy_version_id); 
     // console.log('rating', rating); 
@@ -1126,7 +1126,8 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
       comment: '',
       tabIndex: tabIndex,
       itemIndex: itemIndex,
-      outputIndex: outputIndex
+      outputIndex: outputIndex,
+      copy_variant: copy_variant,
     };
 
     let data:any = {
@@ -1178,7 +1179,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
   const handleFeedbackSave = async (updatedItem: any) => {
     // console.log('updatedItem', updatedItem);
     setIsModalOpen(false);
-    if (updatedItem.rating === 5) {
+    if (updatedItem.rating === 5 && updatedItem.copy_variant !== 'reminder') {
       openFeedbackAlert(updatedItem.copy_version_id);
     }
 
@@ -1372,7 +1373,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
                                       }
                                       onMouseLeave={() => setHoveredRating(null)}
                                       color="primary"
-                                      onClick={() => handleTotalRatingClick(tabIndex, itemIndex, outputIndex, outputItem.input_params.copy_version_id, starValue)}
+                                      onClick={() => handleTotalRatingClick(tabIndex, itemIndex, outputIndex, outputItem.input_params.copy_version_id, starValue, outputItem.input_params.copy_variant)}
                                       style={{ cursor: "pointer", fontSize: "24px" }}
                                     />
                                   ))}
@@ -1601,7 +1602,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
                                   }
                                   onMouseLeave={() => setHoveredRating(null)}
                                   color="primary"
-                                  onClick={() => handleTotalRatingClick(tabIndex, null, outputIndex, outputItem.input_params.copy_version_id, starValue)}
+                                  onClick={() => handleTotalRatingClick(tabIndex, null, outputIndex, outputItem.input_params.copy_version_id, starValue, outputItem.input_params.copy_variant)}
                                   
                                   style={{ cursor: "pointer", fontSize: "24px" }}
                                 />

@@ -143,33 +143,33 @@ const B2B: React.FC = () => {
 
 
     if (storedVersion === null || storedVersion !== packageJson.version) {
-      console.log('version', packageJson.version);
-      console.log('storedVersion', storedVersion);
+      // console.log('version', packageJson.version);
+      // console.log('storedVersion', storedVersion);
       // alert('This is an alert!');
       localStorage.setItem("app_version", packageJson.version);
       window.location.reload();
     }else {
-      console.log('version', packageJson.version);
+      // console.log('version', packageJson.version);
     }
 
   }, [setSegments, setTabs]);
 
   useEffect(() => {
-    console.log('loading......');
+    // console.log('loading......');
     setFamilyId(uuidv4());
   }, []);
 
   const onSelect = (selectedList:any, selectedItem:any) => {
     setSelectedProducts(selectedList);
-    console.log('onSelect', selectedList);
-    console.log('onSelect', selectedItem);
+    // console.log('onSelect', selectedList);
+    // console.log('onSelect', selectedItem);
     
   };
 
   const onRemove = (selectedList:any, removedItem:any) => {
     setSelectedProducts(selectedList);
-    console.log('onRemove', selectedList);
-    console.log('onRemove', removedItem);
+    // console.log('onRemove', selectedList);
+    // console.log('onRemove', removedItem);
   };
   
   /* -------------get segments data start------------- */
@@ -186,7 +186,7 @@ const B2B: React.FC = () => {
         },
       });
       const responseData = await response.json();
-      console.log("Success:", responseData);
+      // console.log("Success:", responseData);
       if (response.ok) {
         setSegments(responseData);
         setLoadingSegments(false);
@@ -213,7 +213,7 @@ const B2B: React.FC = () => {
         },
       });
       const responseData = await response.json();
-      console.log("Success:", responseData);
+      // console.log("Success:", responseData);
 
       if (response.ok) {
         setPurposes(responseData);
@@ -240,7 +240,7 @@ const B2B: React.FC = () => {
         },
       });
       const responseData = await response.json();
-      console.log("Success:", responseData);
+      // console.log("Success:", responseData);
       
       if (response.ok) {
         setProducts(responseData);
@@ -267,7 +267,7 @@ const B2B: React.FC = () => {
         },
       });
       const responseData = await response.json();
-      console.log("Success:", responseData);
+      // console.log("Success:", responseData);
       
       if (response.ok) {
         setFormats(responseData);
@@ -288,7 +288,7 @@ const B2B: React.FC = () => {
       )
     );
 
-    console.log('segments', segments);
+    // console.log('segments', segments);
   };
 
 
@@ -407,12 +407,12 @@ const B2B: React.FC = () => {
 
 
   const handleApiCall = async (data: any) => {
-    console.log('data>>', data);
+    // console.log('data>>', data);
     setLoading(true);
     let formUrl = apiUrl + '/chat/request';
-    console.log('payload', data);
-    console.log('arrayTab>>>', arrayTab);
-    console.log('arrayNoSegment', arrayNoSegment);
+    // console.log('payload', data);
+    // console.log('arrayTab>>>', arrayTab);
+    // console.log('arrayNoSegment', arrayNoSegment);
     data.user_id = userName;
     data.attached_text = attachments || null;
     data.knowledge_base_docs = isKnowledgeBaseData.length === 0 ? null : isKnowledgeBaseData;
@@ -428,13 +428,13 @@ const B2B: React.FC = () => {
       });
   
       const responseData = await response.json();
-      console.log('Success:', responseData);
+      // console.log('Success:', responseData);
   
       if (response.ok && !responseData.ErrorMessage) {
         
         setNoSegmentArray(arrayNoSegment);
         setTabArray(arrayTab);
-        console.log('tabs>>>', tabs);
+        // console.log('tabs>>>', tabs);
         if (responseData.responses.length === 1) {
           if (arrayTab !== undefined) {
             arrayTab = arrayTab.map((segment: { segment_id: any; segment_name: any; data: any[] }) => {
@@ -496,7 +496,7 @@ const B2B: React.FC = () => {
           setFeedbackCopy(prevArray => [...prevArray, responseData]); 
           setCurrentIndex(0);
           setIsOpenModal(true);
-          setTimeout(() => console.log('feedbackCopy', feedbackCopy), 300); 
+          // setTimeout(() => console.log('feedbackCopy', feedbackCopy), 300); 
           
           return;
         }
@@ -613,16 +613,23 @@ const B2B: React.FC = () => {
         if (workingTabs[0]?.data) {
           workingTabs = workingTabs.map((tab: any) => {
             if (tab.segment_id === result.input_params.segment_id) {
+              // Remove any existing reminder for this copy_group_id before inserting a fresh one
+              const withoutOldReminder = tab.data.filter(
+                (d: any) => !(
+                  d.input_params?.copy_group_id === result.entry.input_params?.copy_group_id &&
+                  (d.input_params?.copy_variant || 'base') === 'reminder'
+                )
+              );
               // Insert reminder immediately after its parent base copy (same copy_group_id)
-              const parentIdx = tab.data.findIndex(
+              const parentIdx = withoutOldReminder.findIndex(
                 (d: any) =>
                   d.input_params?.copy_group_id === result.entry.input_params?.copy_group_id &&
                   (d.input_params?.copy_variant || 'base') === 'base'
               );
               if (parentIdx === -1) {
-                return { ...tab, data: [...tab.data, result.entry] };
+                return { ...tab, data: [...withoutOldReminder, result.entry] };
               }
-              const updated = [...tab.data];
+              const updated = [...withoutOldReminder];
               updated.splice(parentIdx + 1, 0, result.entry);
               return { ...tab, data: updated };
             }
@@ -630,6 +637,13 @@ const B2B: React.FC = () => {
           });
           arrayTab = workingTabs;
         } else {
+          // Remove any existing reminder for this copy_group_id before inserting a fresh one
+          workingTabs = workingTabs.filter(
+            (d: any) => !(
+              d.input_params?.copy_group_id === result.entry.input_params?.copy_group_id &&
+              (d.input_params?.copy_variant || 'base') === 'reminder'
+            )
+          );
           // Insert reminder immediately after its parent base copy (same copy_group_id)
           const parentIdx = workingTabs.findIndex(
             (d: any) =>
@@ -711,7 +725,7 @@ const B2B: React.FC = () => {
 
   /* ---------------Regenarate item start--------------- */
   const regenarateItem = (data: any): void => {
-    console.log('tabArray', tabArray);
+    // console.log('tabArray', tabArray);
     arrayNoSegment = tabs;
     arrayTab = tabArray;
     handleApiCall(data);
@@ -720,10 +734,10 @@ const B2B: React.FC = () => {
 
   /* ----------Discard edit answer copy start---------- */
   const discardEditedAnswer = async (data: any): Promise<void> => {
-    console.log('discardEditedAnswer', data);
+    // console.log('discardEditedAnswer', data);
     arrayNoSegment = tabs;
     arrayTab = tabArray;
-    console.log('arrayTab>>', arrayTab);
+    // console.log('arrayTab>>', arrayTab);
     let formUrl = apiUrl + '/chat/discard';
     try {
       const response = await fetch(formUrl, {
@@ -736,14 +750,14 @@ const B2B: React.FC = () => {
       });
   
       const responseData = await response.json();
-      console.log('Success:', responseData);
+      // console.log('Success:', responseData);
   
       if (response.ok && !responseData.ErrorMessage) {
         setNoSegmentArray(arrayNoSegment);
         setTabArray(arrayTab);
-        console.log('tabs>>>', tabs);
-        console.log('arrayTab>>>', arrayTab);
-        console.log('arrayNoSegment>>>', arrayNoSegment);
+        // console.log('tabs>>>', tabs);
+        // console.log('arrayTab>>>', arrayTab);
+        // console.log('arrayNoSegment>>>', arrayNoSegment);
 
         const backendResponse = responseData.responses[0];
         const responseFormatId = backendResponse.input_params.format_id;
@@ -890,10 +904,10 @@ const B2B: React.FC = () => {
 
   /* ----------genarate Refine Copy start---------- */
   const genarateRefineCopy = async (data: any): Promise<void> => {
-    console.log('genarateRefineCopy', data);
+    // console.log('genarateRefineCopy', data);
     arrayNoSegment = tabs;
     arrayTab = tabArray;
-    console.log('arrayTab>>', arrayTab);
+    // console.log('arrayTab>>', arrayTab);
     let formUrl = apiUrl + '/chat/edit';
     try {
       const response = await fetch(formUrl, {
@@ -906,12 +920,12 @@ const B2B: React.FC = () => {
       });
   
       const responseData = await response.json();
-      console.log('Success:', responseData);
+      // console.log('Success:', responseData);
   
       if (response.ok && !responseData.ErrorMessage) {
         setNoSegmentArray(arrayNoSegment);
         setTabArray(arrayTab);
-        console.log('tabs>>>', tabs);
+        // console.log('tabs>>>', tabs);
   
         if (arrayTab !== undefined) {
           arrayTab = arrayTab.map((segment: { segment_id: any; segment_name: any; data: any[] }) => {
@@ -1031,15 +1045,15 @@ const B2B: React.FC = () => {
   /* send To contentful start */
   const handleContentfulChange = (e: CustomEvent) => {
     let input = (e.target as HTMLIonInputElement).value as string;
-    console.log('raw input>>>>', input);
+    // console.log('raw input>>>>', input);
     // 1. Remove trailing spaces immediately
     if (input.endsWith(" ")) {
       input = input.trimEnd();
     }
-    console.log('input>>>>', input);
+    // console.log('input>>>>', input);
     // 2. Validate forbidden characters
     if (forbiddenChars.test(input)) {
-      console.log('Invalid input detected');
+      // console.log('Invalid input detected');
       // setContentError("Contains forbidden characters (!@#$%^&* etc.)");
     } else {
       // setContentError("");
@@ -1053,8 +1067,8 @@ const B2B: React.FC = () => {
     setContentName((prev) => prev.trim());
   };
   const sendTocontentful = async (data: any): Promise<void> => {
-    console.log('contentfulData', data);
-    console.log('B2B array from template.json:', template.B2B); // <-- log B2B array here
+    // console.log('contentfulData', data);
+    // console.log('B2B array from template.json:', template.B2B); // <-- log B2B array here
     const B2BFormats = template.B2B;
     const filtered = data
       .map((item: any) => {
@@ -1079,15 +1093,15 @@ const B2B: React.FC = () => {
       };
       })
       .filter(Boolean);
-    console.log('contentful filtered data', filtered);
+    // console.log('contentful filtered data', filtered);
     setContentfulCopy(filtered)
   }
 
   const handleContentfulFormSubmit = async (data:any) => {
     setLoadingContentful(true);
-    console.log('handleContentfulFormSubmit', data);
-    console.log('contentfulCopy', contentfulCopy);
-    console.log('configData>>>', configData);
+    // console.log('handleContentfulFormSubmit', data);
+    // console.log('contentfulCopy', contentfulCopy);
+    // console.log('configData>>>', configData);
 
     const targetEnv = Object.entries(configData.contentful).map(([key, value]) => {
       // remove the "_env" part from the key
@@ -1113,7 +1127,7 @@ const B2B: React.FC = () => {
         parent_id = prevCopyVersionIdObj ? prevCopyVersionIdObj.id : "";
       }
       const copyVersionIdObj = { id: newId, parent_id };
-      console.log('formatName', formatName);
+      // console.log('formatName', formatName);
       if (isPersonalizedChanged === isPersonalized) {
         if (
           formatName === "Sms" ||
@@ -1138,7 +1152,7 @@ const B2B: React.FC = () => {
 
     // Update the copyVersionIdHistory for next time (flatten both arrays)
     setCopyVersionIdHistory([...genericCopyVersionIds, ...personalizedCopyVersionIds]);
-    console.log('copy_version_ids', allCopyVersionIds);
+    // console.log('copy_version_ids', allCopyVersionIds);
     // Determine which types to include in the array
     let types: string[] = [];
     if (genericCopyVersionIds.length > 0) {
@@ -1168,7 +1182,7 @@ const B2B: React.FC = () => {
       });
   
       const responseData = await response.json();
-      console.log('Success:', responseData);
+      // console.log('Success:', responseData);
   
       if (response.ok && !responseData.ErrorMessage) {
         setLoadingContentful(false);
@@ -1212,7 +1226,7 @@ const B2B: React.FC = () => {
       });
       
       const responseData = await response.json();
-      console.log("Success setConfigData:", responseData);
+      // console.log("Success setConfigData:", responseData);
 
       if (response.ok) {
         setConfigData(responseData[0].config_value);
@@ -1228,13 +1242,13 @@ const B2B: React.FC = () => {
   /* -------------handleEditingMode start------------- */
   const handleEditingMode = async (data: boolean): Promise<void> => {
     setIsOpenEditing(data);
-    console.log('isOpenEditing', data);
+    // console.log('isOpenEditing', data);
   }
   /* handleEditingMode end */
 
   /* ---------------Export to doc start--------------- */
   const exportToDoc = (data:any) => {
-    console.log('data', data);
+    // console.log('data', data);
     let answers: any;
 
     if (data[0].data) {
@@ -1248,7 +1262,7 @@ const B2B: React.FC = () => {
     }
 
 
-    console.log('answers', answers);
+    // console.log('answers', answers);
     
     const blob = new Blob([answers], {
       type: 'application/msword;charset=utf-8',
@@ -1263,20 +1277,20 @@ const B2B: React.FC = () => {
 
   /* ---------------Self learning start--------------- */
   const submitSelfLearning = async () => {
-    console.log('selfLearningData', selfLearningData);
+    // console.log('selfLearningData', selfLearningData);
      // Set the clicked div's ID as selected
     setIsOpenModal(false);
     setIsShowError(true);
     setIsErrorMsg('Testing submitted!');
-    console.log('feedbackCopy', feedbackCopy);
+    // console.log('feedbackCopy', feedbackCopy);
     if (selectedDiv !== null && selectedDiv < feedbackCopy.length - 1) {
       // Move to the next response
       setSelectedDiv(null);
       setCurrentIndex((prev) => prev + 1);
       setTimeout(() => setIsOpenModal(true), 300); // Reopen the modal with the next response
     }
-    console.log('arrayNoSegment', noSegmentArray);
-    console.log('arrayTab', tabArray);
+    // console.log('arrayNoSegment', noSegmentArray);
+    // console.log('arrayTab', tabArray);
 
     let currentArrayTab:any = tabArray;
     let currentNoSegmentArray:any = noSegmentArray;
@@ -1343,7 +1357,7 @@ const B2B: React.FC = () => {
       });
   
       const responseData = await response.json();
-      console.log('Success:', responseData);
+      // console.log('Success:', responseData);
     } catch (error: any) {
       console.error('Login failed:', error);
     }
@@ -1352,11 +1366,11 @@ const B2B: React.FC = () => {
 
   const handleClickContentful = (e: React.MouseEvent<HTMLIonChipElement>) => {
     getConfigData();
-    console.log('handleClickContentful', e);
+    // console.log('handleClickContentful', e);
     if (!(e.target as HTMLIonChipElement).disabled) {
       setIsContentfulModal(true);
     }
-    console.log('Contentful modal opened', contentfulCopy);
+    // console.log('Contentful modal opened', contentfulCopy);
 
     const emailCount = contentfulCopy.filter(
       (item) => item.input_params.format_name && item.input_params.format_name.startsWith('Email')
@@ -1368,7 +1382,7 @@ const B2B: React.FC = () => {
       const baseFid = rawFid.replace(/_reminder_.*$/, '');
       return baseFid.startsWith("Email");
     });
-    console.log('emailItems:', emailItems);
+    // console.log('emailItems:', emailItems);
     // Step 2: Group by (segment_id, base_format_id, copy_variant) — allows max 1 base + 1 reminder
     // per unique (segment, format) combination. Email S base and Email M base are different formats.
     const grouped = emailItems.reduce((acc, item) => {
@@ -1383,16 +1397,16 @@ const B2B: React.FC = () => {
       acc[key].push(item);
       return acc;
     }, {} as Record<string, typeof contentfulCopy>);
-    console.log('grouped by segment+format+variant:', grouped);
+    // console.log('grouped by segment+format+variant:', grouped);
     const keyExists = Object.keys(grouped).some(k => k.startsWith('noSegment::'));
-    console.log('Key "noSegment" exists:', keyExists);
+    // console.log('Key "noSegment" exists:', keyExists);
     // Step 3: Check if any (segment, format, variant) group has more than 1 entry
     const duplicates = Object.entries(grouped).filter(([_, items]: any) => items.length > 1);
 
-    console.log('duplicates:', duplicates);
+    // console.log('duplicates:', duplicates);
 
     if (duplicates.length > 0) {
-      console.log('Multiple copies of the same email format+variant found:', duplicates);
+      // console.log('Multiple copies of the same email format+variant found:', duplicates);
       setIsShowError(true);
       setIsErrorMsg('Can only send one email format per variant (base/reminder) at a time.');
       setIsContentfulModal(false);
@@ -1409,11 +1423,11 @@ const B2B: React.FC = () => {
     ) {
       setIsPersonalized(true);
       setIsPersonalizedChanged(true);
-      console.log("All items are personalized");
+      // console.log("All items are personalized");
     } else {
       setIsPersonalized(false);
       setIsPersonalizedChanged(false);
-      console.log("Not all items are personalized");
+      // console.log("Not all items are personalized");
     }
 
     contentfulCopy.forEach((item) => {
@@ -1422,7 +1436,7 @@ const B2B: React.FC = () => {
       format.startsWith("Sms") ||
       format.startsWith("Email")
       ) {
-        console.log("Matches:", format);
+        // console.log("Matches:", format);
         setIsCreateAssembly(true);
         setIsPersonalized(true);
       }
@@ -1465,7 +1479,7 @@ const B2B: React.FC = () => {
   // Upload function - send binary
   const uploadFile = async (file: File) => {
     setIsUploadAttachement(true);
-    console.log('Uploading file:', file);
+    // console.log('Uploading file:', file);
     const formData = new FormData();
     formData.append('file', file);
 
@@ -1544,7 +1558,7 @@ const B2B: React.FC = () => {
   };
   // Knowledge base remove start
   const handleRemoveKnowledgeBase = (kb_number:string) => {
-    console.log('kb_number', kb_number);
+    // console.log('kb_number', kb_number);
     setKnowledgeBaseData(prevArray => prevArray.filter(item => item.kb_number !== kb_number));
     setIsShowError(true);
     setIsErrorMsg('Knowledge Base removed successfully!');
@@ -1552,7 +1566,7 @@ const B2B: React.FC = () => {
   };
   // Submit Knowledge Base modal start
   const handleKnowledgeBaseForm = async (data:any) => {
-    console.log('KnowledgeBase', data);
+    // console.log('KnowledgeBase', data);
     if (
       !data.kb_number ||
       isKnowledgeBaseData.some(item => item.kb_number === data.kb_number)
@@ -1583,7 +1597,7 @@ const B2B: React.FC = () => {
         });
     
         const responseData = await response.json();
-        console.log('Success:', responseData);
+        // console.log('Success:', responseData);
     
         if (response.ok && responseData.title) {
           reset;
@@ -1937,7 +1951,7 @@ const B2B: React.FC = () => {
                         className="!pointer-events-auto text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg"
                       >
                         {loadingReminders && <IonSpinner name="bubbles" className='mr-1'></IonSpinner>}
-                        {remindersGenerated ? 'Reminders Generated' : loadingReminders ? 'Generating Reminders...' : 'Generate Reminders'}
+                        {loadingReminders ? 'Generating Reminders...' : remindersGenerated ? 'Regenerate Reminders' : 'Generate Reminders'}
                       </IonChip>
                       <IonChip
                         onClick={() => exportToDoc(tabs)}
