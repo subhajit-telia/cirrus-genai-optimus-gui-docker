@@ -1149,9 +1149,9 @@ const B2C: React.FC = () => {
       const copyVersionIdObj = { id: newId, parent_id };
       console.log('formatName', formatName);
       // Route by each item's own type_of_content (set from template config by sendTocontentful).
-      // This is more reliable than the isPersonalized/isPersonalizedChanged flags which can
-      // get out of sync in mixed-content sessions (e.g. Article + Email in the same session).
-      const isItemPersonalized = Array.isArray(item.type_of_content) && item.type_of_content.includes('personalized');
+      // Handle both array ["personalized"] and plain string "personalized" forms.
+      const toc = item.type_of_content;
+      const isItemPersonalized = Array.isArray(toc) ? toc.includes('personalized') : toc === 'personalized';
       if (isItemPersonalized) {
         personalizedCopyVersionIds.push(copyVersionIdObj);
       } else {
