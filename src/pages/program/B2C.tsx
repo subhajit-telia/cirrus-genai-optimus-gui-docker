@@ -937,9 +937,16 @@ const B2C: React.FC = () => {
           arrayTab = arrayTab.map((segment: { segment_id: any; segment_name: any; data: any[] }) => {
             if (segment.segment_id === responseData.responses[0].input_params.segment_id) {
               segment.data = segment.data.map((format: any) => {
-                // Match by copy_id only — format_id can't be used because reminders have a suffixed format_id
-                // while the backend always returns the base format_id, which would also match the base copy entry
-                const fmtMatch = format.input_params?.copy_id === responseData.responses[0].input_params.copy_id;
+                // Match by copy_id or by the copy_version_id that was sent to the edit endpoint.
+                // Matching by copy_version_id is the most reliable anchor: whichever card owns an
+                // output with that version_id is definitively the card being edited, even if the
+                // API returns a new copy_id (which it may do for edit_manual responses).
+                const responseCopyId = responseData.responses[0].input_params.copy_id;
+                const fmtMatch = format.input_params?.copy_id === responseCopyId
+                  || format.outputs?.some((o: any) =>
+                      o.input_params?.copy_id === responseCopyId
+                      || o.input_params?.copy_version_id === data.copy_version_id
+                  );
                 if (fmtMatch) {
                   let replaceOutput = format.outputs.map((output:innerOutput) => 
                     output.input_params.copy_version_id === data.copy_version_id ? responseData.responses[0] : output
@@ -959,8 +966,13 @@ const B2C: React.FC = () => {
           setTabs(arrayTab);
         } else {
           arrayNoSegment = arrayNoSegment.map((format: { format_id: any; outputs: innerOutput[]; input_params?: any }) => {
-            // Match by copy_id only — format_id matching would hit both base and reminder entries
-            const fmtMatch = format.input_params?.copy_id === responseData.responses[0].input_params.copy_id;
+            // Match by copy_id or by the copy_version_id that was sent to the edit endpoint.
+            const responseCopyId = responseData.responses[0].input_params.copy_id;
+            const fmtMatch = format.input_params?.copy_id === responseCopyId
+              || format.outputs?.some((o: any) =>
+                  o.input_params?.copy_id === responseCopyId
+                  || o.input_params?.copy_version_id === data.copy_version_id
+              );
             if (fmtMatch) {
               let replaceOutput = format.outputs.map((output:innerOutput) => 
                 output.input_params.copy_version_id === data.copy_version_id ? responseData.responses[0] : output
