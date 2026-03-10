@@ -441,7 +441,14 @@ const B2B: React.FC = () => {
               if (segment.segment_id === responseData.responses[0].input_params.segment_id) {
                 segment.data = segment.data.map((format: any) => {
                   // Match by copy_id so reminder cards (format_id suffixed) are also updated correctly.
-                  if (format.format_id === responseData.responses[0].input_params.format_id || format.input_params?.copy_id === responseData.responses[0].input_params.copy_id) {
+                  // Also guard copy_variant so reminder regeneration never overwrites the base card.
+                  const responseVariant = responseData.responses[0].input_params.copy_variant || 'base';
+                  const cardBaseFormatId = (format.format_id || '').replace(/_reminder_.*$/, '');
+                  const cardVariant = format.copy_variant || format.input_params?.copy_variant || 'base';
+                  const fmtMatch = (cardBaseFormatId === responseData.responses[0].input_params.format_id
+                    || format.input_params?.copy_id === responseData.responses[0].input_params.copy_id)
+                    && cardVariant === responseVariant;
+                  if (fmtMatch) {
                     return {
                       ...format,
                       answer: DOMPurify.sanitize(responseData.responses[0].answer),
@@ -465,8 +472,16 @@ const B2B: React.FC = () => {
             setTabs(arrayTab);
           } else {
             arrayNoSegment = arrayNoSegment.map((format: { format_id: any; outputs?: any[]; input_params?: any }) => {
-              // Also match reminder cards by copy_id.
-              if (format.format_id === responseData.responses[0].input_params.format_id || format.input_params?.copy_id === responseData.responses[0].input_params.copy_id || format.format_id === 'customPrompts') {
+              // Also match reminder cards by copy_id, but guard copy_variant so reminder regeneration
+              // never overwrites the base card.
+              const responseVariant = responseData.responses[0].input_params.copy_variant || 'base';
+              const cardBaseFormatId = (format.format_id || '').replace(/_reminder_.*$/, '');
+              const cardVariant = (format as any).copy_variant || (format as any).input_params?.copy_variant || 'base';
+              const fmtMatch = format.format_id === 'customPrompts'
+                || ((cardBaseFormatId === responseData.responses[0].input_params.format_id
+                  || (format as any).input_params?.copy_id === responseData.responses[0].input_params.copy_id)
+                  && cardVariant === responseVariant);
+              if (fmtMatch) {
                 const currentOutputs = format.outputs || [];
                 return {
                   ...format,
@@ -617,14 +632,14 @@ const B2B: React.FC = () => {
               const withoutOldReminder = tab.data.filter(
                 (d: any) => !(
                   d.input_params?.copy_group_id === result.entry.input_params?.copy_group_id &&
-                  (d.input_params?.copy_variant || 'base') === 'reminder'
+                  (d.copy_variant || d.input_params?.copy_variant || 'base') === 'reminder'
                 )
               );
               // Insert reminder immediately after its parent base copy (same copy_group_id)
               const parentIdx = withoutOldReminder.findIndex(
                 (d: any) =>
                   d.input_params?.copy_group_id === result.entry.input_params?.copy_group_id &&
-                  (d.input_params?.copy_variant || 'base') === 'base'
+                  (d.copy_variant || d.input_params?.copy_variant || 'base') === 'base'
               );
               if (parentIdx === -1) {
                 return { ...tab, data: [...withoutOldReminder, result.entry] };
@@ -641,14 +656,14 @@ const B2B: React.FC = () => {
           workingTabs = workingTabs.filter(
             (d: any) => !(
               d.input_params?.copy_group_id === result.entry.input_params?.copy_group_id &&
-              (d.input_params?.copy_variant || 'base') === 'reminder'
+              (d.copy_variant || d.input_params?.copy_variant || 'base') === 'reminder'
             )
           );
           // Insert reminder immediately after its parent base copy (same copy_group_id)
           const parentIdx = workingTabs.findIndex(
             (d: any) =>
               d.input_params?.copy_group_id === result.entry.input_params?.copy_group_id &&
-              (d.input_params?.copy_variant || 'base') === 'base'
+              (d.copy_variant || d.input_params?.copy_variant || 'base') === 'base'
           );
           if (parentIdx === -1) {
             workingTabs = [...workingTabs, result.entry];
@@ -931,9 +946,13 @@ const B2B: React.FC = () => {
           arrayTab = arrayTab.map((segment: { segment_id: any; segment_name: any; data: any[] }) => {
             if (segment.segment_id === responseData.responses[0].input_params.segment_id) {
               segment.data = segment.data.map((format: any) => {
-                // Match by copy_id — format_id can't be used because reminders have a suffixed format_id
-                // while the backend always returns the base format_id.
-                if (format.input_params?.copy_id === responseData.responses[0].input_params.copy_id) {
+                // Match by copy_id or by the copy_version_id that was sent to the edit endpoint.
+                const responseCopyId = responseData.responses[0].input_params.copy_id;
+                if (format.input_params?.copy_id === responseCopyId
+                  || format.outputs?.some((o: any) =>
+                      o.input_params?.copy_id === responseCopyId
+                      || o.input_params?.copy_version_id === data.copy_version_id
+                  )) {
                   let replaceOutput = format.outputs.map((output:innerOutput) => 
                     output.input_params.copy_version_id === data.copy_version_id ? responseData.responses[0] : output
                   );
@@ -952,8 +971,14 @@ const B2B: React.FC = () => {
           setTabs(arrayTab);
         } else {
           arrayNoSegment = arrayNoSegment.map((format: { format_id: any; outputs: innerOutput[]; input_params?: any }) => {
-            // Match by copy_id — format_id matching would hit both base and reminder entries
-            const fmtMatch = format.input_params?.copy_id === responseData.responses[0].input_params.copy_id || format.format_id === 'customPrompts';
+            // Match by copy_id or by the copy_version_id that was sent to the edit endpoint.
+            const responseCopyId = responseData.responses[0].input_params.copy_id;
+            const fmtMatch = format.input_params?.copy_id === responseCopyId
+              || format.outputs?.some((o: any) =>
+                  o.input_params?.copy_id === responseCopyId
+                  || o.input_params?.copy_version_id === data.copy_version_id
+              )
+              || format.format_id === 'customPrompts';
             if (fmtMatch) {
               let replaceOutput = format.outputs.map((output:innerOutput) => 
                 output.input_params.copy_version_id === data.copy_version_id ? responseData.responses[0] : output
@@ -1946,7 +1971,7 @@ const B2B: React.FC = () => {
                         Send to contentful
                       </IonChip>
                       <IonChip
-                        disabled={isOpenEditing || loadingReminders || remindersGenerated || contentfulCopy.length === 0 || getCvmEligibleCopies().length === 0}
+                        disabled={isOpenEditing || loadingReminders || contentfulCopy.length === 0 || getCvmEligibleCopies().length === 0}
                         onClick={() => setIsReminderModal(true)}
                         className="!pointer-events-auto text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg"
                       >
