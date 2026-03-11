@@ -1286,10 +1286,13 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
                           if (outputItem.input_params?.status === 'discarded') {
                             return null;
                           }
+                          {/* Highlight active copy version in the session (same copy_version that is sent to Contentful & used to generate reminders) */}
+                          const _groupKey = `${outputItem.input_params?.copy_group_id || outputItem.input_params?.format_id || ''}::${outputItem.input_params?.copy_variant || 'base'}`;
+                          const _isActiveHighlighted = selectedCopyVersionIds.has(outputItem.input_params?.copy_version_id) && contestedGroupKeys.has(_groupKey);
                           return (
                           <React.Fragment key={outputIndex}>
-                          <div onClick={() => selectCopyCopyVersionId(tabIndex, itemIndex, outputIndex, outputItem)} className={`rounded-md mb-1.5 relative${selectedCopyVersionIds.has(outputItem.input_params?.copy_version_id) ? ' selected-copy-version' : ''}`}>
-                            {selectedCopyVersionIds.has(outputItem.input_params?.copy_version_id) && (
+                          <div onClick={() => selectCopyCopyVersionId(tabIndex, itemIndex, outputIndex, outputItem)} className={`rounded-md mb-1.5 relative${_isActiveHighlighted ? ' selected-copy-version' : ''}`}>
+                            {_isActiveHighlighted && (
                               <span className="selected-copy-version-label">active version</span>
                             )}
                             {/* Show the output copy */}
