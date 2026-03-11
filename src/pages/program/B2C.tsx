@@ -948,8 +948,9 @@ const B2C: React.FC = () => {
                       || o.input_params?.copy_version_id === data.copy_version_id
                   );
                 if (fmtMatch) {
+                  const refinedResponse = { ...responseData.responses[0], timestamp: Date.now() };
                   let replaceOutput = format.outputs.map((output:innerOutput) => 
-                    output.input_params.copy_version_id === data.copy_version_id ? responseData.responses[0] : output
+                    output.input_params.copy_version_id === data.copy_version_id ? refinedResponse : output
                   );
                   return {
                     ...format,
@@ -974,8 +975,9 @@ const B2C: React.FC = () => {
                   || o.input_params?.copy_version_id === data.copy_version_id
               );
             if (fmtMatch) {
+              const refinedResponse = { ...responseData.responses[0], timestamp: Date.now() };
               let replaceOutput = format.outputs.map((output:innerOutput) => 
-                output.input_params.copy_version_id === data.copy_version_id ? responseData.responses[0] : output
+                output.input_params.copy_version_id === data.copy_version_id ? refinedResponse : output
               );
               return {
                 ...format,
@@ -1405,6 +1407,8 @@ const B2C: React.FC = () => {
   };
   /* Self learning end */
 
+
+  /* ---------------Contentful Copy Handling start -------------- */
   const handleClickContentful = (e: React.MouseEvent<HTMLIonChipElement>) => {
     getConfigData();
     // console.log('handleClickContentful', e);
@@ -1489,7 +1493,7 @@ const B2C: React.FC = () => {
       }
     });
   };
-
+  /* Contentful Copy Handling end */
 
   /* -------------handle file upload start------------- */
   // Trigger file select dialog
