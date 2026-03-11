@@ -72,6 +72,8 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
   
   const [isSaveChanges, setIsSaveChanges] = useState(false);
   const [isEditCopyVersionId, setIsEditCopyVersionId] = useState('');
+  const [selectedCopyVersionIds, setSelectedCopyVersionIds] = useState<Set<string>>(new Set());
+  const [contestedGroupKeys, setContestedGroupKeys] = useState<Set<string>>(new Set());
   const [isRefineBox, setIsRefineBox] = useState(false);
   const [isRefineText, setIsRefineText] = useState('');
   const [isRefineType, setIsRefineType] = useState('');
@@ -434,6 +436,21 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
       }
     });
 
+    // Count active outputs per group key — used to know which slots are contested (>1 version visible).
+    const countPerGroup = new Map<string, number>();
+    for (const output of allOutputs) {
+      if (output.input_params?.status === 'discarded') continue;
+      const groupId = output.input_params?.copy_group_id || output.input_params?.format_id || '';
+      const variant = output.input_params?.copy_variant || 'base';
+      const key = `${groupId}::${variant}`;
+      countPerGroup.set(key, (countPerGroup.get(key) ?? 0) + 1);
+    }
+    const newContestedKeys = new Set<string>();
+    for (const [key, count] of countPerGroup.entries()) {
+      if (count > 1) newContestedKeys.add(key);
+    }
+    setContestedGroupKeys(newContestedKeys);
+
     // For each copy_group_id + copy_variant, keep only the latest active version.
     // copy_group_id uniquely identifies a (format, segment) slot, so this yields
     // at most 1 base + 1 reminder per slot.
@@ -449,10 +466,14 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
       }
     }
 
+    const newSelectedIds = new Set<string>();
     for (const latestOutput of byGroupVariant.values()) {
       const { rating, ...outputWithoutRating } = latestOutput;
       resultArray.push(outputWithoutRating);
+      const selectedId = latestOutput.input_params?.copy_version_id;
+      if (selectedId) newSelectedIds.add(selectedId);
     }
+    setSelectedCopyVersionIds(newSelectedIds);
 
     contentfulData(resultArray)
     // console.log(resultArray);
@@ -1267,12 +1288,15 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
                           }
                           return (
                           <React.Fragment key={outputIndex}>
-                          <div onClick={() => selectCopyCopyVersionId(tabIndex, itemIndex, outputIndex, outputItem)} className='shadow-md rounded-md mb-1.5 relative'>
+                          <div onClick={() => selectCopyCopyVersionId(tabIndex, itemIndex, outputIndex, outputItem)} className={`rounded-md mb-1.5 relative${selectedCopyVersionIds.has(outputItem.input_params?.copy_version_id) ? ' selected-copy-version' : ''}`}>
+                            {selectedCopyVersionIds.has(outputItem.input_params?.copy_version_id) && (
+                              <span className="selected-copy-version-label">active version</span>
+                            )}
                             {/* Show the output copy */}
                             {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === itemIndex && editVisibility.outputIndex === outputIndex ?
                               <></>
                               :
-                              <ReactMarkdown className='py-2 px-6' remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} children={outputItem.answer}/>
+                              <ReactMarkdown className='py-2 px-4' remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} children={outputItem.answer}/>
                               
                             }
 
@@ -1284,14 +1308,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
                                     <div className='relative'>
                                       {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === itemIndex && editVisibility.outputIndex === outputIndex && editVisibility.isEdit === false ?
                                         <div
-                                          className='editing-area py-2 px-6'
-                                          // contentEditable
-                                          spellCheck="false"
-                                          onKeyDown={handleKeyPress}
-                                          key={outputIndex}
-                                          ref={(el) => (containerRefs.current[outputIndex] = el!)}
-                                          onMouseUp={(e) => handleMouseUp(e, tabIndex, itemIndex, outputIndex)}
-                                          onClick={(e) => handleMouseClick(e, tabIndex, itemIndex, outputIndex)}
+                                          className='editing-area py-2 px-4'
                                           dangerouslySetInnerHTML={{
                                             __html: marked(outputItem.answer) as string
                                           }}
@@ -1300,7 +1317,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
                                         </div>
                                       :
                                         <MDXEditor 
-                                          className='py-2 px-6'
+                                          className='py-2 px-4'
                                           ref={mdxEditorRef}
                                           markdown={outputItem.answer.replace(/<span class="new_content">|<\/span>/g, '').replace(/<span class="cursor">|<\/span>/g, '')}
                                           // markdown={editInputValues[tabIndex][itemIndex][outputIndex]}
@@ -1406,19 +1423,17 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
                                 <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Download as .doc' className='text-xs' onClick={() => exportToDoc('single', outputItem.answer)} shape="round">
                                   <IonIcon className='' slot="icon-only" icon={documentTextOutline}></IonIcon>
                                 </IonButton>
+                                {!(editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === itemIndex) && <>
+                                  <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Refine copy' className='text-xs' onClick={() => { setActiveRefineOutput(prev => prev?.tabIndex === tabIndex && prev?.itemIndex === itemIndex && prev?.outputIndex === outputIndex ? null : {tabIndex, itemIndex, outputIndex}); setActiveRefineInputValue(''); }} shape="round">
+                                    <IonIcon slot="icon-only" icon={activeRefineOutput?.tabIndex === tabIndex && activeRefineOutput?.itemIndex === itemIndex && activeRefineOutput?.outputIndex === outputIndex ? closeOutline : chatbubblesOutline}></IonIcon>
+                                  </IonButton>
+                                  <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Regenerate copy' className='text-xs' onClick={() => handleButtonClick('chat_regenerate', tabIndex, itemIndex, outputItem.input_params)} shape="round">
+                                    <IonIcon slot="icon-only" icon={refreshOutline}></IonIcon>
+                                  </IonButton>
+                                </>}
                               </div>
                             </div>
                           </div>
-                          {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === itemIndex ? <></> :
-                            <div className='text-right'>
-                              <IonButton data-tooltip-id='tooltip' data-tooltip-content='Refine copy' className='text-xs' onClick={() => { setActiveRefineOutput(prev => prev?.tabIndex === tabIndex && prev?.itemIndex === itemIndex && prev?.outputIndex === outputIndex ? null : {tabIndex, itemIndex, outputIndex}); setActiveRefineInputValue(''); }} shape="round">
-                                <IonIcon slot="icon-only" icon={activeRefineOutput?.tabIndex === tabIndex && activeRefineOutput?.itemIndex === itemIndex && activeRefineOutput?.outputIndex === outputIndex ? closeOutline : chatbubblesOutline}></IonIcon>
-                              </IonButton>
-                              <IonButton data-tooltip-id='tooltip' data-tooltip-content='Regenerate copy' className='text-xs' onClick={() => handleButtonClick('chat_regenerate', tabIndex, itemIndex, outputItem.input_params)} shape="round">
-                                <IonIcon slot="icon-only" icon={refreshOutline}></IonIcon>
-                              </IonButton>
-                            </div>
-                          }
                           {activeRefineOutput?.tabIndex === tabIndex && activeRefineOutput?.itemIndex === itemIndex && activeRefineOutput?.outputIndex === outputIndex && (
                             <IonTextarea
                               className='z-0 bottom-textarea rounded-xl mt-2 mb-2.5 text-black'
@@ -1498,14 +1513,19 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
                     }
                     const containerRef = React.createRef<HTMLDivElement>();
                     const boxIndex = tabIndex * 10 + outputIndex;
+                    const _groupKey = `${outputItem.input_params?.copy_group_id || outputItem.input_params?.format_id || ''}::${outputItem.input_params?.copy_variant || 'base'}`;
+                    const _isActiveHighlighted = selectedCopyVersionIds.has(outputItem.input_params?.copy_version_id) && contestedGroupKeys.has(_groupKey);
                     return (
                       <React.Fragment key={boxIndex}>
-                      <div onClick={() => selectCopyCopyVersionId(tabIndex, null, outputIndex, outputItem)} className='shadow-md rounded-md mb-1.5 relative'>
+                      <div onClick={() => selectCopyCopyVersionId(tabIndex, null, outputIndex, outputItem)} className={`rounded-md mb-1.5 relative${_isActiveHighlighted ? ' selected-copy-version' : ''}`}>
+                        {_isActiveHighlighted && (
+                          <span className="selected-copy-version-label">active version</span>
+                        )}
                         {/* Show the output copy */}
                         {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === null && editVisibility.outputIndex === outputIndex ?
                           <></>
                           :
-                          <ReactMarkdown className='py-2 px-6' remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} children={outputItem.answer}/>
+                          <ReactMarkdown className='py-2 px-4' remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} children={outputItem.answer}/>
                         }
                         
                         {/* Edit answer for each output */}
@@ -1516,14 +1536,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
                                 <div className='relative'>
                                   {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === null && editVisibility.outputIndex === outputIndex && editVisibility.isEdit === false ?
                                     <div
-                                      className='editing-area py-2 px-6'
-                                      // contentEditable
-                                      spellCheck="false"
-                                      onKeyDown={handleKeyPress}
-                                      key={outputIndex}
-                                      ref={(el) => (containerRefs.current[outputIndex] = el!)}
-                                      onMouseUp={(e) => handleMouseUp(e, tabIndex, null, outputIndex)}
-                                      onClick={(e) => handleMouseClick(e, tabIndex, null, outputIndex)}
+                                      className='editing-area py-2 px-4'
                                       dangerouslySetInnerHTML={{
                                         __html: marked(outputItem.answer) as string
                                       }}
@@ -1532,7 +1545,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
                                     </div>
                                   :
                                     <MDXEditor 
-                                      className='py-2 px-6'
+                                      className='py-2 px-4'
                                       ref={mdxEditorRef}
                                       markdown={outputItem.answer.replace(/<span class="new_content">|<\/span>/g, '').replace(/<span class="cursor">|<\/span>/g, '')} 
                                       // markdown={editInputValues[tabIndex][outputIndex] as string} 
@@ -1636,19 +1649,17 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
                             <IonButton data-tooltip-id='tooltip' data-tooltip-content='Download as .doc' fill="clear" className='text-xs' onClick={() => exportToDoc('single', outputItem.answer)} shape="round">
                               <IonIcon className='' slot="icon-only" icon={documentTextOutline}></IonIcon>
                             </IonButton>
+                            {!(editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === null) && <>
+                              <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Refine copy' className='text-xs' onClick={() => { setActiveRefineOutput(prev => prev?.tabIndex === tabIndex && prev?.itemIndex === null && prev?.outputIndex === outputIndex ? null : {tabIndex, itemIndex: null, outputIndex}); setActiveRefineInputValue(''); }} shape="round">
+                                <IonIcon slot="icon-only" icon={activeRefineOutput?.tabIndex === tabIndex && activeRefineOutput?.itemIndex === null && activeRefineOutput?.outputIndex === outputIndex ? closeOutline : chatbubblesOutline}></IonIcon>
+                              </IonButton>
+                              <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Regenerate copy' className='text-xs' onClick={() => handleButtonClick('chat_regenerate', tabIndex, '', outputItem.input_params)} shape="round">
+                                <IonIcon slot="icon-only" icon={refreshOutline}></IonIcon>
+                              </IonButton>
+                            </>}
                           </div>
                         </div>
                       </div>
-                      {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === null ? <></> :
-                        <div className='text-right'>
-                          <IonButton data-tooltip-id='tooltip' data-tooltip-content='Refine copy' className='text-xs' onClick={() => { setActiveRefineOutput(prev => prev?.tabIndex === tabIndex && prev?.itemIndex === null && prev?.outputIndex === outputIndex ? null : {tabIndex, itemIndex: null, outputIndex}); setActiveRefineInputValue(''); }} shape="round">
-                            <IonIcon slot="icon-only" icon={activeRefineOutput?.tabIndex === tabIndex && activeRefineOutput?.itemIndex === null && activeRefineOutput?.outputIndex === outputIndex ? closeOutline : chatbubblesOutline}></IonIcon>
-                          </IonButton>
-                          <IonButton data-tooltip-id='tooltip' data-tooltip-content='Regenerate copy' className='text-xs' onClick={() => handleButtonClick('chat_regenerate', tabIndex, '', outputItem.input_params)} shape="round">
-                            <IonIcon slot="icon-only" icon={refreshOutline}></IonIcon>
-                          </IonButton>
-                        </div>
-                      }
                       {activeRefineOutput?.tabIndex === tabIndex && activeRefineOutput?.itemIndex === null && activeRefineOutput?.outputIndex === outputIndex && (
                         <IonTextarea
                           className='z-0 bottom-textarea rounded-xl mt-2 mb-2.5 text-black'
