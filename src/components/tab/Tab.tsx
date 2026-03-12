@@ -1311,7 +1311,10 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
                                     <div className='relative'>
                                       {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === itemIndex && editVisibility.outputIndex === outputIndex && editVisibility.isEdit === false ?
                                         <div
+                                          ref={(el) => { if (el) containerRefs.current[outputIndex] = el; }}
                                           className='editing-area py-2 px-4'
+                                          onMouseUp={(e) => handleMouseUp(e, tabIndex, itemIndex, outputIndex)}
+                                          onClick={(e) => handleMouseClick(e, tabIndex, itemIndex, outputIndex)}
                                           dangerouslySetInnerHTML={{
                                             __html: marked(outputItem.answer) as string
                                           }}
@@ -1539,7 +1542,10 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
                                 <div className='relative'>
                                   {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === null && editVisibility.outputIndex === outputIndex && editVisibility.isEdit === false ?
                                     <div
+                                      ref={(el) => { if (el) containerRefs.current[outputIndex] = el; }}
                                       className='editing-area py-2 px-4'
+                                      onMouseUp={(e) => handleMouseUp(e, tabIndex, null, outputIndex)}
+                                      onClick={(e) => handleMouseClick(e, tabIndex, null, outputIndex)}
                                       dangerouslySetInnerHTML={{
                                         __html: marked(outputItem.answer) as string
                                       }}
