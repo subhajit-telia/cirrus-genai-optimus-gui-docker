@@ -196,11 +196,30 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
       editVisibility.itemIndex === itemIndex &&
       editVisibility.outputIndex === outputIndex
     ) {
+      // Clean blinking cursor from the answer when closing editing mode
+      if (itemIndex !== null) {
+        tabs[tabIndex].data[itemIndex].outputs[outputIndex].answer =
+          tabs[tabIndex].data[itemIndex].outputs[outputIndex].answer.replace(/<span class="cursor"><\/span>/g, '');
+      } else {
+        tabs[tabIndex].outputs[outputIndex].answer =
+          tabs[tabIndex].outputs[outputIndex].answer.replace(/<span class="cursor"><\/span>/g, '');
+      }
       // If it is the same, hide the input by setting editVisibility to null
-      setIsRefineBox(false);
-      setIsRefineText('');
       setEditVisibility({ tabIndex: null, itemIndex: null, outputIndex: null, isEdit: false });
     } else {
+      // Clean blinking cursor from the previously-edited answer when switching to a different edit
+      const prevTabIdx = editVisibility.tabIndex;
+      const prevItemIdx = editVisibility.itemIndex;
+      const prevOutputIdx = editVisibility.outputIndex;
+      if (prevTabIdx !== null && prevOutputIdx !== null) {
+        if (prevItemIdx !== null) {
+          tabs[prevTabIdx].data[prevItemIdx].outputs[prevOutputIdx].answer =
+            tabs[prevTabIdx].data[prevItemIdx].outputs[prevOutputIdx].answer.replace(/<span class="cursor"><\/span>/g, '');
+        } else {
+          tabs[prevTabIdx].outputs[prevOutputIdx].answer =
+            tabs[prevTabIdx].outputs[prevOutputIdx].answer.replace(/<span class="cursor"><\/span>/g, '');
+        }
+      }
       // Otherwise, set the new active input
       setEditVisibility({ tabIndex, itemIndex, outputIndex, isEdit });
     }
