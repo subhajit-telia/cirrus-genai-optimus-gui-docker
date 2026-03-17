@@ -62,9 +62,9 @@ interface Purposes {
   purpose_written_description: string;
 }
 interface Products {
-  product_id: string;
-  product_name: string;
-  category: string;
+  unique_id: string;
+  title: string | null;
+  category: string | null;
 }
 interface Formats {
   format_name: string;
@@ -225,7 +225,7 @@ const B2C: React.FC = () => {
   const getProductsData = async () => {
     setLoadingProducts(true);
     try {
-      const urlData =apiUrl + '/product/get?table=products_b2c&columns=product_id&columns=product_name&columns=category';
+      const urlData = apiUrl + '/product/?filters=business_unit:b2c&filters=business_unit:b2x&columns=unique_id&columns=category&columns=title';
 
       const response = await fetch(urlData, {
         method: 'GET',
@@ -320,7 +320,7 @@ const B2C: React.FC = () => {
     
     const formatIds = selectedFormats.map(f => f.format_id);
     const purposeId = selectedPurpose[0]?.purpose_id || null;
-    const productIds = selectedProducts.map(p => p.product_id);
+    const productIds = selectedProducts.map(p => p.unique_id);
     const segmentIds = segments.filter(s => s.isActive).map(s => s.segment_id);
     const hasFormats = formatIds.length > 0;
     const hasSegments = segmentIds.length > 0;
@@ -1531,10 +1531,10 @@ const B2C: React.FC = () => {
                         selectedOptions={selectedProducts}
                         setSelectedOptions={setSelectedProducts}
                         multiSelect={true}
-                        idKey="product_id"
-                        nameKey="product_name"
+                        idKey="unique_id"
+                        nameKey="title"
                         categoryKey="category"
-                        tooltipKey="product_name"
+                        tooltipKey="title"
                         placeHolder='Select products'
                         label='Which product/offer do you want to report on?'
                       />
