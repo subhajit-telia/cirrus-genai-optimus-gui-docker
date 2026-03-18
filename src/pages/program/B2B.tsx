@@ -226,7 +226,7 @@ const B2B: React.FC = () => {
   const getProductsData = async () => {
     setLoadingProducts(true);
     try {
-      const urlData = apiUrl + '/product/?filters=business_unit:b2b&filters=business_unit:b2x&columns=unique_id&columns=category&columns=title';
+      const urlData = apiUrl + '/product/?filters=business_unit:b2b&filters=business_unit:b2x&order_by=category:asc&order_by=title:asc&columns=unique_id&columns=category&columns=title';
 
       const response = await fetch(urlData, {
         method: 'GET',
