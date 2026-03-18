@@ -80,33 +80,33 @@ import teliaOptimus from '../../theme/assets/telia-optimus.png'
     const [btnMsg, setBtnMsg] = useState('Sync to S3');
 
     /* -------------get Config data start------------- */
-  const syncToS3 = async () => {
-    setBtnMsg('Sync.....');
-    setLoading(true);
-    try {
-      const urlData = NetworkInfo.URL + '/sync_from_s3';
+  // const syncToS3 = async () => {
+  //   setBtnMsg('Sync.....');
+  //   setLoading(true);
+  //   try {
+  //     const urlData = NetworkInfo.URL + '/sync_from_s3';
 
-      const response = await fetch(urlData);
-      const responseData = await response.json();
-      console.log("Success:", responseData);
+  //     const response = await fetch(urlData);
+  //     const responseData = await response.json();
+  //     console.log("Success:", responseData);
 
-      if (response.ok && responseData === true) {
-        setBtnMsg('Sync Done.');
-        setLoading(false);
+  //     if (response.ok && responseData === true) {
+  //       setBtnMsg('Sync Done.');
+  //       setLoading(false);
 
-        setTimeout(() => {
-          setBtnMsg('Sync to S3');
-        }, 3000);
-      }else {
-        setBtnMsg('Sync Failed!');
-        setLoading(false);
-      }
+  //       setTimeout(() => {
+  //         setBtnMsg('Sync to S3');
+  //       }, 3000);
+  //     }else {
+  //       setBtnMsg('Sync Failed!');
+  //       setLoading(false);
+  //     }
       
-    } catch (error: any) {
-      console.error("catch failed:", error);
-      setLoading(false);
-    }
-  };
+  //   } catch (error: any) {
+  //     console.error("catch failed:", error);
+  //     setLoading(false);
+  //   }
+  // };
   /* get config data end */
   
     return (
@@ -129,14 +129,14 @@ import teliaOptimus from '../../theme/assets/telia-optimus.png'
               );
             })}
           </IonList>
-          <IonButton onClick={() => syncToS3()} className='btn-primary' expand="block" shape="round">
+          {/* <IonButton onClick={() => syncToS3()} className='btn-primary' expand="block" shape="round">
               {loading ?
                 <IonSpinner className='mr-2' name="bubbles"></IonSpinner>
                 :
                 <IonIcon aria-hidden="true" slot="start" ios={sync} md={sync} />
               }
               {btnMsg}
-          </IonButton>
+          </IonButton> */}
         </IonContent>
       </IonMenu>
     );
