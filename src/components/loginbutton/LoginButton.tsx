@@ -13,7 +13,7 @@ const LoginButton = () => {
   const handleLogin = async () => {
     const currentUrl = window.location.href;
     console.log("Current URL:", currentUrl);
-    console.log("ACCESSTOKEN:", NetworkInfo.ACCESSTOKEN);
+    console.log("AZURE_CLIENT_ID:", window.RUNTIME_ENV?.AZURE_CLIENT_ID);
     console.log("REACT_APP_URL:", NetworkInfo.REACT_APP_URL);
     console.log("URL:", NetworkInfo.URL);
     let reactAppUrl;
