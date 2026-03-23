@@ -115,6 +115,9 @@ jobs:
 
       - name: Add helm repo
         env:
+            REACT_APP_API_URL: ${{ secrets.REACT_APP_API_URL }}
+            AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+            AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
             REPO_USERNAME: ${{ secrets.CIRRUS_JFROG_READER_USERNAME }}
             REPO_PASSWORD: ${{ secrets.CIRRUS_JFROG_READER_PASSWORD }}
             REPO_URL: "https://jfrog.teliacompany.io/artifactory/cirrus-helm/"
@@ -158,6 +161,9 @@ jobs:
             -f helm/cirrus/env_values/${{ github.event.inputs.cirrus_env }}.yaml \
             -f /tmp/secretstore-values.yaml \
             --set k8sSecretName=${{ github.event.inputs.k8s_secret_name }} \
+            --set env.REACT_APP_API_URL=$REACT_APP_API_URL \
+            --set env.AZURE_CLIENT_ID=$AZURE_CLIENT_ID \
+            --set env.AZURE_TENANT_ID=$AZURE_TENANT_ID \
             $IMAGE_TAG_OPTIONS"
 
           echo "Executing Helm command: $HELM_COMMAND"
