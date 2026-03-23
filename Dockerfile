@@ -23,6 +23,13 @@ RUN ionic build --prod
 # Verify the build output directory 
 RUN ls -la /app/dist
 
+# Copy entrypoint script
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+# Set entrypoint to modify config.json at runtime
+ENTRYPOINT ["/entrypoint.sh"]
+
 # Stage 2: Serve the app with Nginx
 FROM cirrus-docker.jfrog.teliacompany.io/nginx:alpine
 
