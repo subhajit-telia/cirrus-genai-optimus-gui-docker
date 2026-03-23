@@ -11,7 +11,8 @@ COPY package*.json ./
 # Increased fetch-timeout to handle slow QEMU-emulated arm64 builds
 RUN npm install --production
 # Comment out additional npm install, as the previous command should install all dependencies including devDependencies
-# RUN npm i -D -E vite 
+# RUN npm i -D -E vite
+RUN npm install -D -E vite@5.4.21 @vitejs/plugin-legacy@5.4.1 @vitejs/plugin-react@4.3.1 --save-dev
 RUN npm install -g @ionic/cli
 
 # Copy the rest of the application code
