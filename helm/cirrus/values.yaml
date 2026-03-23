@@ -4,6 +4,15 @@ image:
   repository: "cirrus-docker.jfrog.teliacompany.io/genai/ai-optimus-gui"
   pullPolicy: IfNotPresent
 
+# Environment variables passed to the container at runtime
+env:
+  AZURE_CLIENT_ID: ""
+  AZURE_TENANT_ID: ""
+  API_ENDPOINT: ""
+  API_KEY: ""
+  REACT_APP_ENV: "production"
+  REACT_APP_API_URL: "/api"
+
 deployment:
   ports:
     - name: http

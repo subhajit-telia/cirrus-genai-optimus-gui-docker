@@ -7,29 +7,21 @@ WORKDIR /app
 # Copy package.json and package-lock.json to install dependencies
 COPY package*.json ./
 
-# Install dependencies
-# Increased fetch-timeout to handle slow QEMU-emulated arm64 builds
+# Install dependencies with production flag only
 RUN npm install --production
-# Comment out additional npm install, as the previous command should install all dependencies including devDependencies
-# RUN npm i -D -E vite
-RUN npm install -D -E vite@5.4.21 @vitejs/plugin-legacy@5.4.1 @vitejs/plugin-react@4.3.1 --save-dev
+
+# Install Vite and Ionic CLI as dev dependencies
+RUN npm install -D -E vite@5.4.21 @vitejs/plugin-legacy@5.4.1 @vitejs/plugin-react@4.3.1
 RUN npm install -g @ionic/cli
 
 # Copy the rest of the application code
 COPY . .
 
-# Build the Ionic application (assumes a `build` script is defined in package.json)
+# Build the Ionic application
 RUN ionic build --prod
 
 # Verify the build output directory 
 RUN ls -la /app/dist
-
-# Copy entrypoint script
-COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
-
-# Set entrypoint to modify config.json at runtime
-ENTRYPOINT ["/entrypoint.sh"]
 
 # Stage 2: Serve the app with Nginx
 FROM cirrus-docker.jfrog.teliacompany.io/nginx:alpine
@@ -40,8 +32,13 @@ COPY --from=build /app/dist /usr/share/nginx/html
 # Copy the NGINX config template
 COPY nginx.conf.template /etc/nginx/nginx.conf.template
 
+# Copy entrypoint script to configure runtime environment
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
 # Expose port 80 for the application
 EXPOSE 80
 
-# Replace placeholders in the config file with env variables and start NGINX
-CMD envsubst '${API_KEY} ${API_ENDPOINT}' < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf && nginx -g 'daemon off;'
+# Set entrypoint to configure environment and start NGINX
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["nginx", "-g", "daemon off;"]

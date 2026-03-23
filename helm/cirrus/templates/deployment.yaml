@@ -1,0 +1,97 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ai-optimus-gui.fullname" . }}
+  labels:
+    {{- include "ai-optimus-gui.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "ai-optimus-gui.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "ai-optimus-gui.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ .Values.deployment.serviceAccountName }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          
+          # ============================================
+          # Environment Variables from values.yaml
+          # ============================================
+          env:
+            - name: AZURE_CLIENT_ID
+              value: "{{ .Values.env.AZURE_CLIENT_ID }}"
+            - name: AZURE_TENANT_ID
+              value: "{{ .Values.env.AZURE_TENANT_ID }}"
+            - name: API_ENDPOINT
+              value: "{{ .Values.env.API_ENDPOINT }}"
+            - name: API_KEY
+              value: "{{ .Values.env.API_KEY }}"
+            - name: REACT_APP_ENV
+              value: "{{ .Values.env.REACT_APP_ENV }}"
+            - name: REACT_APP_API_URL
+              value: "{{ .Values.env.REACT_APP_API_URL }}"
+          
+          # ============================================
+          # Container Ports
+          # ============================================
+          ports:
+            {{- toYaml .Values.deployment.ports | nindent 12 }}
+          
+          # ============================================
+          # Health Checks
+          # ============================================
+          livenessProbe:
+            {{- toYaml .Values.deployment.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.deployment.readinessProbe | nindent 12 }}
+          
+          # ============================================
+          # Resource Limits
+          # ============================================
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          
+          # ============================================
+          # Volume Mounts
+          # ============================================
+          volumeMounts:
+            {{- toYaml .Values.deployment.volumeMounts | nindent 12 }}
+      
+      # ============================================
+      # Volumes
+      # ============================================
+      volumes:
+        {{- toYaml .Values.deployment.volumes | nindent 8 }}
+      
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
