@@ -126,6 +126,9 @@ jobs:
             helm repo update
 
       - name: Install/upgrade helm chart
+        env:
+            AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+            AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
         shell: bash
         run: |
           set -euo pipefail
