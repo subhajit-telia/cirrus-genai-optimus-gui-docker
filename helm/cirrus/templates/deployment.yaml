@@ -35,7 +35,7 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           
           # ============================================
-          # Environment Variables from values.yaml
+          # ENVIRONMENT VARIABLES - INJECTED FROM values.yaml
           # ============================================
           env:
             - name: AZURE_CLIENT_ID
@@ -52,13 +52,13 @@ spec:
               value: "{{ .Values.env.REACT_APP_API_URL }}"
           
           # ============================================
-          # Container Ports
+          # CONTAINER PORTS
           # ============================================
           ports:
             {{- toYaml .Values.deployment.ports | nindent 12 }}
           
           # ============================================
-          # Health Checks
+          # HEALTH CHECKS (Liveness & Readiness Probes)
           # ============================================
           livenessProbe:
             {{- toYaml .Values.deployment.livenessProbe | nindent 12 }}
@@ -66,19 +66,19 @@ spec:
             {{- toYaml .Values.deployment.readinessProbe | nindent 12 }}
           
           # ============================================
-          # Resource Limits
+          # RESOURCE LIMITS
           # ============================================
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           
           # ============================================
-          # Volume Mounts
+          # VOLUME MOUNTS
           # ============================================
           volumeMounts:
             {{- toYaml .Values.deployment.volumeMounts | nindent 12 }}
       
       # ============================================
-      # Volumes
+      # VOLUMES
       # ============================================
       volumes:
         {{- toYaml .Values.deployment.volumes | nindent 8 }}

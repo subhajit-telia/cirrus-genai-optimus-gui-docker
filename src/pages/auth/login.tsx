@@ -24,7 +24,7 @@ const Login: React.FC = () => {
   const apiUrl = `${NetworkInfo.URL}`;
 
   useEffect(() => {
-    console.log(`Using API URL 2: ${apiUrl}`);
+    console.log(`Using API URL 3: ${apiUrl}`);
     
   }, []);
 

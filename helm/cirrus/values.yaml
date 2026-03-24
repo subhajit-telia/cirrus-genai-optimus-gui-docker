@@ -4,7 +4,9 @@ image:
   repository: "cirrus-docker.jfrog.teliacompany.io/genai/ai-optimus-gui"
   pullPolicy: IfNotPresent
 
-# Environment variables passed to the container at runtime
+# ============================================
+# ENVIRONMENT VARIABLES - CRITICAL FOR DEPLOYMENT
+# ============================================
 env:
   AZURE_CLIENT_ID: ""
   AZURE_TENANT_ID: ""
@@ -42,3 +44,15 @@ deployment:
 
 service:
   port: 80
+
+# Add default empty values for resources if needed
+resources: {}
+podAnnotations: {}
+podSecurityContext: {}
+securityContext: {}
+imagePullSecrets: []
+nodeSelector: {}
+affinity: {}
+tolerations: {}
+autoscaling:
+  enabled: false
