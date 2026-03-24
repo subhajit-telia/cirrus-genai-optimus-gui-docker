@@ -31,8 +31,14 @@ COPY --from=build /app/dist /usr/share/nginx/html
 # Copy the NGINX config template
 COPY nginx.conf.template /etc/nginx/nginx.conf.template
 
+COPY public/config.js /usr/share/nginx/html/config.js
+COPY entrypoint.sh /entrypoint.sh
+
+RUN chmod +x /entrypoint.sh
+
 # Expose port 80 for the application
 EXPOSE 80
 
 # Replace placeholders in the config file with env variables and start NGINX
-CMD envsubst '${API_KEY} ${API_ENDPOINT}' < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf && nginx -g 'daemon off;'
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["nginx", "-g", "daemon off;"]
