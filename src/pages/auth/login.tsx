@@ -25,7 +25,7 @@ const Login: React.FC = () => {
 
   useEffect(() => {
     console.log(`Using API URL 3: ${apiUrl}`);
-    
+    console.log("window.RUNTIME_ENV?", window.RUNTIME_ENV)
   }, []);
 
   const handleLogin = (_role:string) => {

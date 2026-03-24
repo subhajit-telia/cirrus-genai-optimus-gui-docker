@@ -4,29 +4,32 @@ set -e
 echo "=== GenAI Optimus GUI - Runtime Configuration ==="
 
 # Paths
+CONFIG_TEMPLATE="/etc/nginx/templates/config.js.template"
 CONFIG_JS_PATH="/usr/share/nginx/html/config.js"
 NGINX_TEMPLATE="/etc/nginx/nginx.conf.template"
 NGINX_CONFIG="/etc/nginx/nginx.conf"
 
 # ============================================
-# Step 1: Configure config.js with placeholders
+# Step 1: Generate config.js from template
 # ============================================
-if [ -f "$CONFIG_JS_PATH" ]; then
-    echo "[1/3] Configuring config.js..."
+if [ -f "$CONFIG_TEMPLATE" ]; then
+    echo "[1/3] Generating config.js from template..."
     
-    # Replace all placeholders with environment variables or defaults
-    sed -i "s|__REACT_APP_API_URL__|${REACT_APP_API_URL:-/api}|g" "$CONFIG_JS_PATH"
-    sed -i "s|__REACT_APP_ENV__|${REACT_APP_ENV:-production}|g" "$CONFIG_JS_PATH"
-    sed -i "s|__AZURE_CLIENT_ID__|${AZURE_CLIENT_ID:-}|g" "$CONFIG_JS_PATH"
-    sed -i "s|__AZURE_TENANT_ID__|${AZURE_TENANT_ID:-}|g" "$CONFIG_JS_PATH"
+    # Use envsubst to replace variables in template
+    envsubst '${REACT_APP_API_URL} ${REACT_APP_ENV} ${AZURE_CLIENT_ID} ${AZURE_TENANT_ID}' < "$CONFIG_TEMPLATE" > "$CONFIG_JS_PATH"
     
-    echo "✓ config.js configured"
+    echo "✓ config.js generated"
     echo "  REACT_APP_API_URL: ${REACT_APP_API_URL:-/api}"
     echo "  REACT_APP_ENV: ${REACT_APP_ENV:-production}"
     echo "  AZURE_CLIENT_ID: ${AZURE_CLIENT_ID:-(empty)}"
     echo "  AZURE_TENANT_ID: ${AZURE_TENANT_ID:-(empty)}"
+    
+    # Display generated config for debugging
+    echo ""
+    echo "Generated config.js:"
+    cat "$CONFIG_JS_PATH"
 else
-    echo "✗ ERROR: $CONFIG_JS_PATH not found!"
+    echo "✗ ERROR: $CONFIG_TEMPLATE not found!"
     exit 1
 fi
 
@@ -36,12 +39,11 @@ fi
 if [ -f "$NGINX_TEMPLATE" ]; then
     echo "[2/3] Configuring NGINX..."
     
-    # Use envsubst to replace environment variables in nginx config
     envsubst '${API_ENDPOINT} ${API_KEY} ${AZURE_CLIENT_ID} ${AZURE_TENANT_ID}' < "$NGINX_TEMPLATE" > "$NGINX_CONFIG"
     
     echo "✓ nginx.conf configured"
     echo "  API_ENDPOINT: ${API_ENDPOINT:-(empty)}"
-    echo "  API_KEY: ${API_KEY:-(empty - will use '"removed"' header)}"
+    echo "  API_KEY: ${API_KEY:-(empty)}"
 else
     echo "✗ ERROR: $NGINX_TEMPLATE not found!"
     exit 1
@@ -52,10 +54,10 @@ fi
 # ============================================
 echo "[3/3] Verifying configuration..."
 
-if [ -f "$NGINX_CONFIG" ]; then
-    echo "✓ NGINX configuration verified"
+if [ -f "$CONFIG_JS_PATH" ] && [ -f "$NGINX_CONFIG" ]; then
+    echo "✓ Configuration verified"
 else
-    echo "✗ ERROR: NGINX configuration failed to generate"
+    echo "✗ ERROR: Configuration verification failed"
     exit 1
 fi
 
