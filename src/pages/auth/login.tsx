@@ -24,8 +24,8 @@ const Login: React.FC = () => {
   const apiUrl = `${NetworkInfo.URL}`;
 
   useEffect(() => {
-    console.log(`Using API URL: ${apiUrl}`);
-    
+    console.log(`Using API URL1: ${apiUrl}`);
+    console.log("window.RUNTIME_ENV:", window.RUNTIME_ENV)
   }, []);
 
   const handleLogin = (_role:string) => {
@@ -136,7 +136,7 @@ const Login: React.FC = () => {
                                     <IonLabel className='m-0 text-xs'>APP ID</IonLabel>
                                 </IonSegmentButton>
                                 
-                                {/* <LoginButton /> */}
+                                <LoginButton />
                             </IonSegment>
                         </div>
                         

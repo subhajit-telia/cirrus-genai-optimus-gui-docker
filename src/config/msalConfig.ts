@@ -1,6 +1,6 @@
 import { PublicClientApplication } from "@azure/msal-browser";
 
-console.log("window.RUNTIME_ENV 1?", window.RUNTIME_ENV)
+console.log("window.RUNTIME_ENV?", window.RUNTIME_ENV)
 const msalConfig = {
   auth: {
     clientId: window.RUNTIME_ENV?.AZURE_CLIENT_ID,
