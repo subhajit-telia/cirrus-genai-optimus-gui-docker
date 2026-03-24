@@ -33,9 +33,3 @@ deployment:
 
 service:
   port: 80
-
-env:
-  - name: AZURE_CLIENT_ID
-    value: {{ .Values.env.AZURE_CLIENT_ID }}
-  - name: AZURE_TENANT_ID
-    value: {{ .Values.env.AZURE_TENANT_ID }}
