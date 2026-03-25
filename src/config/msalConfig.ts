@@ -1,6 +1,7 @@
 import { PublicClientApplication } from "@azure/msal-browser";
 import { NetworkInfo } from "../routes/network";
 
+console.log("env>>", import.meta.env.VITE_API_BASE_URL);
 console.log("NetworkInfo>>", NetworkInfo.AZURE_CLIENT_ID);
 const currentUrl = window.location.href;
 console.log("Current URL:", currentUrl);

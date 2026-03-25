@@ -12,8 +12,10 @@ class NetworkInfo {
     return (typeof window !== "undefined" && (window as any).RUNTIME_ENV) || {};
   }
 
-  static readonly URL: string =
+  static readonly SANITIZE_URL: string =
     (NetworkInfo.runtimeEnv().API_ENDPOINT || import.meta.env.VITE_API_BASE_URL) + "/api";
+
+  static readonly URL: string = NetworkInfo.SANITIZE_URL.replace("undefined/", "");
 
   static readonly ACCESSTOKEN: string =
     NetworkInfo.runtimeEnv().API_KEY || import.meta.env.REMOVED;
