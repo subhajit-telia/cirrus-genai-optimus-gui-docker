@@ -13,7 +13,7 @@ class NetworkInfo {
   }
 
   static readonly URL: string =
-    NetworkInfo.runtimeEnv().API_ENDPOINT || import.meta.env.VITE_API_BASE_URL;
+    (NetworkInfo.runtimeEnv().API_ENDPOINT || import.meta.env.VITE_API_BASE_URL) + "/api";
 
   static readonly ACCESSTOKEN: string =
     NetworkInfo.runtimeEnv().API_KEY || import.meta.env.REMOVED;
