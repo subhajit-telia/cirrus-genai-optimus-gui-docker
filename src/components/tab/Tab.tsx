@@ -72,6 +72,8 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
   
   const [isSaveChanges, setIsSaveChanges] = useState(false);
   const [isEditCopyVersionId, setIsEditCopyVersionId] = useState('');
+  const [selectedCopyVersionIds, setSelectedCopyVersionIds] = useState<Set<string>>(new Set());
+  const [contestedGroupKeys, setContestedGroupKeys] = useState<Set<string>>(new Set());
   const [isRefineBox, setIsRefineBox] = useState(false);
   const [isRefineText, setIsRefineText] = useState('');
   const [isRefineType, setIsRefineType] = useState('');
@@ -90,6 +92,9 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
 
   const [isShowError, setIsShowError] = useState(false);
   const [isErrorMsg, setIsErrorMsg] = useState('');
+
+  const [activeRefineOutput, setActiveRefineOutput] = useState<{tabIndex: number, itemIndex: number|null, outputIndex: number} | null>(null);
+  const [activeRefineInputValue, setActiveRefineInputValue] = useState('');
 
   const mdxEditorRef = React.useRef<MDXEditorMethods>(null)
 
@@ -123,15 +128,15 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
   };
 
   const handleButtonClick = (identifier:any, tabIndex:any, itemIndex:any, data:any) => {
-    console.log(tabIndex+'/'+itemIndex+'/'+data);
+    // console.log(tabIndex+'/'+itemIndex+'/'+data);
     if (identifier === 'chat_regenerate') {
-      console.log('chat_regenerate:', data);
+      // console.log('chat_regenerate:', data);
       data.copy_id = uuidv4();
       data.request_type = 'chat_regenerate';
       if (itemIndex !== '') {
         tabs[tabIndex].data[itemIndex].answer = '';
         regenarateItem(data); 
-        console.log('tabs@@@@', tabs)
+        // console.log('tabs@@@@', tabs)
       }else {
         tabs[tabIndex].answer = '';
         regenarateItem(data);  
@@ -166,11 +171,11 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
 
   const handleEditingMode = (tabIndex:any, itemIndex:any, outputIndex:any, isEdit: boolean) => {
     // Check if the currently active input is the same as the one being clicked
-    console.log('editVisibility', editVisibility);
-    console.log('inputVisibility>>', inputVisibility);
+    // console.log('editVisibility', editVisibility);
+    // console.log('inputVisibility>>', inputVisibility);
 
     if (Array.isArray(inputVisibility[0])) {
-      console.log('innnnnn');
+      // console.log('innnnnn');
       const clearedInputVisibility:any = inputVisibility.map(innerArray => {
         if (Array.isArray(innerArray)) {
           return innerArray.map(() => false); 
@@ -179,7 +184,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
       });
       setInputVisibility(clearedInputVisibility);
     }else {
-      console.log('Onnnnnn');
+      // console.log('Onnnnnn');
       const clearedInputVisibility:any = inputVisibility.map(() => false);
       setInputVisibility(clearedInputVisibility);
     }
@@ -191,21 +196,40 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
       editVisibility.itemIndex === itemIndex &&
       editVisibility.outputIndex === outputIndex
     ) {
+      // Clean blinking cursor from the answer when closing editing mode
+      if (itemIndex !== null) {
+        tabs[tabIndex].data[itemIndex].outputs[outputIndex].answer =
+          tabs[tabIndex].data[itemIndex].outputs[outputIndex].answer.replace(/<span class="cursor"><\/span>/g, '');
+      } else {
+        tabs[tabIndex].outputs[outputIndex].answer =
+          tabs[tabIndex].outputs[outputIndex].answer.replace(/<span class="cursor"><\/span>/g, '');
+      }
       // If it is the same, hide the input by setting editVisibility to null
-      setIsRefineBox(false);
-      setIsRefineText('');
       setEditVisibility({ tabIndex: null, itemIndex: null, outputIndex: null, isEdit: false });
     } else {
+      // Clean blinking cursor from the previously-edited answer when switching to a different edit
+      const prevTabIdx = editVisibility.tabIndex;
+      const prevItemIdx = editVisibility.itemIndex;
+      const prevOutputIdx = editVisibility.outputIndex;
+      if (prevTabIdx !== null && prevOutputIdx !== null) {
+        if (prevItemIdx !== null) {
+          tabs[prevTabIdx].data[prevItemIdx].outputs[prevOutputIdx].answer =
+            tabs[prevTabIdx].data[prevItemIdx].outputs[prevOutputIdx].answer.replace(/<span class="cursor"><\/span>/g, '');
+        } else {
+          tabs[prevTabIdx].outputs[prevOutputIdx].answer =
+            tabs[prevTabIdx].outputs[prevOutputIdx].answer.replace(/<span class="cursor"><\/span>/g, '');
+        }
+      }
       // Otherwise, set the new active input
       setEditVisibility({ tabIndex, itemIndex, outputIndex, isEdit });
     }
 
-    console.log('editVisibility>>>>', editVisibility)
+    // console.log('editVisibility>>>>', editVisibility)
   };
 
   const handleEditAnswer = (tabIndex:any, itemIndex:any, outputIndex:any) => {
     // Check if the currently active input is the same as the one being clicked
-    console.log('editVisibility>>>>>', editVisibility);
+    // console.log('editVisibility>>>>>', editVisibility);
     setSelectedText(null);
     if (
       editVisibility.tabIndex === tabIndex &&
@@ -219,7 +243,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
       setEditVisibility({ tabIndex: tabIndex, itemIndex: itemIndex, outputIndex: outputIndex, isEdit: true });
     }
 
-    console.log('editVisibility>>>>', editVisibility);
+    // console.log('editVisibility>>>>', editVisibility);
     document.querySelectorAll('._contentEditable_uazmk_379').forEach(element => {
       element.setAttribute('spellcheck', 'false');
     });
@@ -235,12 +259,12 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
 
   /* ----------Save edit answer copy start---------- */
   const saveAnswerChange = async (value:any, copy_version_id:any, mode:any) => {
-    console.log('editInputValues', editInputValues);
-    console.log('currentEditCopy', currentEditCopy);
-    console.log('currentEditingCopy', currentEditingCopy);
-    console.log('value', value);
-    console.log('copy_version_id', copy_version_id);
-    console.log('editorChangedText', editorChangedText);
+    // console.log('editInputValues', editInputValues);
+    // console.log('currentEditCopy', currentEditCopy);
+    // console.log('currentEditingCopy', currentEditingCopy);
+    // console.log('value', value);
+    // console.log('copy_version_id', copy_version_id);
+    // console.log('editorChangedText', editorChangedText);
     setIsRefineBox(false);
     setIsEditCopyVersionId(copy_version_id);
     setIsSaveChanges(true);
@@ -264,8 +288,8 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
           trimmedValue = trimmedValue.slice(0, -1);
         }
       }
-      console.log('trimmedValue', trimmedValue);
-      console.log('Manual edit detected - calling API');
+      // console.log('trimmedValue', trimmedValue);
+      // console.log('Manual edit detected - calling API');
       if (trimmedValue !== value) {
         submitRefineQuestion('','edit_manual', data);
       }else {
@@ -273,7 +297,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
       }
     } else {
       // No manual edits, just UI button actions (refine/regenerate) that already updated via API
-      console.log('No manual edits detected - skipping API call');
+      // console.log('No manual edits detected - skipping API call');
       setIsSaveChanges(false);
     }
     
@@ -284,9 +308,9 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
 
   /* ----------Discard edit answer copy start---------- */
   const discardAnswerChange = async (lastChangeItem:any) => {
-    console.log('currentEditCopy', currentEditCopy);
-    console.log('lastChangeItem', lastChangeItem);
-    console.log('isRefineDetails', isRefineDetails);
+    // console.log('currentEditCopy', currentEditCopy);
+    // console.log('lastChangeItem', lastChangeItem);
+    // console.log('isRefineDetails', isRefineDetails);
     // if (currentEditCopy.answer) {
     //   if (isRefineDetails.itemIndex !== '' && isRefineDetails.itemIndex !== null) {
     //     if (tabs[isRefineDetails.tabIndex].data[isRefineDetails.itemIndex].outputs[isRefineDetails.outputIndex].answer !== currentEditCopy.answer) {
@@ -379,45 +403,96 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
     //   }
     // });
 
+    // TO-DO-UPDATE-AFTER-BACKEND-FIX: This entire enrichment block exists because the backend's /chat/edit
+    // (and possibly /chat/reminder) endpoints return copy_variant="base" regardless of the actual variant.
+    // Once the backend reliably echoes back the correct copy_variant on every response type
+    // (chat_request, chat_regenerate, chat_reminder, chat_refine, edit_manual, edit_refine, edit_regenerate),
+    // this block can be simplified to a plain flat collect with no card-level inheritance:
+    //   tabs.forEach(segment => {
+    //     (segment.data ?? [segment]).forEach(dataItem => dataItem.outputs?.forEach(o => allOutputs.push(o)));
+    //   });
+    // Collect all outputs across all segments/formats into a flat list.
+    // Inherit copy_group_id and copy_variant from the parent format card when the
+    // output's own input_params is missing them (e.g. after an edit_manual API response
+    // that doesn't echo back every field). This prevents key collisions in the dedup step.
+    const allOutputs: any[] = [];
     tabs.forEach((segment: any) => {
-      // If 'data' exists, handle nested structure
       if (Array.isArray(segment.data)) {
         segment.data.forEach((dataItem: any) => {
-
-          if (Array.isArray(dataItem.outputs) && dataItem.outputs.length > 0) {
-            const activeOutputs = dataItem.outputs.filter((output: any) => 
-              output.input_params?.status !== 'discarded'
-            );
-            
-            if (activeOutputs.length > 0) {
-              const latestOutput = activeOutputs.reduce((latest: any, current: any) =>
-                current.timestamp > latest.timestamp ? current : latest
-              );
-            
-              const { rating, ...outputWithoutRating } = latestOutput;
-              resultArray.push(outputWithoutRating);
-            }
+          // Parent card authoritative fields — prefer output's own values, fall back to card's
+          const cardGroupId = dataItem.input_params?.copy_group_id || dataItem.input_params?.format_id || '';
+          const cardVariant = dataItem.input_params?.copy_variant || dataItem.copy_variant || 'base';
+          if (Array.isArray(dataItem.outputs)) {
+            dataItem.outputs.forEach((output: any) => {
+              const enriched = {
+                ...output,
+                input_params: {
+                  copy_group_id: cardGroupId,
+                  copy_variant: cardVariant,
+                  ...output.input_params,
+                }
+              };
+              allOutputs.push(enriched);
+            });
           }
         });
       }
-    
-      // Handle flat structure (if 'outputs' is directly under segment)
-      if (Array.isArray(segment.outputs) && segment.outputs.length > 0) {
-        const activeOutputs = segment.outputs.filter((output: any) => 
-          output.input_params?.status !== 'discarded'
-        );
-        
-        if (activeOutputs.length > 0) {
-          const latestOutput = activeOutputs.reduce((latest: any, current: any) =>
-            current.timestamp > latest.timestamp ? current : latest
-          );
-        
-          const { rating, ...outputWithoutRating } = latestOutput;
-          resultArray.push(outputWithoutRating);
-        }
+      if (Array.isArray(segment.outputs)) {
+        // Flat (no-segment) path: segment itself is the format card
+        const cardGroupId = segment.input_params?.copy_group_id || segment.input_params?.format_id || '';
+        const cardVariant = segment.input_params?.copy_variant || segment.copy_variant || 'base';
+        segment.outputs.forEach((output: any) => {
+          const enriched = {
+            ...output,
+            input_params: {
+              copy_group_id: cardGroupId,
+              copy_variant: cardVariant,
+              ...output.input_params,
+            }
+          };
+          allOutputs.push(enriched);
+        });
       }
-      
     });
+
+    // Count active outputs per group key — used to know which slots are contested (>1 version visible).
+    const countPerGroup = new Map<string, number>();
+    for (const output of allOutputs) {
+      if (output.input_params?.status === 'discarded') continue;
+      const groupId = output.input_params?.copy_group_id || output.input_params?.format_id || '';
+      const variant = output.input_params?.copy_variant || 'base';
+      const key = `${groupId}::${variant}`;
+      countPerGroup.set(key, (countPerGroup.get(key) ?? 0) + 1);
+    }
+    const newContestedKeys = new Set<string>();
+    for (const [key, count] of countPerGroup.entries()) {
+      if (count > 1) newContestedKeys.add(key);
+    }
+    setContestedGroupKeys(newContestedKeys);
+
+    // For each copy_group_id + copy_variant, keep only the latest active version.
+    // copy_group_id uniquely identifies a (format, segment) slot, so this yields
+    // at most 1 base + 1 reminder per slot.
+    const byGroupVariant = new Map<string, any>();
+    for (const output of allOutputs) {
+      if (output.input_params?.status === 'discarded') continue;
+      const groupId = output.input_params?.copy_group_id || output.input_params?.format_id || '';
+      const variant = output.input_params?.copy_variant || 'base';
+      const key = `${groupId}::${variant}`;
+      const existing = byGroupVariant.get(key);
+      if (!existing || output.timestamp > existing.timestamp) {
+        byGroupVariant.set(key, output);
+      }
+    }
+
+    const newSelectedIds = new Set<string>();
+    for (const latestOutput of byGroupVariant.values()) {
+      const { rating, ...outputWithoutRating } = latestOutput;
+      resultArray.push(outputWithoutRating);
+      const selectedId = latestOutput.input_params?.copy_version_id;
+      if (selectedId) newSelectedIds.add(selectedId);
+    }
+    setSelectedCopyVersionIds(newSelectedIds);
 
     contentfulData(resultArray)
     // console.log(resultArray);
@@ -565,8 +640,8 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
       // console.log('charAfterStart:', charAfterStart);
       // console.log('charBeforeStart:', charBeforeStart);
 
-      console.log('before text:',`${fullString.slice(0, markdownStartIndex +1)}`);
-      console.log('after text:',`${fullString.slice(markdownStartIndex + 2)}`);
+      // console.log('before text:',`${fullString.slice(0, markdownStartIndex +1)}`);
+      // console.log('after text:',`${fullString.slice(markdownStartIndex + 2)}`);
       // If the character is `#` or `-`, insert a new line before it and place cursor after `#` or `-` with a space
       if (charAfterStart === "#" || charAfterStart === "-") {
         clickedHtml = `${fullString.slice(0, markdownStartIndex +1)}\n ${charAfterStart} <span class="cursor"></span>${fullString.slice(markdownStartIndex + 2)}`;
@@ -876,25 +951,25 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
   
   /* ----------select Copy CopyVersionId start---------- */
   const selectCopyCopyVersionId = async (tabIndex:number, itemIndex:any, outputIndex:number, outputItem:any) => {
-    console.log(tabIndex +'/'+ itemIndex +'/'+ outputItem);
+    // console.log(tabIndex +'/'+ itemIndex +'/'+ outputItem);
     let selectedItem:RefineAnswer = {
       tabIndex: tabIndex,
       itemIndex: itemIndex,
       outputIndex: outputIndex,
       outputItem: outputItem
     }
-    console.log('selectedItem', selectedItem);
+    // console.log('selectedItem', selectedItem);
     setIsRefineDetails(selectedItem);
   }
   /* select Copy CopyVersionId end */
 
   /* --------refine Selected Text start-------- */
   const refineSelectedText = (_identifier:any, _text:any) => {
-    console.log('_text', _text);
+    // console.log('_text', _text);
     // setIsRefineText(_text);
     setIsRefineType(_identifier);
-    console.log('selectedText', selectedText);
-    console.log('clickedText', clickedText);
+    // console.log('selectedText', selectedText);
+    // console.log('clickedText', clickedText);
     if (_identifier === 'edit_refine') {
       setIsRefineBox(prevState => !prevState);
     }else if (_identifier === 'edit_regenerate'){
@@ -945,7 +1020,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
         question: data || null
       }
     }
-    console.log('refineData', refineData);
+    // console.log('refineData', refineData);
     
     // Clear manual edits when using UI buttons (refine/regenerate/insert)
     // Don't clear for edit_manual as that's the save operation itself
@@ -957,15 +1032,15 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
     // setIsRefineBox(false);
     // setSelectedText('');
 
-    console.log('isRefineDetails', isRefineDetails);
+    // console.log('isRefineDetails', isRefineDetails);
     // handleEditingMode(isRefineDetails.tabIndex, isRefineDetails.itemIndex, isRefineDetails.outputIndex);
 
     if (isRefineDetails.itemIndex !== '' && isRefineDetails.itemIndex !== null) {
       tabs[isRefineDetails.tabIndex].data[isRefineDetails.itemIndex].answer = '';
-      console.log('tabs@@@@', tabs)
+      // console.log('tabs@@@@', tabs)
     }else {
       tabs[isRefineDetails.tabIndex].answer = '';
-      console.log('tabs####', tabs)
+      // console.log('tabs####', tabs)
     }
   }
   /* refine Selected copy end */
@@ -1075,7 +1150,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
   };
 
   /* ----------------star rating start---------------- */
-  const handleTotalRatingClick = async (tabIndex:number, itemIndex:any, outputIndex:number, copy_version_id:string, rating: number) => {
+  const handleTotalRatingClick = async (tabIndex:number, itemIndex:any, outputIndex:number, copy_version_id:string, rating: number, copy_variant?: string) => {
 
     // console.log('item', copy_version_id); 
     // console.log('rating', rating); 
@@ -1091,7 +1166,8 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
       comment: '',
       tabIndex: tabIndex,
       itemIndex: itemIndex,
-      outputIndex: outputIndex
+      outputIndex: outputIndex,
+      copy_variant: copy_variant,
     };
 
     let data:any = {
@@ -1143,7 +1219,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
   const handleFeedbackSave = async (updatedItem: any) => {
     // console.log('updatedItem', updatedItem);
     setIsModalOpen(false);
-    if (updatedItem.rating === 5) {
+    if (updatedItem.rating === 5 && updatedItem.copy_variant !== 'reminder') {
       openFeedbackAlert(updatedItem.copy_version_id);
     }
 
@@ -1229,13 +1305,20 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
                           if (outputItem.input_params?.status === 'discarded') {
                             return null;
                           }
+                          {/* Highlight active copy version in the session (same copy_version that is sent to Contentful & used to generate reminders) */}
+                          const _groupKey = `${outputItem.input_params?.copy_group_id || outputItem.input_params?.format_id || ''}::${outputItem.input_params?.copy_variant || 'base'}`;
+                          const _isActiveHighlighted = selectedCopyVersionIds.has(outputItem.input_params?.copy_version_id) && contestedGroupKeys.has(_groupKey);
                           return (
-                          <div onClick={() => selectCopyCopyVersionId(tabIndex, itemIndex, outputIndex, outputItem)} className='shadow-md rounded-md mb-1.5 relative' key={outputIndex}>
+                          <React.Fragment key={outputIndex}>
+                          <div onClick={() => selectCopyCopyVersionId(tabIndex, itemIndex, outputIndex, outputItem)} className={`rounded-md mb-1.5 relative${_isActiveHighlighted ? ' selected-copy-version' : ''}`}>
+                            {_isActiveHighlighted && (
+                              <span className="selected-copy-version-label">active version</span>
+                            )}
                             {/* Show the output copy */}
                             {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === itemIndex && editVisibility.outputIndex === outputIndex ?
                               <></>
                               :
-                              <ReactMarkdown className='py-2 px-6' remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} children={outputItem.answer}/>
+                              <ReactMarkdown className='py-2 px-4' remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} children={outputItem.answer}/>
                               
                             }
 
@@ -1247,12 +1330,8 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
                                     <div className='relative'>
                                       {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === itemIndex && editVisibility.outputIndex === outputIndex && editVisibility.isEdit === false ?
                                         <div
-                                          className='editing-area py-2 px-6'
-                                          // contentEditable
-                                          spellCheck="false"
-                                          onKeyDown={handleKeyPress}
-                                          key={outputIndex}
-                                          ref={(el) => (containerRefs.current[outputIndex] = el!)}
+                                          ref={(el) => { if (el) containerRefs.current[outputIndex] = el; }}
+                                          className='editing-area py-2 px-4'
                                           onMouseUp={(e) => handleMouseUp(e, tabIndex, itemIndex, outputIndex)}
                                           onClick={(e) => handleMouseClick(e, tabIndex, itemIndex, outputIndex)}
                                           dangerouslySetInnerHTML={{
@@ -1263,7 +1342,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
                                         </div>
                                       :
                                         <MDXEditor 
-                                          className='py-2 px-6'
+                                          className='py-2 px-4'
                                           ref={mdxEditorRef}
                                           markdown={outputItem.answer.replace(/<span class="new_content">|<\/span>/g, '').replace(/<span class="cursor">|<\/span>/g, '')}
                                           // markdown={editInputValues[tabIndex][itemIndex][outputIndex]}
@@ -1336,7 +1415,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
                                       }
                                       onMouseLeave={() => setHoveredRating(null)}
                                       color="primary"
-                                      onClick={() => handleTotalRatingClick(tabIndex, itemIndex, outputIndex, outputItem.input_params.copy_version_id, starValue)}
+                                      onClick={() => handleTotalRatingClick(tabIndex, itemIndex, outputIndex, outputItem.input_params.copy_version_id, starValue, outputItem.input_params.copy_variant)}
                                       style={{ cursor: "pointer", fontSize: "24px" }}
                                     />
                                   ))}
@@ -1369,30 +1448,39 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
                                 <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Download as .doc' className='text-xs' onClick={() => exportToDoc('single', outputItem.answer)} shape="round">
                                   <IonIcon className='' slot="icon-only" icon={documentTextOutline}></IonIcon>
                                 </IonButton>
+                                {!(editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === itemIndex) && <>
+                                  <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Refine copy' className='text-xs' onClick={() => { setActiveRefineOutput(prev => prev?.tabIndex === tabIndex && prev?.itemIndex === itemIndex && prev?.outputIndex === outputIndex ? null : {tabIndex, itemIndex, outputIndex}); setActiveRefineInputValue(''); }} shape="round">
+                                    <IonIcon slot="icon-only" icon={activeRefineOutput?.tabIndex === tabIndex && activeRefineOutput?.itemIndex === itemIndex && activeRefineOutput?.outputIndex === outputIndex ? closeOutline : chatbubblesOutline}></IonIcon>
+                                  </IonButton>
+                                  <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Regenerate copy' className='text-xs' onClick={() => handleButtonClick('chat_regenerate', tabIndex, itemIndex, outputItem.input_params)} shape="round">
+                                    <IonIcon slot="icon-only" icon={refreshOutline}></IonIcon>
+                                  </IonButton>
+                                </>}
                               </div>
                             </div>
                           </div>
+                          {activeRefineOutput?.tabIndex === tabIndex && activeRefineOutput?.itemIndex === itemIndex && activeRefineOutput?.outputIndex === outputIndex && (
+                            <IonTextarea
+                              className='z-0 bottom-textarea rounded-xl mt-2 mb-2.5 text-black'
+                              aria-label="Custom textarea"
+                              placeholder="Write your question."
+                              autoGrow={true}
+                              counter={true}
+                              maxlength={6000}
+                              onIonInput={(e) => setActiveRefineInputValue(e.detail.value || '')}
+                            >
+                              <IonButton data-tooltip-id='tooltip' data-tooltip-content='Generate' onClick={() => { const params = {...outputItem.input_params, question: activeRefineInputValue}; handleButtonClick('chat_refine', tabIndex, itemIndex, params); setActiveRefineOutput(null); setActiveRefineInputValue(''); }} size="small" fill="clear" slot="end">
+                                <IonIcon className='text-primary' slot="icon-only" icon={send}></IonIcon>
+                              </IonButton>
+                            </IonTextarea>
+                          )}
+                          </React.Fragment>
                          );})}
                         {!tabItem.answer &&
                           <IonSpinner name="dots"></IonSpinner>
                         }
                         
-                        {inputVisibility[tabIndex] && Array.isArray(inputVisibility[tabIndex]) && inputVisibility[tabIndex][itemIndex] && (
-                          <IonTextarea
-                            className='z-0 bottom-textarea rounded-xl mt-5 mb-2.5 text-black'
-                            aria-label="Custom textarea"
-                            placeholder="Write your question."
-                            autoGrow={true}
-                            counter={true}
-                            maxlength={6000}
-                            // value={(inputValues[tabIndex] as string[])[itemIndex]}
-                            onIonInput={(event) => handleInputChange(tabIndex, event, itemIndex)}
-                          >
-                            <IonButton data-tooltip-id='tooltip' data-tooltip-content='Generate' onClick={() => handleSubmitChatAnswer(tabIndex, itemIndex)} size="small" fill="clear" slot="end" >
-                              <IonIcon className='text-primary' slot="icon-only" icon={send}></IonIcon>
-                            </IonButton>
-                          </IonTextarea>
-                        )}
+
 
                         {(isRefineBox && isRefineDetails.tabIndex === tabIndex && isRefineDetails.itemIndex === itemIndex) &&
                           <div className='mt-5 bottom-textarea rounded-xl'>
@@ -1423,30 +1511,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
                           </div>
                         }
 
-                        {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === itemIndex ?
-                          <></>
-                          :
-                          <div className='text-right'>
-                            <div>
-                              <IonButton data-tooltip-id='tooltip' data-tooltip-content='Refine copy' onClick={() => toggleInputVisibility(tabIndex, itemIndex)} className='text-xs' shape="round">
-                                {inputVisibility[tabIndex] && Array.isArray(inputVisibility[tabIndex]) && inputVisibility[tabIndex][itemIndex] ? 
-                                  <IonIcon className='' slot="icon-only" icon={closeOutline}></IonIcon>
-                                  :
-                                  <IonIcon className='' slot="icon-only" icon={chatbubblesOutline}></IonIcon>
-                                }
-                              </IonButton>
-                              <IonButton data-tooltip-id='tooltip' data-tooltip-content='Regenerate copy' className='text-xs' onClick={() => handleButtonClick('chat_regenerate', tabIndex, itemIndex, tabItem.input_params)} shape="round">
-                                <IonIcon className='' slot="icon-only" icon={refreshOutline}></IonIcon>
-                              </IonButton>
-                              {/* <IonButton data-tooltip-id='tooltip' data-tooltip-content='Copy all' className='text-xs' onClick={() => copyToClipboard('multiple', tabItem.outputs)} shape="round">
-                                <IonIcon className='' slot="icon-only" icon={copyOutline}></IonIcon>
-                              </IonButton>
-                              <IonButton data-tooltip-id='tooltip' data-tooltip-content='Download all' className='text-xs' onClick={() => exportToDoc('multiple', tabItem.outputs)} shape="round">
-                                <IonIcon className='' slot="icon-only" icon={documentTextOutline}></IonIcon>
-                              </IonButton> */}
-                            </div>
-                          </div>
-                        }
+
                       </>
                     :
                       <IonSpinner name="dots"></IonSpinner>
@@ -1473,13 +1538,19 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
                     }
                     const containerRef = React.createRef<HTMLDivElement>();
                     const boxIndex = tabIndex * 10 + outputIndex;
+                    const _groupKey = `${outputItem.input_params?.copy_group_id || outputItem.input_params?.format_id || ''}::${outputItem.input_params?.copy_variant || 'base'}`;
+                    const _isActiveHighlighted = selectedCopyVersionIds.has(outputItem.input_params?.copy_version_id) && contestedGroupKeys.has(_groupKey);
                     return (
-                      <div key={boxIndex} onClick={() => selectCopyCopyVersionId(tabIndex, null, outputIndex, outputItem)} className='shadow-md rounded-md mb-1.5 relative'>
+                      <React.Fragment key={boxIndex}>
+                      <div onClick={() => selectCopyCopyVersionId(tabIndex, null, outputIndex, outputItem)} className={`rounded-md mb-1.5 relative${_isActiveHighlighted ? ' selected-copy-version' : ''}`}>
+                        {_isActiveHighlighted && (
+                          <span className="selected-copy-version-label">active version</span>
+                        )}
                         {/* Show the output copy */}
                         {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === null && editVisibility.outputIndex === outputIndex ?
                           <></>
                           :
-                          <ReactMarkdown className='py-2 px-6' remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} children={outputItem.answer}/>
+                          <ReactMarkdown className='py-2 px-4' remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} children={outputItem.answer}/>
                         }
                         
                         {/* Edit answer for each output */}
@@ -1490,12 +1561,8 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
                                 <div className='relative'>
                                   {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === null && editVisibility.outputIndex === outputIndex && editVisibility.isEdit === false ?
                                     <div
-                                      className='editing-area py-2 px-6'
-                                      // contentEditable
-                                      spellCheck="false"
-                                      onKeyDown={handleKeyPress}
-                                      key={outputIndex}
-                                      ref={(el) => (containerRefs.current[outputIndex] = el!)}
+                                      ref={(el) => { if (el) containerRefs.current[outputIndex] = el; }}
+                                      className='editing-area py-2 px-4'
                                       onMouseUp={(e) => handleMouseUp(e, tabIndex, null, outputIndex)}
                                       onClick={(e) => handleMouseClick(e, tabIndex, null, outputIndex)}
                                       dangerouslySetInnerHTML={{
@@ -1506,7 +1573,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
                                     </div>
                                   :
                                     <MDXEditor 
-                                      className='py-2 px-6'
+                                      className='py-2 px-4'
                                       ref={mdxEditorRef}
                                       markdown={outputItem.answer.replace(/<span class="new_content">|<\/span>/g, '').replace(/<span class="cursor">|<\/span>/g, '')} 
                                       // markdown={editInputValues[tabIndex][outputIndex] as string} 
@@ -1576,7 +1643,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
                                   }
                                   onMouseLeave={() => setHoveredRating(null)}
                                   color="primary"
-                                  onClick={() => handleTotalRatingClick(tabIndex, null, outputIndex, outputItem.input_params.copy_version_id, starValue)}
+                                  onClick={() => handleTotalRatingClick(tabIndex, null, outputIndex, outputItem.input_params.copy_version_id, starValue, outputItem.input_params.copy_variant)}
                                   
                                   style={{ cursor: "pointer", fontSize: "24px" }}
                                 />
@@ -1610,9 +1677,33 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
                             <IonButton data-tooltip-id='tooltip' data-tooltip-content='Download as .doc' fill="clear" className='text-xs' onClick={() => exportToDoc('single', outputItem.answer)} shape="round">
                               <IonIcon className='' slot="icon-only" icon={documentTextOutline}></IonIcon>
                             </IonButton>
+                            {!(editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === null) && <>
+                              <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Refine copy' className='text-xs' onClick={() => { setActiveRefineOutput(prev => prev?.tabIndex === tabIndex && prev?.itemIndex === null && prev?.outputIndex === outputIndex ? null : {tabIndex, itemIndex: null, outputIndex}); setActiveRefineInputValue(''); }} shape="round">
+                                <IonIcon slot="icon-only" icon={activeRefineOutput?.tabIndex === tabIndex && activeRefineOutput?.itemIndex === null && activeRefineOutput?.outputIndex === outputIndex ? closeOutline : chatbubblesOutline}></IonIcon>
+                              </IonButton>
+                              <IonButton fill="clear" data-tooltip-id='tooltip' data-tooltip-content='Regenerate copy' className='text-xs' onClick={() => handleButtonClick('chat_regenerate', tabIndex, '', outputItem.input_params)} shape="round">
+                                <IonIcon slot="icon-only" icon={refreshOutline}></IonIcon>
+                              </IonButton>
+                            </>}
                           </div>
                         </div>
                       </div>
+                      {activeRefineOutput?.tabIndex === tabIndex && activeRefineOutput?.itemIndex === null && activeRefineOutput?.outputIndex === outputIndex && (
+                        <IonTextarea
+                          className='z-0 bottom-textarea rounded-xl mt-2 mb-2.5 text-black'
+                          aria-label="Custom textarea"
+                          placeholder="Write your question."
+                          autoGrow={true}
+                          counter={true}
+                          maxlength={6000}
+                          onIonInput={(e) => setActiveRefineInputValue(e.detail.value || '')}
+                        >
+                          <IonButton data-tooltip-id='tooltip' data-tooltip-content='Generate' onClick={() => { const params = {...outputItem.input_params, question: activeRefineInputValue}; handleButtonClick('chat_refine', tabIndex, '', params); setActiveRefineOutput(null); setActiveRefineInputValue(''); }} size="small" fill="clear" slot="end">
+                            <IonIcon className='text-primary' slot="icon-only" icon={send}></IonIcon>
+                          </IonButton>
+                        </IonTextarea>
+                      )}
+                      </React.Fragment>
                      );
                   })}
                   
@@ -1620,22 +1711,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
                     <IonSpinner name="dots"></IonSpinner>
                   }
                   
-                  {typeof inputVisibility[tabIndex] === 'boolean' && inputVisibility[tabIndex] && (
-                    <IonTextarea
-                      className='z-0 bottom-textarea rounded-xl mt-5 mb-2.5 text-black'
-                      aria-label="Custom textarea"
-                      placeholder="Write your question."
-                      autoGrow={true}
-                      counter={true}
-                      maxlength={6000}
-                      value={inputValues[tabIndex] as string}
-                      onIonInput={(event) => handleInputChange(tabIndex, event, '')}
-                    >
-                      <IonButton  data-tooltip-id='tooltip' data-tooltip-content='Generate' onClick={() => handleSubmitChatAnswer(tabIndex, '')} size="small" fill="clear" slot="end" >
-                        <IonIcon className='text-primary' slot="icon-only" icon={send}></IonIcon>
-                      </IonButton>
-                    </IonTextarea>
-                  )}
+
 
                   {(isRefineBox && isRefineDetails.tabIndex === tabIndex) && 
                     <div className='mt-5 bottom-textarea rounded-xl'>
@@ -1666,27 +1742,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
                     </div>
                   }
 
-                  {editVisibility.tabIndex !== tabIndex && editVisibility.itemIndex === null &&
-                    <div className='text-right'>
-                        <IonButton data-tooltip-id='tooltip' data-tooltip-content='Refine copy' onClick={() => toggleInputVisibility(tabIndex, null)} className='text-xs' shape="round">
-                          {typeof inputVisibility[tabIndex] === 'boolean' && inputVisibility[tabIndex] ? 
-                            <IonIcon slot="icon-only" icon={closeOutline}></IonIcon>
-                            :
-                            <IonIcon slot="icon-only" icon={chatbubblesOutline}></IonIcon>
-                          }
-                        </IonButton>
-                        <IonButton data-tooltip-id='tooltip' data-tooltip-content='Regenerate copy' className='text-xs' onClick={() => handleButtonClick('chat_regenerate', tabIndex, '', tabItem.input_params)} shape="round">
-                          <IonIcon slot="icon-only" icon={refreshOutline}></IonIcon>
-                        </IonButton>
-                        {/* <IonButton data-tooltip-id='tooltip' data-tooltip-content='Copy all' className='text-xs' onClick={() => copyToClipboard('multiple', tabItem.outputs)} shape="round">
-                          <IonIcon slot="icon-only" icon={copyOutline}></IonIcon>
-                        </IonButton>
-                        
-                        <IonButton data-tooltip-id='tooltip' data-tooltip-content='Download all' className='text-xs' onClick={() => exportToDoc('multiple', tabItem.outputs)} shape="round">
-                          <IonIcon slot="icon-only" icon={documentTextOutline}></IonIcon>
-                        </IonButton> */}
-                    </div>
-                  }
+
                 </>
               :
                 <IonSpinner name="dots"></IonSpinner>

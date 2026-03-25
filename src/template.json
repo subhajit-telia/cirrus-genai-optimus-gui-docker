@@ -233,7 +233,7 @@
             "format_id": "EmailMediumB2C",
             "format_name": "Email M",
             "format_written_description": "A medium sized email that contains two (2) blocks of content, up to 1000 characters in total. ",
-            "type_of_content": "personalized",
+            "type_of_content": ["personalized"],
             "cvm_content": "true", 
             "content_type": ["teaser", "ctaButton"]
         },
