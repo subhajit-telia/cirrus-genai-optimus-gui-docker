@@ -123,6 +123,10 @@ const B2C: React.FC = () => {
   const [contentError, setContentError] = useState("");
   const [contentName, setContentName] = useState("");
   const [configData, setConfigData] = useState<any>('');
+  const [isReminderModal, setIsReminderModal] = useState(false);
+  const [reminderPrompt, setReminderPrompt] = useState('');
+  const [loadingReminders, setLoadingReminders] = useState(false);
+  const [remindersGenerated, setRemindersGenerated] = useState(false);
 
   useEffect(() => {
     let userLocalData:any = localStorage.getItem('user');
@@ -138,33 +142,33 @@ const B2C: React.FC = () => {
 
 
     if (storedVersion === null || storedVersion !== packageJson.version) {
-      console.log('version', packageJson.version);
-      console.log('storedVersion', storedVersion);
+      // console.log('version', packageJson.version);
+      // console.log('storedVersion', storedVersion);
       // alert('This is an alert!');
       localStorage.setItem("app_version", packageJson.version);
       window.location.reload();
     }else {
-      console.log('version', packageJson.version);
+      // console.log('version', packageJson.version);
     }
 
   }, [setSegments, setTabs]);
 
   useEffect(() => {
-    console.log('loading......');
+    // console.log('loading......');
     setFamilyId(uuidv4());
   }, []);
 
   const onSelect = (selectedList:any, selectedItem:any) => {
     setSelectedProducts(selectedList);
-    console.log('onSelect', selectedList);
-    console.log('onSelect', selectedItem);
+    // console.log('onSelect', selectedList);
+    // console.log('onSelect', selectedItem);
     
   };
 
   const onRemove = (selectedList:any, removedItem:any) => {
     setSelectedProducts(selectedList);
-    console.log('onRemove', selectedList);
-    console.log('onRemove', removedItem);
+    // console.log('onRemove', selectedList);
+    // console.log('onRemove', removedItem);
   };
   
   /* -------------get segments data start------------- */
@@ -181,7 +185,7 @@ const B2C: React.FC = () => {
         },
       });
       const responseData = await response.json();
-      console.log("Success:", responseData);
+      // console.log("Success:", responseData);
       if (response.ok) {
         setSegments(responseData);
         setLoadingSegments(false);
@@ -208,7 +212,7 @@ const B2C: React.FC = () => {
         },
       });
       const responseData = await response.json();
-      console.log("Success:", responseData);
+      // console.log("Success:", responseData);
 
       if (response.ok) {
         setPurposes(responseData);
@@ -235,7 +239,7 @@ const B2C: React.FC = () => {
         },
       });
       const responseData = await response.json();
-      console.log("Success:", responseData);
+      // console.log("Success:", responseData);
       
       if (response.ok) {
         setProducts(responseData);
@@ -262,7 +266,7 @@ const B2C: React.FC = () => {
         },
       });
       const responseData = await response.json();
-      console.log("Success:", responseData);
+      // console.log("Success:", responseData);
       
       if (response.ok) {
         setFormats(responseData);
@@ -283,7 +287,7 @@ const B2C: React.FC = () => {
       )
     );
 
-    console.log('segments', segments);
+    // console.log('segments', segments);
   };
 
 
@@ -317,6 +321,8 @@ const B2C: React.FC = () => {
     setCopyVersionIdHistory([]);
     setIsTroubleshooting(false);
     setFeedbackCopy([]);
+    setRemindersGenerated(false);
+    setReminderPrompt('');
     
     const formatIds = selectedFormats.map(f => f.format_id);
     const purposeId = selectedPurpose[0]?.purpose_id || null;
@@ -402,12 +408,12 @@ const B2C: React.FC = () => {
 
 
   const handleApiCall = async (data: any) => {
-    console.log('data>>', data);
+    // console.log('data>>', data);
     setLoading(true);
     let formUrl = apiUrl + '/chat/request';
-    console.log('payload', data);
-    console.log('arrayTab>>>', arrayTab);
-    console.log('arrayNoSegment', arrayNoSegment);
+    // console.log('payload', data);
+    // console.log('arrayTab>>>', arrayTab);
+    // console.log('arrayNoSegment', arrayNoSegment);
     data.user_id = userName;
     data.attached_text = attachments || null;
     data.knowledge_base_docs = isKnowledgeBaseData.length === 0 ? null : isKnowledgeBaseData;
@@ -423,19 +429,25 @@ const B2C: React.FC = () => {
       });
   
       const responseData = await response.json();
-      console.log('Success:', responseData);
+      // console.log('Success:', responseData);
   
       if (response.ok && !responseData.ErrorMessage) {
         
         setNoSegmentArray(arrayNoSegment);
         setTabArray(arrayTab);
-        console.log('tabs>>>', tabs);
+        // console.log('tabs>>>', tabs);
         if (responseData.responses.length === 1) {
           if (arrayTab !== undefined) {
             arrayTab = arrayTab.map((segment: { segment_id: any; segment_name: any; data: any[] }) => {
               if (segment.segment_id === responseData.responses[0].input_params.segment_id) {
                 segment.data = segment.data.map((format: any) => {
-                  if (format.format_id === responseData.responses[0].input_params.format_id) {
+                  const responseVariant = responseData.responses[0].input_params.copy_variant || 'base';
+                  const cardBaseFormatId = (format.format_id || '').replace(/_reminder_.*$/, '');
+                  const cardVariant = format.input_params?.copy_variant || 'base';
+                  const fmtMatch = (cardBaseFormatId === responseData.responses[0].input_params.format_id
+                    || format.input_params?.copy_id === responseData.responses[0].input_params.copy_id)
+                    && cardVariant === responseVariant;
+                  if (fmtMatch) {
                     return {
                       ...format,
                       answer: DOMPurify.sanitize(responseData.responses[0].answer),
@@ -458,8 +470,15 @@ const B2C: React.FC = () => {
             });
             setTabs(arrayTab);
           } else {
-            arrayNoSegment = arrayNoSegment.map((format: { format_id: any; outputs?: any[] }) => {
-              if (format.format_id === responseData.responses[0].input_params.format_id || format.format_id === 'customPrompts') {
+            arrayNoSegment = arrayNoSegment.map((format: { format_id: any; outputs?: any[]; input_params?: any }) => {
+              const responseVariant = responseData.responses[0].input_params.copy_variant || 'base';
+              const cardBaseFormatId = (format.format_id || '').replace(/_reminder_.*$/, '');
+              const cardVariant = (format as any).input_params?.copy_variant || 'base';
+              const fmtMatch = format.format_id === 'customPrompts'
+                || ((cardBaseFormatId === responseData.responses[0].input_params.format_id
+                  || (format as any).input_params?.copy_id === responseData.responses[0].input_params.copy_id)
+                  && cardVariant === responseVariant);
+              if (fmtMatch) {
                 const currentOutputs = format.outputs || [];
                 return {
                   ...format,
@@ -489,7 +508,7 @@ const B2C: React.FC = () => {
           setFeedbackCopy(prevArray => [...prevArray, responseData]); 
           setCurrentIndex(0);
           setIsOpenModal(true);
-          setTimeout(() => console.log('feedbackCopy', feedbackCopy), 300); 
+          // setTimeout(() => console.log('feedbackCopy', feedbackCopy), 300); 
           
           return;
         }
@@ -507,6 +526,170 @@ const B2C: React.FC = () => {
   };
   
   /* Handle form submit end */
+
+  /* ----------Generate Reminders start---------- */
+  const isCvmEligible = (formatName: string) => {
+    return formatName?.startsWith('Sms') || formatName?.startsWith('Email');
+  };
+
+  const getCvmEligibleCopies = () => {
+    return contentfulCopy.filter((item: any) => {
+      const formatName = item.input_params?.format_name || '';
+      const copyVariant = item.input_params?.copy_variant || 'base';
+      return isCvmEligible(formatName) && copyVariant !== 'reminder';
+    });
+  };
+
+  const callReminderApi = async (payload: any, parentFormatName: string): Promise<any | null> => {
+    const formUrl = apiUrl + '/chat/request';
+    try {
+      const response = await fetch(formUrl, {
+        method: HTTPMethod.POST,
+        headers: {
+          '"removed"': `${NetworkInfo.ACCESSTOKEN}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload),
+      });
+      const responseData = await response.json();
+      if (response.ok && !responseData.ErrorMessage && responseData.responses?.length > 0) {
+        const backendResponse = responseData.responses[0];
+        return {
+          input_params: backendResponse.input_params,
+          entry: {
+            format_id: backendResponse.input_params.format_id + '_reminder_' + backendResponse.input_params.copy_id,
+            format_name: (parentFormatName || backendResponse.input_params.format_name || '') + ' - Reminder',
+            answer: DOMPurify.sanitize(backendResponse.answer),
+            // TO-DO-UPDATE-AFTER-BACKEND-FIX: Replace backendResponse.input_params with a corrected copy
+            // that overrides copy_variant to 'reminder' if the chat_reminder endpoint also returns copy_variant="base".
+            // Currently the Tab.tsx enrichment fallback (cardVariant) compensates for this in the Contentful pipeline.
+            input_params: backendResponse.input_params,
+            copy_variant: 'reminder',
+            outputs: [{
+              answer: DOMPurify.sanitize(backendResponse.answer),
+              // TO-DO-UPDATE-AFTER-BACKEND-FIX: Same as above — output's input_params.copy_variant may be wrong.
+              input_params: backendResponse.input_params,
+              rating: null,
+              timestamp: Date.now()
+            }]
+          }
+        };
+      } else {
+        setIsShowError(true);
+        setIsErrorMsg(responseData?.ErrorMessage || 'Failed to generate a reminder.');
+        return null;
+      }
+    } catch (error: any) {
+      console.error('Reminder generation failed:', error);
+      setIsShowError(true);
+      setIsErrorMsg('Something went wrong generating a reminder!');
+      return null;
+    }
+  };
+
+  const handleGenerateReminders = async () => {
+    setIsReminderModal(false);
+    setLoadingReminders(true);
+    const cvmEligible = getCvmEligibleCopies();
+    if (cvmEligible.length === 0) {
+      setIsShowError(true);
+      setIsErrorMsg('No CVM-eligible copies (SMS/Email) found in the session.');
+      setLoadingReminders(false);
+      return;
+    }
+
+    // Deep-clone current tabs as mutable working copy
+    let workingTabs: any[] = JSON.parse(JSON.stringify(tabs));
+
+    for (const copy of cvmEligible) {
+      const params = copy.input_params;
+      const reminderPayload = {
+        copy_variant: 'reminder',
+        copy_id: uuidv4(),
+        copy_group_id: params.copy_group_id,
+        copy_family_id: familyId,
+        request_type: 'chat_reminder',
+        use_case: 'b2c',
+        product_ids: params.product_ids || null,
+        purpose_id: params.purpose_id || null,
+        segment_id: params.segment_id || null,
+        format_id: params.format_id || null,
+        user_id: userName,
+        question: reminderPrompt || null,
+        attached_text: null,
+        knowledge_base_docs: null,
+      };
+
+      const result = await callReminderApi(reminderPayload, params.format_name || '');
+      if (result) {
+        if (workingTabs[0]?.data) {
+          workingTabs = workingTabs.map((tab: any) => {
+            if (tab.segment_id === result.input_params.segment_id) {
+              // Remove any existing reminder for this copy_group_id before inserting a fresh one
+              const withoutOldReminder = tab.data.filter(
+                (d: any) => !(
+                  d.input_params?.copy_group_id === result.entry.input_params?.copy_group_id &&
+                  (d.input_params?.copy_variant || 'base') === 'reminder'
+                )
+              );
+              // Insert reminder immediately after its parent base copy (same copy_group_id)
+              const parentIdx = withoutOldReminder.findIndex(
+                (d: any) =>
+                  d.input_params?.copy_group_id === result.entry.input_params?.copy_group_id &&
+                  (d.input_params?.copy_variant || 'base') === 'base'
+              );
+              if (parentIdx === -1) {
+                return { ...tab, data: [...withoutOldReminder, result.entry] };
+              }
+              const updated = [...withoutOldReminder];
+              updated.splice(parentIdx + 1, 0, result.entry);
+              return { ...tab, data: updated };
+            }
+            return tab;
+          });
+          arrayTab = workingTabs;
+        } else {
+          // Remove any existing reminder for this copy_group_id before inserting a fresh one
+          workingTabs = workingTabs.filter(
+            (d: any) => !(
+              d.input_params?.copy_group_id === result.entry.input_params?.copy_group_id &&
+              (d.input_params?.copy_variant || 'base') === 'reminder'
+            )
+          );
+          // Insert reminder immediately after its parent base copy (same copy_group_id)
+          const parentIdx = workingTabs.findIndex(
+            (d: any) =>
+              d.input_params?.copy_group_id === result.entry.input_params?.copy_group_id &&
+              (d.input_params?.copy_variant || 'base') === 'base'
+          );
+          if (parentIdx === -1) {
+            workingTabs = [...workingTabs, result.entry];
+          } else {
+            workingTabs = [...workingTabs];
+            workingTabs.splice(parentIdx + 1, 0, result.entry);
+          }
+          arrayNoSegment = workingTabs;
+        }
+        // Update state for visible incremental progress
+        setTabs([...workingTabs]);
+      }
+    }
+
+    // Keep tabArray/noSegmentArray in sync so edit/discard/regenerate use up-to-date data
+    if (workingTabs[0]?.data) {
+      setTabArray(workingTabs as any);
+    } else {
+      setNoSegmentArray(workingTabs as any);
+    }
+
+    setLoadingReminders(false);
+    setRemindersGenerated(true);
+    setReminderPrompt('');
+    setIsShowError(true);
+    setIsErrorMsg('Reminders generated successfully!');
+    setIsErrorType('success');
+  };
+  /* Generate Reminders end */
 
   /* ------Handle form input field changes start------ */
   const {
@@ -547,12 +730,14 @@ const B2C: React.FC = () => {
     handleRemoveFile();
     setCopyVersionIdHistory([]);
     setIsTroubleshooting(false);
+    setRemindersGenerated(false);
+    setReminderPrompt('');
   };
   /*  Reset form end */
 
   /* ---------------Regenarate item start--------------- */
   const regenarateItem = (data: any): void => {
-    console.log('tabArray', tabArray);
+    // console.log('tabArray', tabArray);
     arrayNoSegment = tabs;
     arrayTab = tabArray;
     handleApiCall(data);
@@ -561,10 +746,10 @@ const B2C: React.FC = () => {
 
   /* ----------Discard edit answer copy start---------- */
   const discardEditedAnswer = async (data: any): Promise<void> => {
-    console.log('discardEditedAnswer', data);
+    // console.log('discardEditedAnswer', data);
     arrayNoSegment = tabs;
     arrayTab = tabArray;
-    console.log('arrayTab>>', arrayTab);
+    // console.log('arrayTab>>', arrayTab);
     let formUrl = apiUrl + '/chat/discard';
     try {
       const response = await fetch(formUrl, {
@@ -589,8 +774,8 @@ const B2C: React.FC = () => {
         if (arrayTab !== undefined && arrayTab.length > 0) {
           arrayTab = arrayTab.map((segment: { segment_id: any; segment_name: any; data: any[] }) => {
             segment.data = segment.data.map((format: any) => {
-              // Match by format_id AND copy_id to ensure we're updating the right copy
-              const formatMatches = format.format_id === responseFormatId;
+              // Match by format_id AND copy_id — also match reminders by copy_id (their format_id has _reminder_ suffix)
+              const formatMatches = format.format_id === responseFormatId || format.input_params?.copy_id === responseCopyId;
               const copyMatches = format.input_params?.copy_id === responseCopyId;
               
               if (formatMatches && copyMatches) {
@@ -647,7 +832,7 @@ const B2C: React.FC = () => {
           setTabs(arrayTab);
         } else {
           arrayNoSegment = arrayNoSegment.map((format: { format_id: any; outputs: innerOutput[]; input_params?: any }) => {
-            const formatMatches = format.format_id === responseFormatId || format.format_id === 'customPrompts';
+            const formatMatches = format.format_id === responseFormatId || format.input_params?.copy_id === responseCopyId || format.format_id === 'customPrompts';
             const copyMatches = format.input_params?.copy_id === responseCopyId;
             
             if (formatMatches && copyMatches) {
@@ -725,10 +910,10 @@ const B2C: React.FC = () => {
 
   /* ----------genarate Refine Copy start---------- */
   const genarateRefineCopy = async (data: any): Promise<void> => {
-    console.log('genarateRefineCopy', data);
+    // console.log('genarateRefineCopy', data);
     arrayNoSegment = tabs;
     arrayTab = tabArray;
-    console.log('arrayTab>>', arrayTab);
+    // console.log('arrayTab>>', arrayTab);
     let formUrl = apiUrl + '/chat/edit';
     try {
       const response = await fetch(formUrl, {
@@ -741,20 +926,31 @@ const B2C: React.FC = () => {
       });
   
       const responseData = await response.json();
-      console.log('Success:', responseData);
+      // console.log('Success:', responseData);
   
       if (response.ok && !responseData.ErrorMessage) {
         setNoSegmentArray(arrayNoSegment);
         setTabArray(arrayTab);
-        console.log('tabs>>>', tabs);
+        // console.log('tabs>>>', tabs);
   
         if (arrayTab !== undefined) {
           arrayTab = arrayTab.map((segment: { segment_id: any; segment_name: any; data: any[] }) => {
             if (segment.segment_id === responseData.responses[0].input_params.segment_id) {
               segment.data = segment.data.map((format: any) => {
-                if (format.format_id === responseData.responses[0].input_params.format_id) {
+                // Match by copy_id or by the copy_version_id that was sent to the edit endpoint.
+                // Matching by copy_version_id is the most reliable anchor: whichever card owns an
+                // output with that version_id is definitively the card being edited, even if the
+                // API returns a new copy_id (which it may do for edit_manual responses).
+                const responseCopyId = responseData.responses[0].input_params.copy_id;
+                const fmtMatch = format.input_params?.copy_id === responseCopyId
+                  || format.outputs?.some((o: any) =>
+                      o.input_params?.copy_id === responseCopyId
+                      || o.input_params?.copy_version_id === data.copy_version_id
+                  );
+                if (fmtMatch) {
+                  const refinedResponse = { ...responseData.responses[0], timestamp: Date.now() };
                   let replaceOutput = format.outputs.map((output:innerOutput) => 
-                    output.input_params.copy_version_id === data.copy_version_id ? responseData.responses[0] : output
+                    output.input_params.copy_version_id === data.copy_version_id ? refinedResponse : output
                   );
                   return {
                     ...format,
@@ -770,10 +966,18 @@ const B2C: React.FC = () => {
           });
           setTabs(arrayTab);
         } else {
-          arrayNoSegment = arrayNoSegment.map((format: { format_id: any; outputs: innerOutput[] }) => {
-            if (format.format_id === responseData.responses[0].input_params.format_id || format.format_id === 'customPrompts') {
+          arrayNoSegment = arrayNoSegment.map((format: { format_id: any; outputs: innerOutput[]; input_params?: any }) => {
+            // Match by copy_id or by the copy_version_id that was sent to the edit endpoint.
+            const responseCopyId = responseData.responses[0].input_params.copy_id;
+            const fmtMatch = format.input_params?.copy_id === responseCopyId
+              || format.outputs?.some((o: any) =>
+                  o.input_params?.copy_id === responseCopyId
+                  || o.input_params?.copy_version_id === data.copy_version_id
+              );
+            if (fmtMatch) {
+              const refinedResponse = { ...responseData.responses[0], timestamp: Date.now() };
               let replaceOutput = format.outputs.map((output:innerOutput) => 
-                output.input_params.copy_version_id === data.copy_version_id ? responseData.responses[0] : output
+                output.input_params.copy_version_id === data.copy_version_id ? refinedResponse : output
               );
               return {
                 ...format,
@@ -862,15 +1066,15 @@ const B2C: React.FC = () => {
   /* send To contentful start */
   const handleContentfulChange = (e: CustomEvent) => {
     let input = (e.target as HTMLIonInputElement).value as string;
-    console.log('raw input>>>>', input);
+    // console.log('raw input>>>>', input);
     // 1. Remove trailing spaces immediately
     if (input.endsWith(" ")) {
       input = input.trimEnd();
     }
-    console.log('input>>>>', input);
+    // console.log('input>>>>', input);
     // 2. Validate forbidden characters
     if (forbiddenChars.test(input)) {
-      console.log('Invalid input detected');
+      // console.log('Invalid input detected');
       // setContentError("Contains forbidden characters (!@#$%^&* etc.)");
     } else {
       // setContentError("");
@@ -884,13 +1088,16 @@ const B2C: React.FC = () => {
     setContentName((prev) => prev.trim());
   };
   const sendTocontentful = async (data: any): Promise<void> => {
-    console.log('contentfulData', data);
-    console.log('B2C array from template.json:', template.B2C); // <-- log B2C array here
+    // console.log('contentfulData', data);
+    // console.log('B2C array from template.json:', template.B2C); // <-- log B2C array here
     const B2CFormats = template.B2C;
     const filtered = data
       .map((item: any) => {
+      // For reminders, match against the original format_id (strip _reminder_ suffix)
+      const rawFormatId = item.input_params.format_id || '';
+      const baseFormatId = rawFormatId.replace(/_reminder_.*$/, '');
       const format = B2CFormats.find(
-        (f) => f.format_id === item.input_params.format_id
+        (f) => f.format_id === baseFormatId
       );
 
       // If no match found or type_of_content is null → exclude
@@ -910,15 +1117,39 @@ const B2C: React.FC = () => {
       };
       })
       .filter(Boolean);
-    console.log('contentful filtered data', filtered);
-    setContentfulCopy(filtered)
+    // console.log('contentful filtered data', filtered);
+
+    // Deduplication is already handled in Tab.tsx (grouped by copy_group_id + copy_variant,
+    // latest timestamp wins). The filtered array here should already contain at most
+    // 1 active base + 1 active reminder per (format, segment) slot.
+
+    // Sort so each reminder always appears directly below its base copy.
+    // Group order is determined by first occurrence of each copy_group_id (chronological).
+    const groupOrder = new Map<string, number>();
+    let groupIdx = 0;
+    filtered.forEach((item: any) => {
+      const gid = item.input_params?.copy_group_id || '';
+      if (!groupOrder.has(gid)) groupOrder.set(gid, groupIdx++);
+    });
+    const sorted = [...filtered].sort((a: any, b: any) => {
+      const gA = a.input_params?.copy_group_id || '';
+      const gB = b.input_params?.copy_group_id || '';
+      const orderDiff = (groupOrder.get(gA) ?? 999) - (groupOrder.get(gB) ?? 999);
+      if (orderDiff !== 0) return orderDiff;
+      // Same group: base before reminder
+      const varA = a.input_params?.copy_variant || 'base';
+      const varB = b.input_params?.copy_variant || 'base';
+      if (varA === varB) return 0;
+      return varA === 'base' ? -1 : 1;
+    });
+    setContentfulCopy(sorted);
   }
 
   const handleContentfulFormSubmit = async (data:any) => {
     setLoadingContentful(true);
-    console.log('handleContentfulFormSubmit', data);
-    console.log('contentfulCopy', contentfulCopy);
-    console.log('configData>>>', configData);
+    // console.log('handleContentfulFormSubmit', data);
+    // console.log('contentfulCopy', contentfulCopy);
+    // console.log('configData>>>', configData);
 
     const targetEnv = Object.entries(configData.contentful).map(([key, value]) => {
       // remove the "_env" part from the key
@@ -944,19 +1175,14 @@ const B2C: React.FC = () => {
         parent_id = prevCopyVersionIdObj ? prevCopyVersionIdObj.id : "";
       }
       const copyVersionIdObj = { id: newId, parent_id };
-      console.log('formatName', formatName);
-      if (isPersonalizedChanged === isPersonalized) {
-        if (
-          formatName === "Sms" ||
-          formatName.startsWith("Email") || formatName.startsWith("Banner")
-        ) {
-          personalizedCopyVersionIds.push(copyVersionIdObj);
-        } else {
-          genericCopyVersionIds.push(copyVersionIdObj);
-        }
-      }else if (isPersonalized) {
+      // console.log('formatName', formatName);
+      // Route by each item's own type_of_content (set from template config by sendTocontentful).
+      // Handle both array ["personalized"] and plain string "personalized" forms.
+      const toc = item.type_of_content;
+      const isItemPersonalized = Array.isArray(toc) ? toc.includes('personalized') : toc === 'personalized';
+      if (isItemPersonalized) {
         personalizedCopyVersionIds.push(copyVersionIdObj);
-      }else {
+      } else {
         genericCopyVersionIds.push(copyVersionIdObj);
       }
     });
@@ -969,13 +1195,13 @@ const B2C: React.FC = () => {
 
     // Update the copyVersionIdHistory for next time (flatten both arrays)
     setCopyVersionIdHistory([...genericCopyVersionIds, ...personalizedCopyVersionIds]);
-    console.log('copy_version_ids', allCopyVersionIds);
+    // console.log('copy_version_ids', allCopyVersionIds);
     // Determine which types to include in the array
     let types: string[] = [];
     if (genericCopyVersionIds.length > 0) {
       types.push("Generic");
     }
-    if (personalizedCopyVersionIds.length > 0 && isPersonalized) {
+    if (personalizedCopyVersionIds.length > 0) {
       types.push("Personalized");
     }
 
@@ -999,7 +1225,7 @@ const B2C: React.FC = () => {
       });
   
       const responseData = await response.json();
-      console.log('Success:', responseData);
+      // console.log('Success:', responseData);
   
       if (response.ok && !responseData.ErrorMessage) {
         setLoadingContentful(false);
@@ -1043,7 +1269,7 @@ const B2C: React.FC = () => {
       });
       
       const responseData = await response.json();
-      console.log("Success setConfigData:", responseData);
+      // console.log("Success setConfigData:", responseData);
 
       if (response.ok) {
         setConfigData(responseData[0].config_value);
@@ -1059,13 +1285,13 @@ const B2C: React.FC = () => {
   /* -------------handleEditingMode start------------- */
   const handleEditingMode = async (data: boolean): Promise<void> => {
     setIsOpenEditing(data);
-    console.log('isOpenEditing', data);
+    // console.log('isOpenEditing', data);
   }
   /* handleEditingMode end */
 
   /* ---------------Export to doc start--------------- */
   const exportToDoc = (data:any) => {
-    console.log('data', data);
+    // console.log('data', data);
     let answers: any;
 
     if (data[0].data) {
@@ -1079,7 +1305,7 @@ const B2C: React.FC = () => {
     }
 
 
-    console.log('answers', answers);
+    // console.log('answers', answers);
     
     const blob = new Blob([answers], {
       type: 'application/msword;charset=utf-8',
@@ -1094,20 +1320,20 @@ const B2C: React.FC = () => {
 
   /* ---------------Self learning start--------------- */
   const submitSelfLearning = async () => {
-    console.log('selfLearningData', selfLearningData);
+    // console.log('selfLearningData', selfLearningData);
      // Set the clicked div's ID as selected
     setIsOpenModal(false);
     setIsShowError(true);
     setIsErrorMsg('Testing submitted!');
-    console.log('feedbackCopy', feedbackCopy);
+    // console.log('feedbackCopy', feedbackCopy);
     if (selectedDiv !== null && selectedDiv < feedbackCopy.length - 1) {
       // Move to the next response
       setSelectedDiv(null);
       setCurrentIndex((prev) => prev + 1);
       setTimeout(() => setIsOpenModal(true), 300); // Reopen the modal with the next response
     }
-    console.log('arrayNoSegment', noSegmentArray);
-    console.log('arrayTab', tabArray);
+    // console.log('arrayNoSegment', noSegmentArray);
+    // console.log('arrayTab', tabArray);
 
     let currentArrayTab:any = tabArray;
     let currentNoSegmentArray:any = noSegmentArray;
@@ -1174,55 +1400,63 @@ const B2C: React.FC = () => {
       });
   
       const responseData = await response.json();
-      console.log('Success:', responseData);
+      // console.log('Success:', responseData);
     } catch (error: any) {
       console.error('Login failed:', error);
     }
   };
   /* Self learning end */
 
+
+  /* ---------------Contentful Copy Handling start -------------- */
   const handleClickContentful = (e: React.MouseEvent<HTMLIonChipElement>) => {
     getConfigData();
-    console.log('handleClickContentful', e);
+    // console.log('handleClickContentful', e);
     if (!(e.target as HTMLIonChipElement).disabled) {
       setIsContentfulModal(true);
     }
-    console.log('Contentful modal opened', contentfulCopy);
+    // console.log('Contentful modal opened', contentfulCopy);
 
     const emailCount = contentfulCopy.filter(
       (item) => item.input_params.format_name && item.input_params.format_name.startsWith('Email')
     ).length;
 
-    // Step 1: Filter only items with format_id starting with "Email"
-    const emailItems = contentfulCopy.filter(item => item.input_params.format_id.startsWith("Email"));
-    console.log('emailItems:', emailItems);
-    // Step 2: Group by segment_id
+    // Step 1: Filter all email copies (base + reminder)
+    const emailItems = contentfulCopy.filter(item => {
+      const rawFid = item.input_params.format_id || '';
+      const baseFid = rawFid.replace(/_reminder_.*$/, '');
+      return baseFid.startsWith("Email");
+    });
+    // console.log('emailItems:', emailItems);
+
+    // Step 2: Group by (segment_id, base_format_id, copy_variant) — allows max 1 base + 1 reminder
+    // per unique (segment, format) combination. Email S base and Email M base are different formats
+    // so they must NOT be grouped together.
     const grouped = emailItems.reduce((acc, item) => {
       const segmentId = item.input_params.segment_id || 'noSegment';
-      if (!acc[segmentId]) {
-        acc[segmentId] = [];
+      const variant = item.input_params.copy_variant || 'base';
+      const rawFid = item.input_params.format_id || '';
+      const baseFid = rawFid.replace(/_reminder_.*$/, '');
+      const key = `${segmentId}::${baseFid}::${variant}`;
+      if (!acc[key]) {
+        acc[key] = [];
       }
-      acc[segmentId].push(item);
+      acc[key].push(item);
       return acc;
     }, {} as Record<string, typeof contentfulCopy>);
-    console.log('grouped by segment_id:', grouped);
-    const keyExists = 'noSegment' in grouped;
-    console.log('Key "noSegment" exists:', keyExists);
-    // Step 3: Check which segment_ids have multiple entries
+    // console.log('grouped by segment+variant:', grouped);
+
+    const keyExists = Object.keys(grouped).some(k => k.startsWith('noSegment::'));
+    // console.log('Key "noSegment" exists:', keyExists);
+
+    // Step 3: Check if any (segment_id, copy_variant) group has more than 1 entry
     const duplicates = Object.entries(grouped).filter(([_, items]: any) => items.length > 1);
+    // console.log('duplicates:', duplicates);
 
-    console.log('duplicates:', duplicates);
-
-    if (!keyExists && duplicates.length > 0) {
-      console.log('Multiple Email formats found:', emailCount);
+    if (duplicates.length > 0) {
+      // console.log('Multiple Email formats found for same segment+variant:', emailCount);
       setIsShowError(true);
-      setIsErrorMsg('Can only send one email format at a time.');
-      setIsContentfulModal(false);
-    }
-     
-    if (keyExists && emailCount > 1) {
-      setIsShowError(true);
-      setIsErrorMsg('Can only send one email format at a time.');
+      setIsErrorMsg('Can only send one email format per variant (base/reminder) at a time.');
       setIsContentfulModal(false);
     }
     
@@ -1237,11 +1471,11 @@ const B2C: React.FC = () => {
     ) {
       setIsPersonalized(true);
       setIsPersonalizedChanged(true);
-      console.log("All items are personalized");
+      // console.log("All items are personalized");
     } else {
       setIsPersonalized(false);
       setIsPersonalizedChanged(false);
-      console.log("Not all items are personalized");
+      // console.log("Not all items are personalized");
     }
 
     contentfulCopy.forEach((item) => {
@@ -1250,7 +1484,7 @@ const B2C: React.FC = () => {
       format.startsWith("Sms") ||
       format.startsWith("Email")
       ) {
-        console.log("Matches:", format);
+        // console.log("Matches:", format);
         setIsCreateAssembly(true);
         setIsPersonalized(true);
       }
@@ -1259,7 +1493,7 @@ const B2C: React.FC = () => {
       }
     });
   };
-
+  /* Contentful Copy Handling end */
 
   /* -------------handle file upload start------------- */
   // Trigger file select dialog
@@ -1293,7 +1527,7 @@ const B2C: React.FC = () => {
   // Upload function - send binary
   const uploadFile = async (file: File) => {
     setIsUploadAttachement(true);
-    console.log('Uploading file:', file);
+    // console.log('Uploading file:', file);
     const formData = new FormData();
     formData.append('file', file);
 
@@ -1372,7 +1606,7 @@ const B2C: React.FC = () => {
   };
   // Knowledge base remove start
   const handleRemoveKnowledgeBase = (kb_number:string) => {
-    console.log('kb_number', kb_number);
+    // console.log('kb_number', kb_number);
     setKnowledgeBaseData(prevArray => prevArray.filter(item => item.kb_number !== kb_number));
     setIsShowError(true);
     setIsErrorMsg('Knowledge Base removed successfully!');
@@ -1380,7 +1614,7 @@ const B2C: React.FC = () => {
   };
   // Submit Knowledge Base modal start
   const handleKnowledgeBaseForm = async (data:any) => {
-    console.log('KnowledgeBase', data);
+    // console.log('KnowledgeBase', data);
     if (
       !data.kb_number ||
       isKnowledgeBaseData.some(item => item.kb_number === data.kb_number)
@@ -1411,7 +1645,7 @@ const B2C: React.FC = () => {
         });
     
         const responseData = await response.json();
-        console.log('Success:', responseData);
+        // console.log('Success:', responseData);
     
         if (response.ok && responseData.title) {
           reset;
@@ -1666,6 +1900,10 @@ const B2C: React.FC = () => {
                     <div className="text-right mt-3">
                       <IonChip onClick={() => handleFormSubmit(requestData)} className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Rewrite all suggestions</IonChip>
                       <IonChip data-tooltip-id="contentful" data-tooltip-content="Save all content before sending it to Contentful." disabled={isOpenEditing || contentfulCopy.length === 0} onClick={ handleClickContentful } className='!pointer-events-auto text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Send to contentful</IonChip>
+                      <IonChip disabled={isOpenEditing || loadingReminders || contentfulCopy.length === 0 || getCvmEligibleCopies().length === 0} onClick={() => setIsReminderModal(true)} className='!pointer-events-auto text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>
+                        {loadingReminders && <IonSpinner name="bubbles" className='mr-1'></IonSpinner>}
+                        {loadingReminders ? 'Generating Reminders...' : remindersGenerated ? 'Regenerate Reminders' : 'Generate Reminders'}
+                      </IonChip>
                       <IonChip onClick={() => exportToDoc(tabs)} className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Save all suggestions to word.doc</IonChip>
                       {/* <IonChip onClick={handleReset} className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Create new task</IonChip> */}
                       <Tooltip className={`${!isOpenEditing ? 'hidden' : ''}`} id="contentful" />
@@ -1813,6 +2051,42 @@ const B2C: React.FC = () => {
           </div>
         </IonModal>
         {/* send to contentful end */}
+
+        {/* Reminder modal start */}
+        <IonModal id="example-modal" isOpen={isReminderModal} onWillDismiss={() => setIsReminderModal(false)}>
+          <IonHeader>
+            <IonToolbar>
+              <IonTitle className='text-sm font-bold'>Generate Reminders</IonTitle>
+              <IonButtons slot="end">
+                <IonButton size="small" shape="round" onClick={() => setIsReminderModal(false)}>
+                  <IonIcon slot="icon-only" icon={closeOutline}></IonIcon>
+                </IonButton>
+              </IonButtons>
+            </IonToolbar>
+          </IonHeader>
+          <div className="ion-padding inner-content">
+            <p className='text-sm text-center pb-4'>Generate reminder copies for all CVM-eligible formats (SMS &amp; Email) in the current session. You can optionally add a custom prompt to guide the tone or content of the reminders.</p>
+            <IonTextarea
+              className='bottom-textarea rounded-xl text-black mb-4'
+              placeholder="e.g. add urgency, mention the offer expires in one week..."
+              autoGrow={true}
+              counter={true}
+              maxlength={2000}
+              value={reminderPrompt}
+              onIonInput={(e) => setReminderPrompt(e.detail.value || '')}
+            ></IonTextarea>
+            <IonText className='block text-sm text-center mb-4'>{`${getCvmEligibleCopies().length} reminder(s) will be generated.`}</IonText>
+            <div className='text-center mt-4'>
+              <IonButton size='small' onClick={handleGenerateReminders} className='btn-primary' shape="round">
+                Generate
+              </IonButton>
+              <IonButton onClick={() => setIsReminderModal(false)} size='small' fill='outline' shape="round">
+                Cancel
+              </IonButton>
+            </div>
+          </div>
+        </IonModal>
+        {/* Reminder modal end */}
 
         {/* Knowledge Base start */}
         <IonModal id="example-modal" isOpen={isKnowledgeBaseModal} onWillDismiss={() => setIsKnowledgeBaseModal(false)}>
