@@ -13,12 +13,17 @@
 
 # misc
 .DS_Store
-.env*
+.env
+.env.local
+.env.production
+.env.development.local
+.env.test.local
+.env.production.local
 /.nx
 /.nx/cache
 /.vscode/*
 !/.vscode/extensions.json
-.idea
+.ideas
 
 npm-debug.log*
 yarn-debug.log*
