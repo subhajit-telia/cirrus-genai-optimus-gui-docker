@@ -130,7 +130,7 @@ const B2C: React.FC = () => {
 
   useEffect(() => {
     console.log("RUNTIME_ENV",window.RUNTIME_ENV?.REACT_APP_API_URL);
-    console.log("NetworkInfo url", NetworkInfo.URL);
+    console.log("NetworkInfo url >", NetworkInfo.URL);
 
     let userLocalData:any = localStorage.getItem('user');
     let userData = JSON.parse(userLocalData);
