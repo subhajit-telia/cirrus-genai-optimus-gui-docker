@@ -129,9 +129,6 @@ const B2C: React.FC = () => {
   const [remindersGenerated, setRemindersGenerated] = useState(false);
 
   useEffect(() => {
-    console.log("RUNTIME_ENV",window.RUNTIME_ENV?.REACT_APP_API_URL);
-    console.log("NetworkInfo url >", NetworkInfo.URL);
-
     let userLocalData:any = localStorage.getItem('user');
     let userData = JSON.parse(userLocalData);
     setUserName(userData.username);
