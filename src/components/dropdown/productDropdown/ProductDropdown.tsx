@@ -46,7 +46,7 @@ const ProductDropdown = <T extends Record<string, any>>({
       debounce((term) => {
         const grouped = options.reduce((acc, option) => {
           const rawCategory = option[categoryKey];
-          const category = rawCategory != null && rawCategory !== '' ? rawCategory : 'uncategorized';
+          const category = rawCategory != null && rawCategory !== '' ? String(rawCategory) : 'uncategorized';
           if (!acc[category]) acc[category] = [];
           if (
             term === '' ||
