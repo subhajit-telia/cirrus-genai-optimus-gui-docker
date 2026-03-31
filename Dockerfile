@@ -1,4 +1,5 @@
 # Stage 1: Build the Ionic app
+# syntax=docker/dockerfile:1.6
 FROM cirrus-docker.jfrog.teliacompany.io/node:20-alpine AS build
 
 # Set working directory inside the container
@@ -8,11 +9,14 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies
-# Increased fetch-timeout to handle slow QEMU-emulated arm64 builds
-RUN npm install --fetch-timeout=600000
-# Comment out additional npm install, as the previous command should install all dependencies including devDependencies
-# RUN npm i -D -E vite 
-RUN npm install -g @ionic/cli --fetch-timeout=600000
+# Using BuildKit cache mounts significantly speeds up repeated CI builds.
+# Also use `npm ci` for deterministic/fast installs from the lockfile.
+RUN --mount=type=cache,target=/root/.npm \
+  npm ci --fetch-timeout=600000 --no-audit --no-fund --prefer-offline
+
+# Install Ionic CLI (used by the build command below)
+RUN --mount=type=cache,target=/root/.npm \
+  npm install -g @ionic/cli --fetch-timeout=600000 --no-audit --no-fund --prefer-offline
 
 # Copy the rest of the application code
 COPY . .
