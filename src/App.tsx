@@ -46,7 +46,6 @@ import B2C from './pages/program/B2C';
 import B2B from './pages/program/B2B';
 import Examples from './pages/admin/examples/Examples';
 import Config from './pages/admin/configuration/Config';
-import NotFoundPage from './pages/NotFoundPage';
 import packageJson from '../package.json';
 const storedVersion = localStorage.getItem("app_version");
 
@@ -76,7 +75,6 @@ const App: React.FC = () => (
               <AuthGuard path="/examples" component={Examples} role="admin"/>
               <AuthGuard path="/config" component={Config} role="admin"/>
               
-              <Route path="/notfound" component={NotFoundPage} />
               <Route exact path="/login">
                 <Login />
               </Route>
