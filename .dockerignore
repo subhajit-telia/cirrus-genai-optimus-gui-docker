@@ -1,6 +1,10 @@
 # Ignore node_modules
 node_modules
 
+# Ignore git metadata and CI config (not needed for build output)
+.git
+.github
+
 # Ignore build directories
 dist
 build
