@@ -11,6 +11,8 @@ COPY package*.json ./
 # Install dependencies
 # Using BuildKit cache mounts significantly speeds up repeated CI builds.
 # Also use `npm ci` for deterministic/fast installs from the lockfile.
+# Skip Cypress binary download in CI image build (not needed for compile).
+ENV CYPRESS_INSTALL_BINARY=0
 RUN --mount=type=cache,target=/root/.npm \
   npm ci --fetch-timeout=600000 --no-audit --no-fund --prefer-offline
 
