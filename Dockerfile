@@ -14,15 +14,11 @@ COPY package*.json ./
 RUN --mount=type=cache,target=/root/.npm \
   npm ci --fetch-timeout=600000 --no-audit --no-fund --prefer-offline
 
-# Install Ionic CLI (used by the build command below)
-RUN --mount=type=cache,target=/root/.npm \
-  npm install -g @ionic/cli --fetch-timeout=600000 --no-audit --no-fund --prefer-offline
-
 # Copy the rest of the application code
 COPY . .
 
-# Build the Ionic application (assumes a `build` script is defined in package.json)
-RUN ionic build --prod
+# Build the app using the project script (tsc + vite build)
+RUN npm run build
 
 # Verify the build output directory 
 RUN ls -la /app/dist
