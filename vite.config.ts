@@ -10,6 +10,27 @@ export default defineConfig({
     react(),
     legacy()
   ],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          azure: ['@azure/msal-browser', '@azure/msal-react'],
+          markdown: [
+            '@mdxeditor/editor',
+            'remark',
+            'remark-gfm',
+            'remark-html',
+            'remark-parse',
+            'remark-stringify',
+            'react-markdown',
+            'rehype-raw',
+            'marked'
+          ]
+        }
+      }
+    },
+    chunkSizeWarningLimit: 1000
+  },
   test: {
     globals: true,
     environment: 'jsdom',
