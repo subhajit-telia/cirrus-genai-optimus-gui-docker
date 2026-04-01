@@ -15,8 +15,6 @@ const LoginButton = () => {
     console.log("Current URL:", currentUrl);
     console.log("ACCESSTOKEN:", NetworkInfo.ACCESSTOKEN);
     console.log("AZURE_AD_TENANT_ID:", NetworkInfo.AZURE_TENANT_ID);
-    console.log("VITE_API_BASE_URL:", NetworkInfo.VITE_API_BASE_URL);
-    console.log("REACT_APP_API_URL:", NetworkInfo.REACT_APP_API_URL);
     console.log("URL:", NetworkInfo.URL);
     let reactAppUrl;
     if (currentUrl.toLowerCase().includes('dev')) {
