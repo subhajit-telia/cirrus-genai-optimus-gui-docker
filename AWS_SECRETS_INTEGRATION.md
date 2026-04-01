@@ -181,7 +181,7 @@ docker build -t optimus-gui:local .
 
 # Run with secrets simulation
 docker run -it -p 8000:80 \
-  -e API_ENDPOINT="http://localhost:8000/api/v1/" \
+  -e API_ENDPOINT="http://localhost:8010/api/v1/" \
   -e API_KEY="test-key" \
   optimus-gui:local
 ```
