@@ -14,7 +14,7 @@ const LoginButton = () => {
     const currentUrl = window.location.href;
     console.log("Current URL:", currentUrl);
     console.log("ACCESSTOKEN:", NetworkInfo.ACCESSTOKEN);
-    console.log("REACT_APP_URL:", NetworkInfo.REACT_APP_URL);
+    console.log("REACT_APP_API_URL:", NetworkInfo.REACT_APP_API_URL);
     console.log("URL:", NetworkInfo.URL);
     let reactAppUrl;
     if (currentUrl.toLowerCase().includes('dev')) {

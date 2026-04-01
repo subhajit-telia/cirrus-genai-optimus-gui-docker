@@ -17,6 +17,9 @@ class NetworkInfo {
 
   static readonly URL: string = NetworkInfo.SANITIZE_URL.replace("undefined/", "");
 
+  static readonly REACT_APP_API_URL: string =
+    NetworkInfo.runtimeEnv().API_ENDPOINT || "";
+
   static readonly ACCESSTOKEN: string =
     NetworkInfo.runtimeEnv().API_KEY || "";
 
