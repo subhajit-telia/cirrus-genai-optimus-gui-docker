@@ -18,17 +18,17 @@ class NetworkInfo {
   static readonly URL: string = NetworkInfo.SANITIZE_URL.replace("undefined/", "");
 
   static readonly ACCESSTOKEN: string =
-    NetworkInfo.runtimeEnv().API_KEY || import.meta.env.REMOVED;
+    NetworkInfo.runtimeEnv().API_KEY || "";
 
   static readonly AZURE_CLIENT_ID: string =
-    NetworkInfo.runtimeEnv().AZURE_AD_CLIENT_ID || import.meta.env.AZURE_AD_CLIENT_ID;
+    NetworkInfo.runtimeEnv().AZURE_AD_CLIENT_ID || "";
 
   static readonly AZURE_TENANT_ID: string =
-    NetworkInfo.runtimeEnv().AZURE_AD_TENANT_ID || import.meta.env.AZURE_AD_TENANT_ID;
+    NetworkInfo.runtimeEnv().AZURE_AD_TENANT_ID || "";
 
   // Mantengo per compatibilità, se serve
   static readonly REACT_APP_URL: string =
-    NetworkInfo.runtimeEnv().REACT_APP_URL || import.meta.env.REACT_APP_URL;
+    NetworkInfo.runtimeEnv().REACT_APP_URL || "";
 }
 
 export { NetworkInfo, HTTPMethod };
