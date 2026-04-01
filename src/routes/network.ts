@@ -15,11 +15,10 @@ class NetworkInfo {
   static readonly SANITIZE_URL: string =
     (NetworkInfo.runtimeEnv().API_ENDPOINT || import.meta.env.VITE_API_BASE_URL) + "/api";
 
-  static readonly URL: string =
-    (NetworkInfo.runtimeEnv().REACT_APP_API_URL || NetworkInfo.SANITIZE_URL).replace("undefined/", "");
+  static readonly URL: string = NetworkInfo.SANITIZE_URL.replace("undefined/", "");
 
   static readonly REACT_APP_API_URL: string =
-    NetworkInfo.runtimeEnv().REACT_APP_API_URL || "";
+    NetworkInfo.runtimeEnv().API_ENDPOINT || "";
 
   static readonly ACCESSTOKEN: string =
     NetworkInfo.runtimeEnv().API_KEY || "";
