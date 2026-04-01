@@ -17,6 +17,9 @@ class NetworkInfo {
 
   static readonly URL: string = NetworkInfo.SANITIZE_URL.replace("undefined/", "");
 
+  static readonly VITE_API_BASE_URL: string =
+    import.meta.env.VITE_API_BASE_URL;
+
   static readonly REACT_APP_API_URL: string =
     NetworkInfo.runtimeEnv().API_ENDPOINT || "";
 
