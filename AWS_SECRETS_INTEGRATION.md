@@ -107,7 +107,7 @@ kubectl apply -f helm/cirrus/env_values/secret-provider-class-prod.yaml
 ### Step 2: Create Kubernetes Secret (optional, for fallback)
 ```bash
 kubectl create secret generic ai-optimus-gui-secrets \
-  --from-literal=api_endpoint='http://optimus-genai-app.stallions.svc:8000/api/v1/' \
+  --from-literal=api_endpoint='https://genai-optimus-gui.cirrus-dev.teliacompany.net/api' \
   --from-literal=api_key='your-api-key' \
   --from-literal=azure_ad_client_id='your-client-id' \
   --from-literal=azure_ad_tenant_id='your-tenant-id' \
