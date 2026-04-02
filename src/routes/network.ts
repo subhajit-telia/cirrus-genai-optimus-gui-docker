@@ -12,23 +12,21 @@ class NetworkInfo {
     return (typeof window !== "undefined" && (window as any).RUNTIME_ENV) || {};
   }
 
-  static readonly SANITIZE_URL: string =
-    NetworkInfo.runtimeEnv().API_ENDPOINT || import.meta.env.VITE_API_BASE_URL || "api";
-
-  static readonly URL: string = NetworkInfo.SANITIZE_URL;
+  static readonly URL: string = 
+    NetworkInfo.runtimeEnv().API_ENDPOINT || import.meta.env.VITE_API_BASE_URL;
 
   static readonly ACCESSTOKEN: string =
     NetworkInfo.runtimeEnv().API_KEY || import.meta.env.VITE_API_KEY;
 
   static readonly AZURE_CLIENT_ID: string =
-    NetworkInfo.runtimeEnv().AZURE_AD_CLIENT_ID || import.meta.env.AZURE_AD_CLIENT_ID;
+    NetworkInfo.runtimeEnv().AZURE_AD_CLIENT_ID || "";
 
   static readonly AZURE_TENANT_ID: string =
-    NetworkInfo.runtimeEnv().AZURE_AD_TENANT_ID || import.meta.env.AZURE_AD_TENANT_ID;
+    NetworkInfo.runtimeEnv().AZURE_AD_TENANT_ID || "";
 
   // Mantengo per compatibilità, se serve
   static readonly REACT_APP_URL: string =
-    NetworkInfo.runtimeEnv().REACT_APP_URL || import.meta.env.REACT_APP_URL;
+    NetworkInfo.runtimeEnv().REACT_APP_URL || "";
 }
 
 export { NetworkInfo, HTTPMethod };
