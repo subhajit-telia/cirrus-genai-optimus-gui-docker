@@ -12,13 +12,11 @@ class NetworkInfo {
     return (typeof window !== "undefined" && (window as any).RUNTIME_ENV) || {};
   }
 
-  static readonly URL: string = NetworkInfo.runtimeEnv().API_ENDPOINT || import.meta.env.VITE_API_BASE_URL;
-
-  static readonly REACT_APP_API_URL: string =
-    NetworkInfo.runtimeEnv().API_ENDPOINT || "";
+  static readonly URL: string = 
+    NetworkInfo.runtimeEnv().API_ENDPOINT || import.meta.env.VITE_API_BASE_URL;
 
   static readonly ACCESSTOKEN: string =
-    NetworkInfo.runtimeEnv().API_KEY || "";
+    NetworkInfo.runtimeEnv().API_KEY || import.meta.env.VITE_API_KEY;
 
   static readonly AZURE_CLIENT_ID: string =
     NetworkInfo.runtimeEnv().AZURE_AD_CLIENT_ID || "";
