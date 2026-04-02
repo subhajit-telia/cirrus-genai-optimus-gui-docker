@@ -84,7 +84,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<FeedbackBox | null>(null);
   const [feedbackResponse, setFeedbackResponse] = useState<any>(null);
-  const apiUrl = window.RUNTIME_ENV?.REACT_APP_API_URL || NetworkInfo.URL;
+  const apiUrl = NetworkInfo.URL;
  
   // const [popoverEvent, setPopoverEvent] = useState<MouseEvent | null>(null);
 
