@@ -96,7 +96,7 @@ const B2C: React.FC = () => {
   const [selectedPurpose, setSelectedPurpose] = useState<typeof purposes[0][]>([]);
   const [userName, setUserName] = useState('');
   const [tigaRoles, setTigaRoles] = useState([]);
-  const apiUrl = NetworkInfo.URL;
+  const apiUrl = window.RUNTIME_ENV?.REACT_APP_API_URL || NetworkInfo.URL;
   const [isOpenModal, setIsOpenModal] = useState(false);
   const [isOpenEditing, setIsOpenEditing] = useState(false);
   const [selectedDiv, setSelectedDiv] = useState<number | null>(null);
