@@ -25,7 +25,7 @@ const FeedbackAlert = forwardRef((_, ref) => {
       const response = await fetch(formUrl, {
         method: HTTPMethod.POST,
         headers: {
-          '"removed"': `${NetworkInfo.ACCESSTOKEN}`,
+          'access_token': `${NetworkInfo.ACCESSTOKEN}`,
           'Content-Type': 'application/json'
         },
       });

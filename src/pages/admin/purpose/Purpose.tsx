@@ -49,7 +49,7 @@ const Purpose: React.FC = () => {
       const response = await fetch(urlData, {
         method: 'GET',
         headers: {
-          '"removed"': `${NetworkInfo.ACCESSTOKEN}`,
+          'access_token': `${NetworkInfo.ACCESSTOKEN}`,
           'Content-Type': 'application/json',
         },
       });
@@ -200,7 +200,7 @@ const Purpose: React.FC = () => {
       const response = await fetch(isEdit && type === 'delete' ? NetworkInfo.URL + '/resource/purpose/' + purposeItem.purpose_id + '/deprecate' : isEdit && type === 'status' ? NetworkInfo.URL + '/resource/purpose/' + purposeItem.purpose_version_id + '/activate' : NetworkInfo.URL + '/resource/purpose', {
         method: isEdit && type === 'delete' ? HTTPMethod.PATCH : isEdit && type === 'status' ? HTTPMethod.PATCH : HTTPMethod.POST,
         headers: {
-          '"removed"': `${NetworkInfo.ACCESSTOKEN}`,
+          'access_token': `${NetworkInfo.ACCESSTOKEN}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(purposeItem),

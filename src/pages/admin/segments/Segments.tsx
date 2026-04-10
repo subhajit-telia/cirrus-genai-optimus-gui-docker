@@ -48,7 +48,7 @@ const Segments: React.FC = () => {
       const response = await fetch(urlData, {
         method: 'GET',
         headers: {
-          '"removed"': `${NetworkInfo.ACCESSTOKEN}`,
+          'access_token': `${NetworkInfo.ACCESSTOKEN}`,
           'Content-Type': 'application/json',
         },
       });
@@ -195,7 +195,7 @@ const Segments: React.FC = () => {
       const response = await fetch(isEdit && type === 'delete' ? NetworkInfo.URL + '/resource/segment/' + segmentItem.segment_id + '/deprecate' : isEdit && type === 'status' ? NetworkInfo.URL + '/resource/segment/' + segmentItem.segment_version_id + '/activate' : NetworkInfo.URL + '/resource/segment', {
         method: isEdit && type === 'delete' ? HTTPMethod.PATCH : isEdit && type === 'status' ? HTTPMethod.PATCH : HTTPMethod.POST,
         headers: {
-          '"removed"': `${NetworkInfo.ACCESSTOKEN}`,
+          'access_token': `${NetworkInfo.ACCESSTOKEN}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(segmentItem),

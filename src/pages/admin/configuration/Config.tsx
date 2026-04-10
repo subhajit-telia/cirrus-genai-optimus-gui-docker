@@ -17,13 +17,13 @@ interface ConfigAddModel {
 
     quality_check_enabled: boolean;
     quality_check_retry_count: number;
-    generation_max_"removed"s: number;
+    generation_max_tokens: number;
     temperature: number;
     example_validation_steps: number;
     max_file_size_mb: number;
     generic_env: string;
     personalized_env: string;
-    max_"removed"_length: number;
+    max_token_length: number;
     test_example_chance: number;
     example_acceptance_threshold: number;
     example_automatic_approval: boolean;
@@ -62,7 +62,7 @@ const Config: React.FC = () => {
       const response = await fetch(urlData, {
         method: 'GET',
         headers: {
-          '"removed"': `${NetworkInfo.ACCESSTOKEN}`,
+          'access_token': `${NetworkInfo.ACCESSTOKEN}`,
           'Content-Type': 'application/json',
         },
       });
@@ -82,7 +82,7 @@ const Config: React.FC = () => {
 
         setValue("llm_name", configValue.model.llm_name);
         setValue("reasoning_effort", configValue.model.reasoning_effort);
-        setValue("generation_max_"removed"s", configValue.model.generation_max_"removed"s);
+        setValue("generation_max_tokens", configValue.model.generation_max_tokens);
         setValue("temperature", configValue.model.temperature);
 
         setValue("wait_min", configValue.retry.wait_min);
@@ -97,7 +97,7 @@ const Config: React.FC = () => {
         setValue("max_file_size_mb", configValue.attachment.max_file_size_mb);
         setValue("generic_env", configValue.contentful.generic_env);
         setValue("personalized_env", configValue.contentful.personalized_env);
-        setValue("max_"removed"_length", configValue.attachment.max_"removed"_length);
+        setValue("max_token_length", configValue.attachment.max_token_length);
         setValue("example_acceptance_threshold", configValue.example_validation.example_acceptance_threshold);
         setValue("example_automatic_approval", configValue.example_validation.example_automatic_approval);
         setValue("automatic_feedback_enabled", configValue.automatic_feedback_enabled);
@@ -124,7 +124,7 @@ const Config: React.FC = () => {
 
     payLoad.model.llm_name = data.llm_name;
     payLoad.model.reasoning_effort = data.reasoning_effort;
-    payLoad.model.generation_max_"removed"s = data.generation_max_"removed"s;
+    payLoad.model.generation_max_tokens = data.generation_max_tokens;
     payLoad.model.temperature = data.temperature;
 
     payLoad.retry.wait_min = data.wait_min;
@@ -139,7 +139,7 @@ const Config: React.FC = () => {
     payLoad.attachment.max_file_size_mb = data.max_file_size_mb;
     payLoad.contentful.generic_env = data.generic_env;
     payLoad.contentful.personalized_env = data.personalized_env;
-    payLoad.attachment.max_"removed"_length = data.max_"removed"_length;
+    payLoad.attachment.max_token_length = data.max_token_length;
     payLoad.example_validation.example_acceptance_threshold = data.example_acceptance_threshold;
     payLoad.example_validation.example_automatic_approval = data.example_automatic_approval;
     payLoad.automatic_feedback_enabled = data.automatic_feedback_enabled;
@@ -165,7 +165,7 @@ const Config: React.FC = () => {
       const response = await fetch(formUrl, {
         method: HTTPMethod.POST,
         headers: {
-          '"removed"': `${NetworkInfo.ACCESSTOKEN}`,
+          'access_token': `${NetworkInfo.ACCESSTOKEN}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(finalPayload),
@@ -305,15 +305,15 @@ const Config: React.FC = () => {
                                 </IonPopover>
                             </IonCol>
                             <IonCol size="4">
-                                <IonInput type='number' className='mb-4 text-sm' label="Genaration max "removed"s" labelPlacement="floating" fill="outline" placeholder="Enter Max "removed"s"
-                                    {...register("generation_max_"removed"s", {
+                                <IonInput type='number' className='mb-4 text-sm' label="Generation max tokens" labelPlacement="floating" fill="outline" placeholder="Enter Max tokens"
+                                    {...register("generation_max_tokens", {
                                         validate: {},
                                     })}
                                     ><IonIcon id="genaration-max" className="block absolute left-0 -top-1.5 z-10 cursor-pointer" slot="icon-only" icon={informationCircle}></IonIcon>
                                 </IonInput>
                                 <IonPopover className="rating-popover" size="auto" trigger="genaration-max" triggerAction="hover">
                                     <IonContent class="ion-padding">
-                                        Maximum number of "removed"s in the answer of the LLM. If the LLM attempts to generate more "removed"s, there may be a cut-off mid-response.
+                                        Maximum number of tokens in the answer of the LLM. If the LLM attempts to generate more tokens, there may be a cut-off mid-response.
                                     </IonContent>
                                 </IonPopover>
                             </IonCol>
@@ -481,14 +481,14 @@ const Config: React.FC = () => {
                             </IonCol>
                             <IonCol size="4">
                                 <IonInput type='number' step="0.1" className='mb-4 text-sm' label="Max Token Length" labelPlacement="floating" fill="outline" placeholder="Enter Max Token Length"
-                                    {...register("max_"removed"_length", {
+                                    {...register("max_token_length", {
                                         validate: {},
                                     })}
-                                    ><IonIcon id="max-"removed"-length" className="block absolute left-0 -top-1.5 z-10 cursor-pointer" slot="icon-only" icon={informationCircle}></IonIcon>
+                                    ><IonIcon id="max-token-length" className="block absolute left-0 -top-1.5 z-10 cursor-pointer" slot="icon-only" icon={informationCircle}></IonIcon>
                                 </IonInput>
-                                <IonPopover className="rating-popover" size="auto" trigger="max-"removed"-length" triggerAction="hover">
+                                <IonPopover className="rating-popover" size="auto" trigger="max-token-length" triggerAction="hover">
                                     <IonContent class="ion-padding">
-                                        Maximum number of "removed"s allowed for the attachment. This value limits the length of the attached document in terms of "removed"s, where a "removed" is a single unit of text (such as a word, punctuation mark, or part of a word) as used by the language model (LLM). If the document exceeds this limit, it will be truncated.
+                                        Maximum number of tokens allowed for the attachment. This value limits the length of the attached document in terms of tokens, where a token is a single unit of text (such as a word, punctuation mark, or part of a word) as used by the language model (LLM). If the document exceeds this limit, it will be truncated.
                                     </IonContent>
                                 </IonPopover>
                             </IonCol>
