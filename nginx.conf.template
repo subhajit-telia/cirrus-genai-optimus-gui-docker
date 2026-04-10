@@ -34,7 +34,7 @@ http {
             # Use environment variable for API endpoint (configured via envsubst)
             proxy_pass $API_ENDPOINT;  # Replace with your backend API endpoint
             # Add the Authorization header with the API key
-            proxy_set_header "removed" "$API_KEY";
+            proxy_set_header access_token "$API_KEY";
             proxy_set_header Host $host;
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;

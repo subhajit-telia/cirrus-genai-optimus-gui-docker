@@ -50,7 +50,7 @@ on:
 jobs:
   Deploy:
     permissions:
-      id-"removed": write
+      id-token: write
       contents: read    
     runs-on: [ec2, linux, small]
     container:

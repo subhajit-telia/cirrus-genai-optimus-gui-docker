@@ -196,7 +196,7 @@ const Examples: React.FC = () => {
       const response = await fetch(urlData, {
         method: 'GET',
         headers: {
-          '"removed"': `${NetworkInfo.ACCESSTOKEN}`,
+          'access_token': `${NetworkInfo.ACCESSTOKEN}`,
           'Content-Type': 'application/json',
         },
       });
@@ -224,7 +224,7 @@ const Examples: React.FC = () => {
       const response = await fetch(urlData, {
         method: 'GET',
         headers: {
-          '"removed"': `${NetworkInfo.ACCESSTOKEN}`,
+          'access_token': `${NetworkInfo.ACCESSTOKEN}`,
           'Content-Type': 'application/json',
         },
       });
@@ -248,7 +248,7 @@ const Examples: React.FC = () => {
       const response = await fetch(urlData, {
         method: 'GET',
         headers: {
-          '"removed"': `${NetworkInfo.ACCESSTOKEN}`,
+          'access_token': `${NetworkInfo.ACCESSTOKEN}`,
           'Content-Type': 'application/json',
         },
       });
@@ -272,7 +272,7 @@ const Examples: React.FC = () => {
       const response = await fetch(urlData, {
         method: 'GET',
         headers: {
-          '"removed"': `${NetworkInfo.ACCESSTOKEN}`,
+          'access_token': `${NetworkInfo.ACCESSTOKEN}`,
           'Content-Type': 'application/json',
         },
       });
@@ -510,7 +510,7 @@ const Examples: React.FC = () => {
         const response = await fetch(isEdit ? NetworkInfo.URL + '/example/'+exampleItem.example_id : NetworkInfo.URL + '/example/', {
           method: isEdit && type === 'delete' ? HTTPMethod.DELETE : isEdit && type !== 'delete' ? HTTPMethod.PATCH  : HTTPMethod.POST,
           headers: {
-            '"removed"': `${NetworkInfo.ACCESSTOKEN}`,
+            'access_token': `${NetworkInfo.ACCESSTOKEN}`,
             'Content-Type': 'application/json'
           },
           body: JSON.stringify(exampleItem),

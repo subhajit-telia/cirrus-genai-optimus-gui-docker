@@ -5,7 +5,7 @@ title = "Telia Custom"
 [extend]
 useDefault = true
 
-disabledRules = ["atlassian-api-"removed"", "nytimes-access-"removed""]
+disabledRules = ["atlassian-api-access_token", "nytimes-access-access_token"]
 
 [[allowlists]]
 description = "Global allowlist to reduce false positives"
@@ -56,7 +56,7 @@ regexes = [
     '''-----BEGIN AGE ENCRYPTED FILE-----''',
     '''ENC\[AES256_GCM,data:[^,]+,iv:[^,]+,tag:[^\]]+\]''',
     '''U2FsdGVkX1[A-Za-z0-9+/]+=*''',  # OpenSSL encrypted data (base64 encoded "Salted__" prefix)
-    '''(?i)encrypted[_-]?(?:secret|key|password|"removed"|credential)s?[:=]\s*["'][^"']+["']''',
+    '''(?i)encrypted[_-]?(?:secret|key|password|access_token|credential)s?[:=]\s*["'][^"']+["']''',
     # Template variables (e.g., ${{ secrets.PASSWORD }}, ${PASSWORD}, $PASSWORD)
     '''(?i)(pass(word)?|pwd|passcode)\s*[:=]\s*\$''',
     # Environment variable API calls
@@ -86,8 +86,8 @@ description = "Detected a Generic API Key, potentially exposing access to variou
 telia_note = "Raising entropy threshold, dropping 'key'-like matches, and excluding identifiers named 'accessType' (via negative lookahead in regex) to reduce false positives."
 #entropy = 3.5
 entropy = 4.0
-# regex = '''(?i)[\w.-]{0,50}?(?:access|auth|(?-i:[Aa]pi|API)|credential|creds|key|passw(?:or)?d|secret|"removed")(?:[ \t\w.-]{0,20})[\s'"]{0,3}(?:=|>|:{1,3}=|\|\||:|=>|\?=|,)[\x60'"\s=]{0,5}([\w.=-]{10,150}|[a-z0-9][a-z0-9+/]{11,}={0,3})(?:[\x60'"\s;]|\\[nr]|$)'''
-regex = '''(?i)[\w.-]{0,50}?(?:access|auth|(?-i:[Aa]pi|API)|credential|creds|passw(?:or)?d|secret|"removed")(?:[ \t\w.-]{0,20})[\s'"]{0,3}(?:=|>|:{1,3}=|\|\||:|=>|\?=|,)[\x60'"\s=]{0,5}([\w.=-]{10,150}|[a-z0-9][a-z0-9+/]{11,}={0,3})(?:[\x60'"\s;]|\\[nr]|$)'''
+# regex = '''(?i)[\w.-]{0,50}?(?:access|auth|(?-i:[Aa]pi|API)|credential|creds|key|passw(?:or)?d|secret|access_token)(?:[ \t\w.-]{0,20})[\s'"]{0,3}(?:=|>|:{1,3}=|\|\||:|=>|\?=|,)[\x60'"\s=]{0,5}([\w.=-]{10,150}|[a-z0-9][a-z0-9+/]{11,}={0,3})(?:[\x60'"\s;]|\\[nr]|$)'''
+regex = '''(?i)[\w.-]{0,50}?(?:access|auth|(?-i:[Aa]pi|API)|credential|creds|passw(?:or)?d|secret|access_token)(?:[ \t\w.-]{0,20})[\s'"]{0,3}(?:=|>|:{1,3}=|\|\||:|=>|\?=|,)[\x60'"\s=]{0,5}([\w.=-]{10,150}|[a-z0-9][a-z0-9+/]{11,}={0,3})(?:[\x60'"\s;]|\\[nr]|$)'''
 keywords = [
     "access",
     "api",
@@ -98,7 +98,7 @@ keywords = [
     "passwd",
     "password",
     "secret",
-    ""removed"",
+    "access_token",
 ]
 
 [rules.allowlist]
@@ -128,7 +128,7 @@ regexes = [
     '''-----BEGIN AGE ENCRYPTED FILE-----[\s\S]*?-----END AGE ENCRYPTED FILE-----''',
     '''ENC\[AES256_GCM,data:[^,]+,iv:[^,]+,tag:[^\]]+\]''',
     '''U2FsdGVkX1[A-Za-z0-9+/]+=*''',  # OpenSSL encrypted data (base64 encoded "Salted__" prefix)
-    '''(?i)encrypted[_-]?(?:secret|key|password|"removed"|credential)s?[:=]\s*["'][^"']{20,}["']''',
+    '''(?i)encrypted[_-]?(?:secret|key|password|access_token|credential)s?[:=]\s*["'][^"']{20,}["']''',
 ]
 paths = [
     '''.*/vods/.*''',
@@ -146,7 +146,7 @@ paths = [
 
 
 [[rules]]
-id = "vault-service-"removed""
+id = "vault-service-access_token"
 description = "Identified a Vault Service Token, potentially compromising infrastructure security and access to sensitive credentials."
 telia_note = "raising entropy threshold, dropping 'key'-like matches - a compromise to reduce false positives"
 entropy = 4.0
@@ -154,7 +154,7 @@ entropy = 4.0
 [rules.allowlist]
 regexTarget = "match"
 regexes = [
-    # Salesforce property assignments in test files - these are not vault "removed"s
+    # Salesforce property assignments in test files - these are not vault access_tokens
     '''s\.[A-Za-z][A-Za-z0-9_]*\d*\s*=''',
 ]
 paths = [
@@ -168,7 +168,7 @@ paths = [
 ]
 
 [[rules]]
-id = "dropbox-api-"removed""
+id = "dropbox-api-access_token"
 entropy = 3.4
 telia_note = "raising entropy threshold, especially to reduce false positives on https://github.com/telia-company/uc-servicehub-mi-autotests"
 
@@ -186,13 +186,13 @@ paths = [
 
 [[rules]]
 id = "curl-auth-user"
-description = "Discovered a potential basic authorization "removed" provided in a curl command, which could compromise the curl accessed resource."
+description = "Discovered a potential basic authorization access_token provided in a curl command, which could compromise the curl accessed resource."
 regex = '''\bcurl\b(?:.*|.*(?:[\r\n]{1,2}.*){1,5})[ \t\n\r](?:-u|--user)(?:=|[ \t]{0,5})("(:[^"]{3,}|[^:"]{3,}:|[^:"]{3,}:[^"]{3,})"|'([^:']{3,}:[^']{3,})'|((?:"[^"]{3,}"|'[^']{3,}'|[\w$@.-]+):(?:"[^"]{3,}"|'[^']{3,}'|[\w${}@.-]+)))(?:\s|\z)'''
 entropy = 2
 keywords = ["curl"]
 [rules.allowlist]
 regexes = [
-    '''[^:]+:(?:change(?:it|me)|pass(?:word)?|pwd|test|"removed"|\*+|x+)''',
+    '''[^:]+:(?:change(?:it|me)|pass(?:word)?|pwd|test|access_token|\*+|x+)''',
     '''['"]?<[^>]+>['"]?:['"]?<[^>]+>|<[^:]+:[^>]+>['"]?''',
     '''[^:]+:\[[^]]+]''',
     '''['"]?[^:]+['"]?:['"]?\$(?:\d|\w+|\{(?:\d|\w+)})['"]?''',
@@ -213,8 +213,8 @@ paths = [
 ]
 
 [[rules]]
-id = "jfrog-identity-"removed""
-description = "Detects a JFrog identity "removed", risking unauthorized access to JFrog services."
+id = "jfrog-identity-access_token"
+description = "Detects a JFrog identity access_token, risking unauthorized access to JFrog services."
 entropy = 3.9
 telia_note = "Overriding entropy threshold to 3.9 to reduce false positives"
 
@@ -244,7 +244,7 @@ regexes = [
     '''ENC\[AES256_GCM,data:[^,]+,iv:[^,]+,tag:[^\]]+\]''',
     # Base64 prefix that says "Salted_" in plaintext
     '''U2FsdGVkX1[A-Za-z0-9+/]+=*''',
-    '''(?i)encrypted[_-]?(?:secret|key|password|"removed"|credential)s?[:=]\s*["'][^"']+["']''',
+    '''(?i)encrypted[_-]?(?:secret|key|password|access_token|credential)s?[:=]\s*["'][^"']+["']''',
 ]
 paths = [
     '''.*\.md$''',
@@ -260,7 +260,7 @@ paths = [
 
 [[rules]]
 id = "curl-auth-header"
-description = "Discovered a potential authorization "removed" provided in a curl command header, which could compromise the curl accessed resource."
+description = "Discovered a potential authorization access_token provided in a curl command header, which could compromise the curl accessed resource."
 telia_note = "Override default curl-auth-header rule to exclude README files as they contain documentation examples"
 
 [rules.allowlist]
@@ -273,9 +273,9 @@ paths = [
 ]
 
 [[rules]]
-id = "square-access-"removed""
+id = "square-access-access_token"
 description = "Detected a Square Access Token, risking unauthorized payment processing and financial transaction exposure."
-telia_note = "Override default square-access-"removed" rule to exclude .resx files entirely"
+telia_note = "Override default square-access-access_token rule to exclude .resx files entirely"
 
 [rules.allowlist]
 paths = [
@@ -328,9 +328,9 @@ regexes = [
     '''\.[a-zA-Z_][a-zA-Z0-9_]*\(''',
 ]
 
-# Override aws-access-"removed" rule to exclude Finnish words that start with ASIA
+# Override aws-access-access_token rule to exclude Finnish words that start with ASIA
 [[rules]]
-id = "aws-access-"removed""
+id = "aws-access-access_token"
 description = "Identified a pattern that may indicate AWS credentials, risking unauthorized cloud resource access and data breaches on AWS platforms."
 
 [rules.allowlist]

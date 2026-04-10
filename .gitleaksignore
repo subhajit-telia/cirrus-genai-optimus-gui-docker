@@ -3,7 +3,7 @@
 # .env files: REMOVED and AZURE_SECRET_ID values are empty or removed in HEAD.
 # .env.dev / .env.stage: no longer tracked by git.
 # src/config/msalConfig.ts: AZURE_SECRET_ID hardcodes removed, now uses env/runtime values.
-# src/pages/admin/configuration/Config.tsx: hardcoded "removed" removed.
+# src/pages/admin/configuration/Config.tsx: hardcoded access_token removed.
 # src/pages/home/Home.tsx: hardcoded AWS accessKeyId removed.
 # .github/workflows/build.yaml: hardcoded JF_PASSWORD removed.
 
@@ -30,12 +30,12 @@ fa42de0fae4b9b6c9aeb70ab120bd35492c1031a:.env:generic-api-key:2
 82e35c8117ec5029cb661d555049d90771e652e8:src/config/msalConfig.ts:generic-api-key:15
 82e35c8117ec5029cb661d555049d90771e652e8:src/config/msalConfig.ts:generic-api-key:18
 
-# src/pages/admin/configuration/Config.tsx - hardcoded "removed"
+# src/pages/admin/configuration/Config.tsx - hardcoded access_token
 c73eb8e2563f32fa4092420035acf818c215d6bc:src/pages/admin/configuration/Config.tsx:generic-api-key:48
 
 # src/pages/home/Home.tsx - hardcoded AWS accessKeyId which is already expired/changed
 90b020c15e2c1aebfc3120bfddf696f319ebb936:src/pages/home/Home.tsx:generic-api-key:15
-90b020c15e2c1aebfc3120bfddf696f319ebb936:src/pages/home/Home.tsx:aws-access-"removed":15
+90b020c15e2c1aebfc3120bfddf696f319ebb936:src/pages/home/Home.tsx:aws-access-access_token:15
 
 # .github/workflows/build.yaml - hardcoded JF_PASSWORD
 3d20af5916e11bd78f90a8aac151e557d7fa1a79:.github/workflows/build.yaml:generic-api-key:26

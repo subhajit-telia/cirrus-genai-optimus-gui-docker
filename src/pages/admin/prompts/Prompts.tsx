@@ -47,7 +47,7 @@ const Prompts: React.FC = () => {
       const response = await fetch(urlData, {
         method: 'GET',
         headers: {
-          '"removed"': `${NetworkInfo.ACCESSTOKEN}`,
+          'access_token': `${NetworkInfo.ACCESSTOKEN}`,
           'Content-Type': 'application/json',
         },
       });
@@ -160,7 +160,7 @@ const Prompts: React.FC = () => {
       const response = await fetch(isEdit && type === 'delete' ? NetworkInfo.URL + '/resource/prompt/' + promptItem.prompt_id + '/deprecate' : isEdit && type === 'status' ? NetworkInfo.URL + '/resource/prompt/' + promptItem.prompt_version_id + '/activate' : NetworkInfo.URL + '/resource/prompt', {
         method: isEdit && type === 'delete' ? HTTPMethod.PATCH : isEdit && type === 'status' ? HTTPMethod.PATCH : HTTPMethod.POST,
         headers: {
-          '"removed"': `${NetworkInfo.ACCESSTOKEN}`,
+          'access_token': `${NetworkInfo.ACCESSTOKEN}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(promptItem),

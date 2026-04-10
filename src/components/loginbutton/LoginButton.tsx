@@ -37,7 +37,7 @@ const LoginButton = () => {
       const account = response.account;
       console.log("User Info:", account?.name, account?.username);
 
-      // Store "removed" for API calls
+      // Store access_token for API calls
       const accessToken = response.accessToken;
       
       if (accessToken) {

@@ -41,7 +41,7 @@ const Users: React.FC = () => {
       const response = await fetch(urlData, {
         method: 'GET',
         headers: {
-          '"removed"': `${NetworkInfo.ACCESSTOKEN}`,
+          'access_token': `${NetworkInfo.ACCESSTOKEN}`,
           'Content-Type': 'application/json',
         },
       });

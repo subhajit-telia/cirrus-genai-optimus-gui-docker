@@ -40,13 +40,13 @@ const Login: React.FC = () => {
     let formUrl:any;
     // console.log('payload', data);
     // console.log('segmentValue', segmentValue);
-
+ 
     if (segmentValue === 'tcad') {
       formUrl = apiUrl + '/tcad_login/check';
     }else {
       formUrl = apiUrl + '/login/check';
     }
-
+ 
     try {
       const response = await fetch(formUrl, {
         method: HTTPMethod.POST,
@@ -56,12 +56,12 @@ const Login: React.FC = () => {
         body: JSON.stringify(data),
       });
       const responseData = await response.json();
-      // console.log("Success:", responseData);
-
+      console.log("Success:", responseData);
+ 
       if (response.ok) {
         setLoading(false);
         if (responseData.verification === true) {
-          // console.log('login');
+          console.log('login');
           localStorage.setItem('user', JSON.stringify(responseData));
           setIsShowError(true);
           if (responseData.roles.admin === true && responseData.roles.user === true) {
@@ -73,31 +73,37 @@ const Login: React.FC = () => {
           }else if (responseData.roles.user === true) {
             handleLogin('user');
             setIsErrorMsg('Logged in as user');
-          }else if (responseData.role == 'admin') {
+          }else {
+            setIsErrorMsg('Please check your credential.');
+          }
+        }else {
+          // console.log('login faild');
+          localStorage.setItem('user', JSON.stringify(responseData));
+          setIsShowError(true);
+          if (responseData.role == 'admin') {
             handleLogin('admin');
             setIsErrorMsg('Logged in as admin');
           }else if (responseData.role == 'user') {
             handleLogin('user');
             setIsErrorMsg('Logged in as user');
           }else {
+            setIsShowError(true);
             setIsErrorMsg('Please check your credential.');
           }
-        }else {
-          // console.log('login faild');
-          setIsShowError(true);
-          setIsErrorMsg('Please check your credential.');
         }
+      }else {
+        setLoading(false);
+        setIsShowError(true);
+        setIsErrorMsg(responseData.detail || 'Login failed. Please try again.');
       }
-      
+     
     } catch (error: any) {
       console.error("Login failed:", error);
       setLoading(false);
     }
   };
-  /* Handle form submit end */
-
    /* ------Handle form input field changes start------ */
-   const {
+  const {
     register: register,
     handleSubmit: handleSubmit,
     reset,

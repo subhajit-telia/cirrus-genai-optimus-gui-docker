@@ -181,7 +181,7 @@ const B2B: React.FC = () => {
       const response = await fetch(urlData, {
         method: 'GET',
         headers: {
-          '"removed"': `${NetworkInfo.ACCESSTOKEN}`,
+          'access_token': `${NetworkInfo.ACCESSTOKEN}`,
           'Content-Type': 'application/json',
         },
       });
@@ -208,7 +208,7 @@ const B2B: React.FC = () => {
       const response = await fetch(urlData, {
         method: 'GET',
         headers: {
-          '"removed"': `${NetworkInfo.ACCESSTOKEN}`,
+          'access_token': `${NetworkInfo.ACCESSTOKEN}`,
           'Content-Type': 'application/json',
         },
       });
@@ -235,7 +235,7 @@ const B2B: React.FC = () => {
       const response = await fetch(urlData, {
         method: 'GET',
         headers: {
-          '"removed"': `${NetworkInfo.ACCESSTOKEN}`,
+          'access_token': `${NetworkInfo.ACCESSTOKEN}`,
           'Content-Type': 'application/json',
         },
       });
@@ -262,7 +262,7 @@ const B2B: React.FC = () => {
       const response = await fetch(urlData, {
         method: 'GET',
         headers: {
-          '"removed"': `${NetworkInfo.ACCESSTOKEN}`,
+          'access_token': `${NetworkInfo.ACCESSTOKEN}`,
           'Content-Type': 'application/json',
         },
       });
@@ -421,7 +421,7 @@ const B2B: React.FC = () => {
       const response = await fetch(formUrl, {
         method: HTTPMethod.POST,
         headers: {
-          '"removed"': `${NetworkInfo.ACCESSTOKEN}`,
+          'access_token': `${NetworkInfo.ACCESSTOKEN}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(data),
@@ -549,7 +549,7 @@ const B2B: React.FC = () => {
       const response = await fetch(formUrl, {
         method: HTTPMethod.POST,
         headers: {
-          '"removed"': `${NetworkInfo.ACCESSTOKEN}`,
+          'access_token': `${NetworkInfo.ACCESSTOKEN}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(payload),
@@ -758,7 +758,7 @@ const B2B: React.FC = () => {
       const response = await fetch(formUrl, {
         method: HTTPMethod.POST,
         headers: {
-          '"removed"': `${NetworkInfo.ACCESSTOKEN}`,
+          'access_token': `${NetworkInfo.ACCESSTOKEN}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(data),
@@ -928,7 +928,7 @@ const B2B: React.FC = () => {
       const response = await fetch(formUrl, {
         method: HTTPMethod.POST,
         headers: {
-          '"removed"': `${NetworkInfo.ACCESSTOKEN}`,
+          'access_token': `${NetworkInfo.ACCESSTOKEN}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(data),
@@ -1200,7 +1200,7 @@ const B2B: React.FC = () => {
       const response = await fetch(formUrl, {
         method: HTTPMethod.POST,
         headers: {
-          '"removed"': `${NetworkInfo.ACCESSTOKEN}`,
+          'access_token': `${NetworkInfo.ACCESSTOKEN}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(payload),
@@ -1245,7 +1245,7 @@ const B2B: React.FC = () => {
       const response = await fetch(urlData, {
         method: 'GET',
         headers: {
-          '"removed"': `${NetworkInfo.ACCESSTOKEN}`,
+          'access_token': `${NetworkInfo.ACCESSTOKEN}`,
           'Content-Type': 'application/json',
         },
       });
@@ -1376,7 +1376,7 @@ const B2B: React.FC = () => {
       const response = await fetch(formUrl, {
         method: HTTPMethod.PUT,
         headers: {
-          '"removed"': `${NetworkInfo.ACCESSTOKEN}`,
+          'access_token': `${NetworkInfo.ACCESSTOKEN}`,
           'Content-Type': 'application/json'
         },
       });
@@ -1513,7 +1513,7 @@ const B2B: React.FC = () => {
       const response = await fetch(apiUrl+'/attachments/upload', {
         method: 'POST',
         headers: {
-          '"removed"': `${NetworkInfo.ACCESSTOKEN}`,
+          'access_token': `${NetworkInfo.ACCESSTOKEN}`,
         },
         body: formData, // sending raw binary
       });
@@ -1615,7 +1615,7 @@ const B2B: React.FC = () => {
         const response = await fetch(formUrl, {
           method: HTTPMethod.POST,
           headers: {
-            '"removed"': `${NetworkInfo.ACCESSTOKEN}`,
+            'access_token': `${NetworkInfo.ACCESSTOKEN}`,
             'Content-Type': 'application/json'
           },
           body: JSON.stringify(payload),
