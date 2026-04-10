@@ -73,6 +73,12 @@ const Login: React.FC = () => {
           }else if (responseData.roles.user === true) {
             handleLogin('user');
             setIsErrorMsg('Logged in as user');
+          }else if (responseData.role == 'admin') {
+            handleLogin('admin');
+            setIsErrorMsg('Logged in as admin');
+          }else if (responseData.role == 'user') {
+            handleLogin('user');
+            setIsErrorMsg('Logged in as user');
           }else {
             setIsErrorMsg('Please check your credential.');
           }
