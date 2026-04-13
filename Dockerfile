@@ -1,4 +1,5 @@
 # Stage 1: Build the Ionic app
+# syntax=docker/dockerfile:1.6
 FROM cirrus-docker.jfrog.teliacompany.io/node:20-alpine AS build
 
 # Set working directory inside the container
@@ -8,17 +9,18 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies
-# Increased fetch-timeout to handle slow QEMU-emulated arm64 builds
-RUN npm install --fetch-timeout=600000
-# Comment out additional npm install, as the previous command should install all dependencies including devDependencies
-# RUN npm i -D -E vite 
-RUN npm install -g @ionic/cli --fetch-timeout=600000
+# Using BuildKit cache mounts significantly speeds up repeated CI builds.
+# Also use `npm ci` for deterministic/fast installs from the lockfile.
+# Skip Cypress binary download in CI image build (not needed for compile).
+ENV CYPRESS_INSTALL_BINARY=0
+RUN --mount=type=cache,target=/root/.npm \
+  npm ci --fetch-timeout=600000 --no-audit --no-fund --prefer-offline
 
 # Copy the rest of the application code
 COPY . .
 
-# Build the Ionic application (assumes a `build` script is defined in package.json)
-RUN ionic build --prod
+# Build the app using the project script (tsc + vite build)
+RUN npm run build
 
 # Verify the build output directory 
 RUN ls -la /app/dist
@@ -32,8 +34,12 @@ COPY --from=build /app/dist /usr/share/nginx/html
 # Copy the NGINX config template
 COPY nginx.conf.template /etc/nginx/nginx.conf.template
 
+# Runtime env injection (generates /usr/share/nginx/html/runtime-env.js)
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
+
 # Expose port 80 for the application
 EXPOSE 80
 
-# Replace placeholders in the config file with env variables and start NGINX
-CMD envsubst '${API_KEY} ${API_ENDPOINT}' < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf && nginx -g 'daemon off;'
+# Generate runtime config + NGINX config, then start NGINX
+CMD ["/docker-entrypoint.sh"]
