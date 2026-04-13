@@ -199,18 +199,6 @@ ion-textarea .textarea-wrapper-inner .native-wrapper .native-textarea {
     font-size: 14px;
     color: var(--color-black);
 }
-.not-found {
-    background-image: url('../theme/assets/404-background.png');
-    background-size: cover;
-    background-position: center;
-    height: 100%;
-    color: var(--color-white);
-    --background: unset;
-    display: flex;
-    justify-content: flex-start;
-    align-items: center;
-    padding-left: 20px; 
-}
 .feedback-alert textarea {
     border: 1px solid #d9d9d9 !important;
     border-radius: 6px;

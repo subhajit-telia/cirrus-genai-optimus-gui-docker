@@ -1,5 +1,6 @@
-import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
-import { IonApp, IonRouterOutlet, IonToast, setupIonicReact } from '@ionic/react';
+import { Suspense, lazy } from 'react';
+import { Route, Switch } from 'react-router-dom';
+import { IonApp, IonRouterOutlet, setupIonicReact } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
 
 /* Core CSS required for Ionic components to work properly */
@@ -34,20 +35,20 @@ import '@ionic/react/css/display.css';
 
 setupIonicReact();
 import './theme/variables.css';
-import Login from './pages/auth/login';
-import Formats from './pages/admin/formats/Formats';
-import Prompts from './pages/admin/prompts/Prompts';
-import Purpose from './pages/admin/purpose/Purpose';
-import Segments from './pages/admin/segments/Segments';
-import Users from './pages/admin/users/Users';
 import {AuthProvider}  from './config/AuthContext';
 import AuthGuard from './config/AuthGuard';
-import B2C from './pages/program/B2C';
-import B2B from './pages/program/B2B';
-import Examples from './pages/admin/examples/Examples';
-import Config from './pages/admin/configuration/Config';
-import NotFoundPage from './pages/NotFoundPage';
 import packageJson from '../package.json';
+
+const Login = lazy(() => import('./pages/auth/login'));
+const Formats = lazy(() => import('./pages/admin/formats/Formats'));
+const Prompts = lazy(() => import('./pages/admin/prompts/Prompts'));
+const Purpose = lazy(() => import('./pages/admin/purpose/Purpose'));
+const Segments = lazy(() => import('./pages/admin/segments/Segments'));
+const Users = lazy(() => import('./pages/admin/users/Users'));
+const B2C = lazy(() => import('./pages/program/B2C'));
+const B2B = lazy(() => import('./pages/program/B2B'));
+const Examples = lazy(() => import('./pages/admin/examples/Examples'));
+const Config = lazy(() => import('./pages/admin/configuration/Config'));
 const storedVersion = localStorage.getItem("app_version");
 
 if (storedVersion === null || storedVersion !== packageJson.version) {
@@ -65,23 +66,24 @@ const App: React.FC = () => (
     <IonReactRouter>
       <IonRouterOutlet id="main">
         <AuthProvider>
-            <Switch>
-              <AuthGuard path="/b2c" component={B2C}/>
-              <AuthGuard path="/b2b" component={B2B}/>
-              <AuthGuard path="/users" component={Users} role="admin"/>
-              <AuthGuard path="/formats" component={Formats} role="admin"/>
-              <AuthGuard path="/prompts" component={Prompts} role="admin"/>
-              <AuthGuard path="/purpose" component={Purpose} role="admin"/>
-              <AuthGuard path="/segments" component={Segments} role="admin"/>
-              <AuthGuard path="/examples" component={Examples} role="admin"/>
-              <AuthGuard path="/config" component={Config} role="admin"/>
-              
-              <Route path="/notfound" component={NotFoundPage} />
-              <Route exact path="/login">
-                <Login />
-              </Route>
-              <Route path="/" component={Login} />
-            </Switch>
+          <Suspense fallback={<div>Loading...</div>}>
+              <Switch>
+                <AuthGuard path="/b2c" component={B2C}/>
+                <AuthGuard path="/b2b" component={B2B}/>
+                <AuthGuard path="/users" component={Users} role="admin"/>
+                <AuthGuard path="/formats" component={Formats} role="admin"/>
+                <AuthGuard path="/prompts" component={Prompts} role="admin"/>
+                <AuthGuard path="/purpose" component={Purpose} role="admin"/>
+                <AuthGuard path="/segments" component={Segments} role="admin"/>
+                <AuthGuard path="/examples" component={Examples} role="admin"/>
+                <AuthGuard path="/config" component={Config} role="admin"/>
+                
+                <Route exact path="/login">
+                  <Login />
+                </Route>
+                <Route path="/" component={Login} />
+              </Switch>
+          </Suspense>
         </AuthProvider>
       </IonRouterOutlet>
     </IonReactRouter>
