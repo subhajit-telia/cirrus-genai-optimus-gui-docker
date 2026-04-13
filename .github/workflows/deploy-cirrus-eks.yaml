@@ -149,7 +149,7 @@ jobs:
           # Force refresh of K8s secret
           kubectl delete secret ${{ github.event.inputs.k8s_secret_name }} -n ${{ github.event.inputs.cirrus_tenant }} --ignore-not-found
 
-          HELM_COMMAND="helm upgrade --install --atomic --timeout 10m0s \
+          HELM_COMMAND="helm upgrade --install --atomic --timeout 20m0s \
             ${{ github.event.inputs.application_name }} \
             helm-remote-repo/${{ github.event.inputs.helm_chart_name }} \
             -n ${{ github.event.inputs.cirrus_tenant }} \

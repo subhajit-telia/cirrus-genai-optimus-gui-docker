@@ -18,7 +18,7 @@ class NetworkInfo {
   static readonly URL: string = NetworkInfo.SANITIZE_URL.replace("undefined/", "");
 
   static readonly ACCESSTOKEN: string =
-    NetworkInfo.runtimeEnv().API_KEY || import.meta.env.REMOVED;
+    NetworkInfo.runtimeEnv().API_KEY || import.meta.env.VITE_API_KEY;
 
   static readonly AZURE_CLIENT_ID: string =
     NetworkInfo.runtimeEnv().AZURE_AD_CLIENT_ID || import.meta.env.AZURE_AD_CLIENT_ID;
