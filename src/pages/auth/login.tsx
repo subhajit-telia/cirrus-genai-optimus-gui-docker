@@ -142,11 +142,11 @@ const Login: React.FC = () => {
                 <div className='content-box'>
                     <p className='md:text-8xl text-3xl font-bold text-white'>Welcome to Optimus</p>
                 </div>
-                <div className='login-box size-[40%] '>
-                    {/* <form onSubmit={handleSubmit(handleFormSubmit)} className="w-full"> */}
-                        <div className='flex flex-col items-center'>
-                            {/* <p className='mb-3.5 text-xl text-white text-start'>Log in</p> */}
-                            {/* <IonSegment onIonChange={handleSegmentChange} className='size-min h-7 bg-white rounded-[50px]' value={segmentValue}>
+                <div className='login-box size-[40%] py-5 px-4 bg-[#6f139ec7] rounded-lg'>
+                    <form onSubmit={handleSubmit(handleFormSubmit)} className="w-full">
+                        <div className='flex flex-col items-center mb-5'>
+                            <p className='mb-3.5 text-xl text-white text-start'>Choose your login method</p>
+                            <IonSegment onIonChange={handleSegmentChange} className='size-min h-7 bg-white rounded-[50px]' value={segmentValue}>
                                 <IonSegmentButton className='size-min min-w-0 h-7 min-h-6' value="tcad">
                                     <IonLabel className='m-0 text-xs'>TCAD</IonLabel>
                                 </IonSegmentButton>
@@ -155,11 +155,11 @@ const Login: React.FC = () => {
                                 </IonSegmentButton>
                                 
                                 <LoginButton />
-                            </IonSegment> */}
-                            <LoginButton />
+                            </IonSegment>
+                            {/* <LoginButton /> */}
                         </div>
                         
-                        {/* <div>
+                        <div>
                             <IonInput className='text-white' label="Username" labelPlacement="stacked" fill="outline"
                                 {...register("username", {
                                     required: "Username is required",
@@ -184,8 +184,8 @@ const Login: React.FC = () => {
                                 {loading && <IonSpinner className='mr-2' name="bubbles"></IonSpinner>}
                                 Sign in
                             </IonButton>
-                        </div> */}
-                    {/* </form> */}
+                        </div>
+                    </form>
                 </div>
             </div>
         <IonToast

@@ -130,9 +130,8 @@ const ProductDropdown = <T extends Record<string, any>>({
       {expandedCategories.has(category) && (
         <div className="category-options">
           {options.map((option) => (
-            <>
+            <React.Fragment key={String(option[idKey])}>
                 <div
-                key={option[idKey]}
                 className={`multi-select-option ${
                     selectedOptions.some((o) => o[idKey] === option[idKey]) ? 'selected' : ''
                 }`}
@@ -144,7 +143,7 @@ const ProductDropdown = <T extends Record<string, any>>({
                     <IonIcon data-tooltip-id={option[idKey]} data-tooltip-content={option[tooltipKey]} aria-hidden="true" icon={informationCircleOutline} slot="start"></IonIcon>
                 </div>
                 <Tooltip id={option[idKey]} />
-            </>
+            </React.Fragment>
           ))}
         </div>
       )}
