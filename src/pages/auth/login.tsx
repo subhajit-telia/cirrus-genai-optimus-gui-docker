@@ -78,7 +78,13 @@ const Login: React.FC = () => {
           }
         }else {
           // console.log('login faild');
-          localStorage.setItem('user', JSON.stringify(responseData));
+          const formattedData = {
+            roles: {
+              [responseData.role]: true
+            },
+            username: responseData.user_id
+          };
+          localStorage.setItem('user', JSON.stringify(formattedData));
           setIsShowError(true);
           if (responseData.role == 'admin') {
             handleLogin('admin');
