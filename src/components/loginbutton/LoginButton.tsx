@@ -98,8 +98,8 @@ const LoginButton = () => {
     }
   };
   /* get user details data end */
-  return <IonSegmentButton onClick={handleLogin} className='hidden size-min min-w-0 h-7 min-h-6' value="sso"><IonLabel  className='m-0 text-xs'>AZURE AD</IonLabel></IonSegmentButton>;
-  // return <IonButton className='btn-primary' shape="round" onClick={handleLogin}>Telia Single Sign-On</IonButton>;
+  // return <IonSegmentButton onClick={handleLogin} className='hidden size-min min-w-0 h-7 min-h-6' value="sso"><IonLabel  className='m-0 text-xs'>AZURE AD</IonLabel></IonSegmentButton>;
+  return <IonButton className='btn-primary' shape="round" onClick={handleLogin}>Telia Single Sign-On</IonButton>;
 };
 
 export default LoginButton;

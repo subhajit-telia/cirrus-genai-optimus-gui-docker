@@ -76,27 +76,27 @@ const Login: React.FC = () => {
           }else {
             setIsErrorMsg('Please check your credential.');
           }
-        }else {
-          // console.log('login faild');
-          const formattedData = {
-            roles: {
-              [responseData.role]: true
-            },
-            username: responseData.user_id
-          };
-          localStorage.setItem('user', JSON.stringify(formattedData));
-          setIsShowError(true);
-          if (responseData.role == 'admin') {
-            handleLogin('admin');
-            setIsErrorMsg('Logged in as admin');
-          }else if (responseData.role == 'user') {
-            handleLogin('user');
-            setIsErrorMsg('Logged in as user');
-          }else {
-            setIsShowError(true);
-            setIsErrorMsg('Please check your credential.');
-          }
         }
+        // else {
+        //   const formattedData = {
+        //     roles: {
+        //       [responseData.role]: true
+        //     },
+        //     username: responseData.user_id
+        //   };
+        //   localStorage.setItem('user', JSON.stringify(formattedData));
+        //   setIsShowError(true);
+        //   if (responseData.role == 'admin') {
+        //     handleLogin('admin');
+        //     setIsErrorMsg('Logged in as admin');
+        //   }else if (responseData.role == 'user') {
+        //     handleLogin('user');
+        //     setIsErrorMsg('Logged in as user');
+        //   }else {
+        //     setIsShowError(true);
+        //     setIsErrorMsg('Please check your credential.');
+        //   }
+        // }
       }else {
         setLoading(false);
         setIsShowError(true);
@@ -142,11 +142,11 @@ const Login: React.FC = () => {
                 <div className='content-box'>
                     <p className='md:text-8xl text-3xl font-bold text-white'>Welcome to Optimus</p>
                 </div>
-                <div className='login-box size-[40%] py-5 px-4 bg-[#6f139ec7] rounded-lg'>
-                    <form onSubmit={handleSubmit(handleFormSubmit)} className="w-full">
-                        <div className='flex flex-col items-center mb-5'>
-                            <p className='mb-3.5 text-xl text-white text-start'>Choose your login method</p>
-                            <IonSegment onIonChange={handleSegmentChange} className='size-min h-7 bg-white rounded-[50px]' value={segmentValue}>
+                <div className='login-box size-[40%]'>
+                    {/* <form onSubmit={handleSubmit(handleFormSubmit)} className="w-full">
+                        <div className='flex flex-col items-center mb-5'> */}
+                            {/* <p className='mb-3.5 text-xl text-white text-start'>Choose your login method</p> */}
+                            {/* <IonSegment onIonChange={handleSegmentChange} className='size-min h-7 bg-white rounded-[50px]' value={segmentValue}>
                                 <IonSegmentButton className='size-min min-w-0 h-7 min-h-6' value="tcad">
                                     <IonLabel className='m-0 text-xs'>TCAD</IonLabel>
                                 </IonSegmentButton>
@@ -155,11 +155,11 @@ const Login: React.FC = () => {
                                 </IonSegmentButton>
                                 
                                 <LoginButton />
-                            </IonSegment>
-                            {/* <LoginButton /> */}
-                        </div>
+                            </IonSegment> */}
+                            <LoginButton />
+                        {/* </div> */}
                         
-                        <div>
+                        {/* <div>
                             <IonInput className='text-white' label="Username" labelPlacement="stacked" fill="outline"
                                 {...register("username", {
                                     required: "Username is required",
@@ -185,7 +185,7 @@ const Login: React.FC = () => {
                                 Sign in
                             </IonButton>
                         </div>
-                    </form>
+                    </form> */}
                 </div>
             </div>
         <IonToast
