@@ -44,7 +44,6 @@ const Formats = lazy(() => import('./pages/admin/formats/Formats'));
 const Prompts = lazy(() => import('./pages/admin/prompts/Prompts'));
 const Purpose = lazy(() => import('./pages/admin/purpose/Purpose'));
 const Segments = lazy(() => import('./pages/admin/segments/Segments'));
-const Users = lazy(() => import('./pages/admin/users/Users'));
 const B2C = lazy(() => import('./pages/program/B2C'));
 const B2B = lazy(() => import('./pages/program/B2B'));
 const Examples = lazy(() => import('./pages/admin/examples/Examples'));
@@ -70,7 +69,6 @@ const App: React.FC = () => (
               <Switch>
                 <AuthGuard path="/b2c" component={B2C}/>
                 <AuthGuard path="/b2b" component={B2B}/>
-                <AuthGuard path="/users" component={Users} role="admin"/>
                 <AuthGuard path="/formats" component={Formats} role="admin"/>
                 <AuthGuard path="/prompts" component={Prompts} role="admin"/>
                 <AuthGuard path="/purpose" component={Purpose} role="admin"/>

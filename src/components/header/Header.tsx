@@ -98,7 +98,7 @@ const AppHeader: React.FC<ContainerProps> = () => {
                 <IonContent>
                     <IonList className='p-0'>
                         {(userData && userData.roles.admin) && (currentPath === 'b2c' || currentPath === 'b2b') ?
-                            <IonItem routerLink="users" className='text-sm' button={true} detail={false}>
+                            <IonItem routerLink="formats" className='text-sm' button={true} detail={false}>
                                 <IonIcon className='text-base' aria-hidden="true" icon={person} slot="start"></IonIcon>
                                 <IonLabel>Admin Page</IonLabel>
                             </IonItem>
