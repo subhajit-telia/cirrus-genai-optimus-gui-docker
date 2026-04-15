@@ -14,7 +14,7 @@ const LoginButton = () => {
     const currentUrl = window.location.href;
     console.log("Current URL:", currentUrl);
     console.log("ACCESSTOKEN:", NetworkInfo.ACCESSTOKEN);
-    console.log("REACT_APP_URL:", NetworkInfo.REACT_APP_URL);
+    console.log("AZURE_AD_TENANT_ID:", NetworkInfo.AZURE_TENANT_ID);
     console.log("URL:", NetworkInfo.URL);
     let reactAppUrl;
     if (currentUrl.toLowerCase().includes('dev')) {
@@ -98,8 +98,8 @@ const LoginButton = () => {
     }
   };
   /* get user details data end */
-
-  return <IonSegmentButton onClick={handleLogin} className='size-min min-w-0 h-7 min-h-6' value="sso"><IonLabel  className='m-0 text-xs'>AZURE AD</IonLabel></IonSegmentButton>;
+  // return <IonSegmentButton onClick={handleLogin} className='hidden size-min min-w-0 h-7 min-h-6' value="sso"><IonLabel  className='m-0 text-xs'>AZURE AD</IonLabel></IonSegmentButton>;
+  return <IonButton className='btn-primary' shape="round" onClick={handleLogin}>Telia Single Sign-On</IonButton>;
 };
 
 export default LoginButton;

@@ -129,9 +129,6 @@ const B2C: React.FC = () => {
   const [remindersGenerated, setRemindersGenerated] = useState(false);
 
   useEffect(() => {
-    console.log("RUNTIME_ENV",window.RUNTIME_ENV?.REACT_APP_API_URL);
-    console.log("NetworkInfo url", NetworkInfo.URL);
-
     let userLocalData:any = localStorage.getItem('user');
     let userData = JSON.parse(userLocalData);
     setUserName(userData.username);
@@ -232,7 +229,7 @@ const B2C: React.FC = () => {
   const getProductsData = async () => {
     setLoadingProducts(true);
     try {
-      const urlData =apiUrl + '/product/get?table=products_b2c&columns=product_id&columns=product_name&columns=category';
+      const urlData = apiUrl + '/product/get?table=products_b2b&columns=product_id&columns=product_name&columns=category';
 
       const response = await fetch(urlData, {
         method: 'GET',

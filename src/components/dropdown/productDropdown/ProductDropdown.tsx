@@ -45,11 +45,12 @@ const ProductDropdown = <T extends Record<string, any>>({
     () =>
       debounce((term) => {
         const grouped = options.reduce((acc, option) => {
-          const category = option[categoryKey];
+          const rawCategory = option[categoryKey];
+          const category = rawCategory != null && rawCategory !== '' ? String(rawCategory) : 'uncategorized';
           if (!acc[category]) acc[category] = [];
           if (
             term === '' ||
-            option[nameKey].toLowerCase().includes(term.toLowerCase()) ||
+            (option[nameKey] != null && option[nameKey].toLowerCase().includes(term.toLowerCase())) ||
             category.toLowerCase().includes(term.toLowerCase())
           ) {
             acc[category].push(option);
@@ -129,21 +130,20 @@ const ProductDropdown = <T extends Record<string, any>>({
       {expandedCategories.has(category) && (
         <div className="category-options">
           {options.map((option) => (
-            <>
+            <React.Fragment key={String(option[idKey])}>
                 <div
-                key={option[idKey]}
                 className={`multi-select-option ${
                     selectedOptions.some((o) => o[idKey] === option[idKey]) ? 'selected' : ''
                 }`}
                 onClick={() => handleOptionClick(option)}
                 >
                     <span>
-                        {option[nameKey]}
+                        {option[nameKey] ?? option[idKey]}
                     </span>
                     <IonIcon data-tooltip-id={option[idKey]} data-tooltip-content={option[tooltipKey]} aria-hidden="true" icon={informationCircleOutline} slot="start"></IonIcon>
                 </div>
                 <Tooltip id={option[idKey]} />
-            </>
+            </React.Fragment>
           ))}
         </div>
       )}
@@ -152,7 +152,7 @@ const ProductDropdown = <T extends Record<string, any>>({
 
   const formatCategoryName = (category: string) => {
     return category
-      .split('-') // Split the category name by hyphens
+      .split(/[-_]/) // Split by hyphens or underscores
       .map((word) => word.charAt(0).toUpperCase() + word.slice(1)) // Capitalize each word
       .join(' '); // Join the words with spaces
   };
