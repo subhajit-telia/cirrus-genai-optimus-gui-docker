@@ -31,12 +31,6 @@ import teliaOptimus from '../../theme/assets/telia-optimus.png'
   
   const appPages: AppPage[] = [
     {
-      title: 'Users',
-      url: '/users',
-      iosIcon: peopleOutline,
-      mdIcon: peopleOutline
-    },
-    {
       title: 'Formats',
       url: '/formats',
       iosIcon: optionsOutline,
