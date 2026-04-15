@@ -8,8 +8,30 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   plugins: [
     react(),
-    legacy()
+    // Legacy build doubles bundle generation work; keep it opt-in.
+    ...(process.env.VITE_ENABLE_LEGACY === 'true' ? [legacy()] : [])
   ],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          azure: ['@azure/msal-browser', '@azure/msal-react'],
+          markdown: [
+            '@mdxeditor/editor',
+            'remark',
+            'remark-gfm',
+            'remark-html',
+            'remark-parse',
+            'remark-stringify',
+            'react-markdown',
+            'rehype-raw',
+            'marked'
+          ]
+        }
+      }
+    },
+    chunkSizeWarningLimit: 1000
+  },
   test: {
     globals: true,
     environment: 'jsdom',
