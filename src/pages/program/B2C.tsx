@@ -228,7 +228,7 @@ const B2C: React.FC = () => {
   const getProductsData = async () => {
     setLoadingProducts(true);
     try {
-      const urlData = apiUrl + '/product/get?table=products_b2b&columns=product_id&columns=product_name&columns=category';
+      const urlData = apiUrl + '/product/get?table=products_b2c&columns=product_id&columns=product_name&columns=category';
 
       const response = await fetch(urlData, {
         method: 'GET',
