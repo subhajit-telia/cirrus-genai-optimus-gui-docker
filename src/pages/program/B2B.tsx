@@ -16,7 +16,6 @@ import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import ProductDropdown from '../../components/dropdown/productDropdown/ProductDropdown';
 import { Tooltip } from 'react-tooltip';
-import { i } from 'vite/dist/node/types.d-aGj9QkWt';
 import template from '../../template.json'; // adjust path if needed
 import { v4 as uuidv4 } from 'uuid';
 import HistoryBar from '../../components/historybar/Historybar';
