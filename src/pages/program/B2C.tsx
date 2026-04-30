@@ -1,6 +1,6 @@
 import { IonButton, IonButtons, IonCheckbox, IonChip, IonCol, IonContent, IonFab, IonFabButton, IonFabList, IonFooter, IonGrid, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonModal, IonPage, IonProgressBar, IonRow, IonSkeletonText, IonSpinner, IonText, IonTextarea, IonTitle, IonToast, IonToggle, IonToolbar, ToggleCustomEvent } from '@ionic/react';
 import AppHeader from '../../components/header/Header';
-import { attach, closeCircle, closeCircleOutline, closeOutline, documentAttach, documentAttachOutline, globe, information, informationCircle, link } from 'ionicons/icons';
+import { attach, closeCircle, closeCircleOutline, closeOutline, documentAttach, documentAttachOutline, globe, globeOutline, information, informationCircle, link } from 'ionicons/icons';
 import { useEffect, useRef, useState } from 'react';
 import Tabs from '../../components/tab/Tab';
 import { useForm } from "react-hook-form";
@@ -126,6 +126,7 @@ const B2C: React.FC = () => {
   const [reminderPrompt, setReminderPrompt] = useState('');
   const [loadingReminders, setLoadingReminders] = useState(false);
   const [remindersGenerated, setRemindersGenerated] = useState(false);
+  const [webSearchEnabled, setWebSearchEnabled] = useState<boolean>(false);
 
   useEffect(() => {
     let userLocalData:any = localStorage.getItem('user');
@@ -191,7 +192,7 @@ const B2C: React.FC = () => {
       }
       
     } catch (error: any) {
-      console.error("catch failed:", error);
+      // console.error("catch failed:", error);
       setLoadingSegments(false);
     }
   };
@@ -218,7 +219,7 @@ const B2C: React.FC = () => {
         setLoadingPurposes(false);
       }
     } catch (error: any) {
-      console.error("catch failed:", error);
+      // console.error("catch failed:", error);
       setLoadingPurposes(false);
     }
   };
@@ -245,7 +246,7 @@ const B2C: React.FC = () => {
         setLoadingProducts(false);
       }
     } catch (error: any) {
-      console.error("catch failed:", error);
+      // console.error("catch failed:", error);
       setLoadingProducts(false);
     }
   };
@@ -272,7 +273,7 @@ const B2C: React.FC = () => {
         setLoadingFormats(false);
       }
     } catch (error: any) {
-      console.error("catch failed:", error);
+      // console.error("catch failed:", error);
       setLoadingFormats(false);
     }
   };
@@ -311,6 +312,15 @@ const B2C: React.FC = () => {
     setLoading(_isLoading);
     
   };
+
+  /* Normalize a raw API response object into a consistent output shape */
+  const normalizeOutput = (response: any) => ({
+    answer: DOMPurify.sanitize(response.answer),
+    input_params: response.input_params,
+    rating: response.rating ?? null,
+    timestamp: response.timestamp ?? Date.now(),
+    sources: response.web_search_result?.sources ?? response.sources ?? []
+  });
 
   /* -----------Handle form submit start----------- */
   let arrayTab: any;
@@ -417,6 +427,7 @@ const B2C: React.FC = () => {
     data.attached_text = attachments || null;
     data.knowledge_base_docs = isKnowledgeBaseData.length === 0 ? null : isKnowledgeBaseData;
     data.use_case = 'b2c';
+    data.web_search_enabled = webSearchEnabled;
     try {
       const response = await fetch(formUrl, {
         method: HTTPMethod.POST,
@@ -434,7 +445,7 @@ const B2C: React.FC = () => {
         
         setNoSegmentArray(arrayNoSegment);
         setTabArray(arrayTab);
-        // console.log('tabs>>>', tabs);
+        console.log('tabs>>>', tabs);
         if (responseData.responses.length === 1) {
           if (arrayTab !== undefined) {
             arrayTab = arrayTab.map((segment: { segment_id: any; segment_name: any; data: any[] }) => {
@@ -453,12 +464,7 @@ const B2C: React.FC = () => {
                       input_params: responseData.responses[0].input_params,
                       outputs: [
                         ...(format.outputs || []),
-                        { 
-                          answer: DOMPurify.sanitize(responseData.responses[0].answer), 
-                          input_params: responseData.responses[0].input_params ,
-                          rating: null,
-                          timestamp: Date.now()
-                        }
+                        normalizeOutput(responseData.responses[0])
                       ]
                     };
                   }
@@ -485,12 +491,7 @@ const B2C: React.FC = () => {
                   input_params: responseData.responses[0].input_params,
                   outputs: [
                     ...currentOutputs,
-                    { 
-                      answer: DOMPurify.sanitize(responseData.responses[0].answer), 
-                      input_params: responseData.responses[0].input_params ,
-                      rating: null,
-                      timestamp: Date.now()
-                    }
+                    normalizeOutput(responseData.responses[0])
                   ]
                 };
               }
@@ -516,7 +517,7 @@ const B2C: React.FC = () => {
         setIsErrorMsg(responseData.ErrorMessage || 'Something went wrong!');
       }
     } catch (error: any) {
-      console.error('Login failed:', error);
+      // console.error('Login failed:', error);
       setIsShowError(true);
       setIsErrorMsg('Something went wrong!');
       setLoading(false);
@@ -569,7 +570,8 @@ const B2C: React.FC = () => {
               // TO-DO-UPDATE-AFTER-BACKEND-FIX: Same as above — output's input_params.copy_variant may be wrong.
               input_params: backendResponse.input_params,
               rating: null,
-              timestamp: Date.now()
+              timestamp: Date.now(),
+              sources: backendResponse.web_search_result?.sources || []
             }]
           }
         };
@@ -579,7 +581,7 @@ const B2C: React.FC = () => {
         return null;
       }
     } catch (error: any) {
-      console.error('Reminder generation failed:', error);
+      // console.error('Reminder generation failed:', error);
       setIsShowError(true);
       setIsErrorMsg('Something went wrong generating a reminder!');
       return null;
@@ -587,6 +589,7 @@ const B2C: React.FC = () => {
   };
 
   const handleGenerateReminders = async () => {
+    setWebSearchEnabled(false);
     setIsReminderModal(false);
     setLoadingReminders(true);
     const cvmEligible = getCvmEligibleCopies();
@@ -617,6 +620,7 @@ const B2C: React.FC = () => {
         question: reminderPrompt || null,
         attached_text: null,
         knowledge_base_docs: null,
+        web_search_enabled: false
       };
 
       const result = await callReminderApi(reminderPayload, params.format_name || '');
@@ -799,7 +803,7 @@ const B2C: React.FC = () => {
                       }
                       return output;
                     }),
-                    backendResponse
+                    normalizeOutput(backendResponse)
                   ];
                 } else {
                   // Just mark the discarded one
@@ -856,7 +860,7 @@ const B2C: React.FC = () => {
                     }
                     return output;
                   }),
-                  backendResponse
+                  normalizeOutput(backendResponse)
                 ];
               } else {
                 // Just mark the discarded one
@@ -894,7 +898,7 @@ const B2C: React.FC = () => {
       }
       
     } catch (error: any) {
-      console.error('Login failed:', error);
+      // console.error('Login failed:', error);
       if (error.response) {
         setIsShowError(true);
         setIsErrorMsg(error.response || 'Something went wrong!');
@@ -930,7 +934,7 @@ const B2C: React.FC = () => {
       if (response.ok && !responseData.ErrorMessage) {
         setNoSegmentArray(arrayNoSegment);
         setTabArray(arrayTab);
-        // console.log('tabs>>>', tabs);
+        console.log('tabs>>>', tabs);
   
         if (arrayTab !== undefined) {
           arrayTab = arrayTab.map((segment: { segment_id: any; segment_name: any; data: any[] }) => {
@@ -947,9 +951,9 @@ const B2C: React.FC = () => {
                       || o.input_params?.copy_version_id === data.copy_version_id
                   );
                 if (fmtMatch) {
-                  const refinedResponse = { ...responseData.responses[0], timestamp: Date.now() };
+                  const normalizedRefined = normalizeOutput(responseData.responses[0]);
                   let replaceOutput = format.outputs.map((output:innerOutput) => 
-                    output.input_params.copy_version_id === data.copy_version_id ? refinedResponse : output
+                    output.input_params.copy_version_id === data.copy_version_id ? normalizedRefined : output
                   );
                   return {
                     ...format,
@@ -974,9 +978,9 @@ const B2C: React.FC = () => {
                   || o.input_params?.copy_version_id === data.copy_version_id
               );
             if (fmtMatch) {
-              const refinedResponse = { ...responseData.responses[0], timestamp: Date.now() };
+              const normalizedRefined = normalizeOutput(responseData.responses[0]);
               let replaceOutput = format.outputs.map((output:innerOutput) => 
-                output.input_params.copy_version_id === data.copy_version_id ? refinedResponse : output
+                output.input_params.copy_version_id === data.copy_version_id ? normalizedRefined : output
               );
               return {
                 ...format,
@@ -1048,7 +1052,7 @@ const B2C: React.FC = () => {
         setIsErrorMsg(responseData.ErrorMessage || 'Something went wrong!');
       }
     } catch (error: any) {
-      console.error('Login failed:', error);
+      // console.error('Login failed:', error);
 
       if (error.response) {
         setIsShowError(true);
@@ -1242,7 +1246,7 @@ const B2C: React.FC = () => {
       }
     } catch (error: any) {
       setLoadingContentful(false);
-      console.error('Login failed:', error);
+      // console.error('Login failed:', error);
       if (error.response) {
         setIsShowError(true);
         setIsErrorMsg(error.response || 'Something went wrong!');
@@ -1275,7 +1279,7 @@ const B2C: React.FC = () => {
       }
       
     } catch (error: any) {
-      console.error("catch failed:", error);
+      // console.error("catch failed:", error);
       setLoading(false);
     }
   };
@@ -1347,12 +1351,7 @@ const B2C: React.FC = () => {
                 input_params: selfLearningData.input_params,
                 outputs: [
                   ...(format.outputs || []),
-                  { 
-                    answer: DOMPurify.sanitize(selfLearningData.answer), 
-                    input_params: selfLearningData.input_params ,
-                    rating: null,
-                    timestamp: Date.now()
-                  }
+                  normalizeOutput(selfLearningData)
                 ]
               };
             }
@@ -1372,12 +1371,7 @@ const B2C: React.FC = () => {
             input_params: selfLearningData.input_params,
             outputs: [
               ...currentOutputs,
-              { 
-                answer: DOMPurify.sanitize(selfLearningData.answer), 
-                input_params: selfLearningData.input_params ,
-                rating: null,
-                timestamp: Date.now()
-              }
+              normalizeOutput(selfLearningData)
             ]
           };
         }
@@ -1401,7 +1395,7 @@ const B2C: React.FC = () => {
       const responseData = await response.json();
       // console.log('Success:', responseData);
     } catch (error: any) {
-      console.error('Login failed:', error);
+      // console.error('Login failed:', error);
     }
   };
   /* Self learning end */
@@ -1557,7 +1551,7 @@ const B2C: React.FC = () => {
           setIsErrorType('success');
         }
       }else {
-        console.error('File upload failed:', responseData);
+        // console.error('File upload failed:', responseData);
         setIsShowError(true);
         setIsErrorMsg(responseData.detail);
         setIsErrorType('error');
@@ -1568,7 +1562,7 @@ const B2C: React.FC = () => {
       
       console.log('Upload success:', responseData);
     } catch (err) {
-      console.error('Error uploading file:', err);
+      // console.error('Error uploading file:', err);
       setIsUploadAttachement(false);
 
       // setIsShowError(true);
@@ -1660,7 +1654,7 @@ const B2C: React.FC = () => {
           setIsErrorType('error');
         }
       } catch (error: any) {
-        console.error('Login failed:', error);
+        // console.error('Login failed:', error);
         if (error.response) {
           setIsShowError(true);
           setIsErrorMsg(error.response || 'Something went wrong!');
@@ -1671,6 +1665,12 @@ const B2C: React.FC = () => {
     
   };
   /* Set Knowledge Base Enabled end */
+
+  /* Web search start */
+  const changeWebSearch = (event: ToggleCustomEvent<{ checked: boolean }>) => {
+    setWebSearchEnabled(event.detail.checked);
+  };
+  /* Web search end */
 
   return (
     <IonPage>
@@ -1842,31 +1842,45 @@ const B2C: React.FC = () => {
                       
                     </IonTextarea>
                     <div className='flex items-center absolute bottom-0 left-0 z-10 w-full px-4 py-1'>
-                      {isUploadAttachement &&
-                        <IonSpinner name="lines-small" color="primary"></IonSpinner>
-                      }
-                      {isUploadAttachement === false && attachments ?
-                        <IonIcon onClick={handleIconClick} data-tooltip-id="attachment" data-tooltip-content="All text in the uploaded file will be processed." className='text-[20px] cursor-pointer' icon={documentAttach}></IonIcon>
-                      : (isUploadAttachement === false && !attachments) &&
-                        <IonIcon onClick={handleIconClick} data-tooltip-id="attachment" data-tooltip-content="All text in the uploaded file will be processed." className='text-[20px] cursor-pointer' icon={attach}></IonIcon>
-                      }
                       
-                      
-                      <Tooltip id="attachment" />
-                      {selectedFile ? (
-                        <div className='flex items-center px-4 text-[14px] cursor-pointer'>
-                          <span>{selectedFile.name}</span>
-                          <IonIcon onClick={handleRemoveFile} className='text-[20px] cursor-pointer' icon={closeCircleOutline}></IonIcon>
-                        </div>
-                      )
-                      : 
-                        <input
-                          className='opacity-0 cursor-pointer'
-                          type="file"
-                          ref={fileInputRef}
-                          onChange={handleFileChange}
-                        />
-                      }
+                      <div className='flex items-center'>
+                        {isUploadAttachement &&
+                          <IonSpinner name="lines-small" color="primary"></IonSpinner>
+                        }
+                        {isUploadAttachement === false && attachments ?
+                          <IonIcon onClick={handleIconClick} data-tooltip-id="attachment" data-tooltip-content="All text in the uploaded file will be processed." className='text-[20px] cursor-pointer' icon={documentAttach}></IonIcon>
+                        : (isUploadAttachement === false && !attachments) &&
+                          <IonIcon onClick={handleIconClick} data-tooltip-id="attachment" data-tooltip-content="All text in the uploaded file will be processed." className='text-[20px] cursor-pointer' icon={attach}></IonIcon>
+                        }
+                        
+                        
+                        <Tooltip id="attachment" />
+                        {selectedFile ? (
+                          <div className='flex items-center px-4 text-[14px] cursor-pointer'>
+                            <span>{selectedFile.name}</span>
+                            <IonIcon onClick={handleRemoveFile} className='text-[20px] cursor-pointer' icon={closeCircleOutline}></IonIcon>
+                          </div>
+                        )
+                        : 
+                          <input
+                            className='opacity-0 cursor-pointer w-[10px] h-px'
+                            type="file"
+                            ref={fileInputRef}
+                            onChange={handleFileChange}
+                          />
+                        }
+                      </div>
+                      <div>
+                        <IonToggle
+                          data-tooltip-id="webSearch" data-tooltip-content="Search the web"
+                          class='float-right text-sm globe-toggle'
+                          enableOnOffLabels={true}
+                          checked={webSearchEnabled}
+                          onIonChange={(event) => changeWebSearch(event)}
+                        >
+                        </IonToggle>
+                        <Tooltip id="webSearch" />
+                      </div>
                     </div>
                   </div>
                 </IonCol>
@@ -1895,7 +1909,7 @@ const B2C: React.FC = () => {
               <IonRow>
                 <IonCol>
                   <div className="mx-2.5 mt-7">
-                    <Tabs tabs={tabs} regenarateItem={regenarateItem} discardEditedAnswer={discardEditedAnswer} genarateRefineCopy={genarateRefineCopy} contentfulData={sendTocontentful} isEditingMode={handleEditingMode}/>
+                    <Tabs tabs={tabs} regenarateItem={regenarateItem} discardEditedAnswer={discardEditedAnswer} genarateRefineCopy={genarateRefineCopy} contentfulData={sendTocontentful} isEditingMode={handleEditingMode} webSearchEnabled={webSearchEnabled} setWebSearchEnabled={setWebSearchEnabled}/>
                     <div className="text-right mt-3">
                       <IonChip onClick={() => handleFormSubmit(requestData)} className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Rewrite all suggestions</IonChip>
                       <IonChip data-tooltip-id="contentful" data-tooltip-content="Save all content before sending it to Contentful." disabled={isOpenEditing || contentfulCopy.length === 0} onClick={ handleClickContentful } className='!pointer-events-auto text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Send to contentful</IonChip>

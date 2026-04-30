@@ -255,7 +255,33 @@ ion-menu ion-content::part(scroll)::-webkit-scrollbar {
   display: none;                /* Chrome, Safari */
 }
 
+/* knob */
+.globe-toggle::part(handle) {
+  position: relative;
+  background: #fff;
+}
 
+/* default = unchecked = black globe */
+.globe-toggle::part(handle)::after {
+  content: "🌐";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 14px;
+  line-height: 1;
+  filter: grayscale(100%) brightness(0); /* black */
+}
+
+/* checked track */
+.globe-toggle.toggle-checked::part(track) {
+  background: #7ea6ff;
+}
+
+/* checked = colored globe */
+.globe-toggle.toggle-checked::part(handle)::after {
+  filter: none;
+}
 
 @media (prefers-color-scheme: dark) {
     :root.md {

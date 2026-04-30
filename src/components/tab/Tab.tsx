@@ -1,6 +1,6 @@
-import { IonButton, IonCol, IonGrid, IonIcon, IonItem, IonLabel, IonList, IonPopover, IonRow, IonSpinner, IonTextarea, IonToast } from '@ionic/react';
+import { IonButton, IonCol, IonGrid, IonIcon, IonItem, IonLabel, IonList, IonPopover, IonRow, IonSpinner, IonTextarea, IonToast, IonToggle, ToggleCustomEvent } from '@ionic/react';
 import React, { useEffect, useRef, useState } from 'react';
-import { addOutline, arrowUndoOutline, chatbubbleEllipsesOutline, chatbubblesOutline, closeCircleOutline, closeOutline, copyOutline, createOutline, documentTextOutline, refreshOutline, reloadOutline, returnDownForwardOutline, saveOutline, send, star, starOutline, thumbsDownOutline, thumbsUpOutline } from 'ionicons/icons';
+import { addOutline, arrowUndoOutline, chatbubbleEllipsesOutline, chatbubblesOutline, closeCircleOutline, closeOutline, copyOutline, createOutline, documentTextOutline, globeOutline, refreshOutline, reloadOutline, returnDownForwardOutline, saveOutline, send, star, starOutline, thumbsDownOutline, thumbsUpOutline } from 'ionicons/icons';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
@@ -44,6 +44,8 @@ interface TabsProps {
   genarateRefineCopy: (data: string) => void;
   contentfulData: (data: string) => void;
   isEditingMode: (data: boolean) => void;
+  webSearchEnabled: boolean;
+  setWebSearchEnabled: (value: boolean) => void;
 }
 
 interface Position {
@@ -67,7 +69,7 @@ interface FeedbackBox {
   comment: string
 }
 
-const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, genarateRefineCopy, contentfulData, isEditingMode }) => {
+const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, genarateRefineCopy, contentfulData, isEditingMode, webSearchEnabled, setWebSearchEnabled }) => {
   const [activeTab, setActiveTab] = useState(tabs[0].segment_id); // Set the first tab as active initially
   
   const [isSaveChanges, setIsSaveChanges] = useState(false);
@@ -136,7 +138,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
       if (itemIndex !== '') {
         tabs[tabIndex].data[itemIndex].answer = '';
         regenarateItem(data); 
-        // console.log('tabs@@@@', tabs)
+        console.log('tabs@@@@', tabs)
       }else {
         tabs[tabIndex].answer = '';
         regenarateItem(data);  
@@ -344,7 +346,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
   /* Discard edit answer copy end */
 
   useEffect(() => {
-    // console.log('tabstabstabstabstabs', tabs);
+    console.log('tabstabstabstabstabs', tabs);
     if (tabs[0].data && tabs.length === 1) {
       setActiveTab(tabs[0].segment_id)
     }
@@ -367,7 +369,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
       setEditVisibility({ tabIndex: null, itemIndex: null, outputIndex: null, isEdit: false });
       setIsRefineBox(false);
     }
-    // console.log('tabs>><<', tabs);
+    console.log('tabs>><<', tabs);
 
     /* initialize the array for contentful start */
     const resultArray:any = [];
@@ -1000,7 +1002,8 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
         request_type: identifier,
         text: clickedText,
         text_index: isTextIndex,
-        question: data || null
+        question: data || null,
+        web_search_enabled: webSearchEnabled
       }
     }else if (identifier === 'edit_manual') {
       refineData = {
@@ -1008,7 +1011,8 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
         request_type: identifier,
         text: selecteText.text,
         text_index: null,
-        question: null
+        question: null,
+        web_search_enabled: false,
       }
     }else {
       // console.log('regenarate', selecteText);
@@ -1017,7 +1021,8 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
         request_type: identifier,
         text: selectedText,
         text_index: isTextIndex,
-        question: data || null
+        question: data || null,
+        web_search_enabled: identifier === 'edit_refine' ? webSearchEnabled : false
       }
     }
     // console.log('refineData', refineData);
@@ -1037,10 +1042,10 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
 
     if (isRefineDetails.itemIndex !== '' && isRefineDetails.itemIndex !== null) {
       tabs[isRefineDetails.tabIndex].data[isRefineDetails.itemIndex].answer = '';
-      // console.log('tabs@@@@', tabs)
+      console.log('tabs@@@@', tabs)
     }else {
       tabs[isRefineDetails.tabIndex].answer = '';
-      // console.log('tabs####', tabs)
+      console.log('tabs####', tabs)
     }
   }
   /* refine Selected copy end */
@@ -1181,11 +1186,11 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
     };
     if (itemIndex !== '' && itemIndex !== null) {
       tabs[tabIndex].data[itemIndex].outputs[outputIndex].rating = rating;
-      //  console.log('tabs@@@@', tabs)
+       console.log('tabs@@@@', tabs)
     }else {
       tabs[tabIndex].outputs[outputIndex].rating = rating;
     }
-    //  console.log('tabs', tabs); 
+     console.log('tabs', tabs); 
     // Open the modal with the updated item
     setSelectedItem(starItem);
     setIsModalOpen(true);
@@ -1225,7 +1230,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
 
     if (updatedItem.itemIndex !== '' && updatedItem.itemIndex !== null) {
       tabs[updatedItem.tabIndex].data[updatedItem.itemIndex].outputs[updatedItem.outputIndex].rating = updatedItem.rating;
-      // console.log('tabs@@@@', tabs)
+      console.log('tabs@@@@', tabs)
     }else {
       tabs[updatedItem.tabIndex].outputs[updatedItem.outputIndex].rating = updatedItem.rating;
     }
@@ -1263,6 +1268,12 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
     }
   };
   /* star rating end */
+
+  /* Web search start */
+    const changeWebSearch = (event: ToggleCustomEvent<{ checked: boolean }>) => {
+      setWebSearchEnabled(event.detail.checked);
+    };
+  /* Web search end */
 
   return (
     <div className="">
@@ -1312,7 +1323,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
                           <React.Fragment key={outputIndex}>
                           <div onClick={() => selectCopyCopyVersionId(tabIndex, itemIndex, outputIndex, outputItem)} className={`rounded-md mb-1.5 relative${_isActiveHighlighted ? ' selected-copy-version' : ''}`}>
                             {_isActiveHighlighted && (
-                              <span className="selected-copy-version-label">active version</span>
+                              <span className="selected-copy-version-label">Active version</span>
                             )}
                             {/* Show the output copy */}
                             {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === itemIndex && editVisibility.outputIndex === outputIndex ?
@@ -1458,21 +1469,46 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
                                 </>}
                               </div>
                             </div>
+                            {/* Show sources of the content */}
+                            {outputItem.sources && outputItem.sources.length > 0 && (
+                              <div className='p-2 flex items-center gap-1 text-sm'>
+                                <IonIcon icon={globeOutline}></IonIcon>
+                                Sources: 
+                                {outputItem.sources.map((source: any, sourceIndex: number) => (
+                                  <a key={sourceIndex} href={source.url} target="_blank" rel="noopener noreferrer" className='ml-1 text-xs bg-[#f5e0ff] hover:underline px-1 rounded-3xl' onClick={(e) => e.stopPropagation()}>
+                                    {source.title}
+                                  </a>
+                                ))}
+                              </div>
+                            )}
                           </div>
                           {activeRefineOutput?.tabIndex === tabIndex && activeRefineOutput?.itemIndex === itemIndex && activeRefineOutput?.outputIndex === outputIndex && (
-                            <IonTextarea
-                              className='z-0 bottom-textarea rounded-xl mt-2 mb-2.5 text-black'
-                              aria-label="Custom textarea"
-                              placeholder="Write your question."
-                              autoGrow={true}
-                              counter={true}
-                              maxlength={6000}
-                              onIonInput={(e) => setActiveRefineInputValue(e.detail.value || '')}
-                            >
-                              <IonButton data-tooltip-id='tooltip' data-tooltip-content='Generate' onClick={() => { const params = {...outputItem.input_params, question: activeRefineInputValue}; handleButtonClick('chat_refine', tabIndex, itemIndex, params); setActiveRefineOutput(null); setActiveRefineInputValue(''); }} size="small" fill="clear" slot="end">
-                                <IonIcon className='text-primary' slot="icon-only" icon={send}></IonIcon>
-                              </IonButton>
-                            </IonTextarea>
+                            <div className='relative'>
+                              <IonTextarea
+                                className='z-0 bottom-textarea rounded-xl mt-2 mb-2.5 text-black'
+                                aria-label="Custom textarea"
+                                placeholder="Write your question."
+                                autoGrow={true}
+                                counter={true}
+                                maxlength={6000}
+                                onIonInput={(e) => setActiveRefineInputValue(e.detail.value || '')}
+                              >
+                                <IonButton data-tooltip-id='tooltip' data-tooltip-content='Generate' onClick={() => { const params = {...outputItem.input_params, question: activeRefineInputValue}; handleButtonClick('chat_refine', tabIndex, itemIndex, params); setActiveRefineOutput(null); setActiveRefineInputValue(''); }} size="small" fill="clear" slot="end">
+                                  <IonIcon className='text-primary' slot="icon-only" icon={send}></IonIcon>
+                                </IonButton>
+                              </IonTextarea>
+                              <div className='flex items-center absolute bottom-0 left-0 z-10 w-full px-4 py-2'>
+                                <IonToggle
+                                  data-tooltip-id="webSearch" data-tooltip-content="Search the web"
+                                  class='float-right text-sm globe-toggle'
+                                  enableOnOffLabels={true}
+                                  checked={webSearchEnabled}
+                                  onIonChange={(event) => changeWebSearch(event)}
+                                >
+                                </IonToggle>
+                                <Tooltip id="webSearch" />
+                              </div>
+                            </div>
                           )}
                           </React.Fragment>
                          );})}
@@ -1483,7 +1519,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
 
 
                         {(isRefineBox && isRefineDetails.tabIndex === tabIndex && isRefineDetails.itemIndex === itemIndex) &&
-                          <div className='mt-5 bottom-textarea rounded-xl'>
+                          <div className='relative mt-5 bottom-textarea rounded-xl'>
                             {isRefineType === 'edit_refine' &&
                               <div className='showSelectedText'>
                                 <div>
@@ -1508,6 +1544,17 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
                                 <IonIcon className='text-primary' slot="icon-only" icon={send}></IonIcon>
                               </IonButton>
                             </IonTextarea>
+                            <div className='flex items-center absolute bottom-0 left-0 z-10 w-full px-4 py-2'>
+                              <IonToggle
+                                data-tooltip-id="webSearch" data-tooltip-content="Search the web"
+                                class='float-right text-sm globe-toggle'
+                                enableOnOffLabels={true}
+                                checked={webSearchEnabled}
+                                onIonChange={(event) => changeWebSearch(event)}
+                              >
+                              </IonToggle>
+                              <Tooltip id="webSearch" />
+                            </div>
                           </div>
                         }
 
@@ -1544,7 +1591,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
                       <React.Fragment key={boxIndex}>
                       <div onClick={() => selectCopyCopyVersionId(tabIndex, null, outputIndex, outputItem)} className={`rounded-md mb-1.5 relative${_isActiveHighlighted ? ' selected-copy-version' : ''}`}>
                         {_isActiveHighlighted && (
-                          <span className="selected-copy-version-label">active version</span>
+                          <span className="selected-copy-version-label">Active version</span>
                         )}
                         {/* Show the output copy */}
                         {editVisibility.tabIndex === tabIndex && editVisibility.itemIndex === null && editVisibility.outputIndex === outputIndex ?
@@ -1687,21 +1734,46 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
                             </>}
                           </div>
                         </div>
+                        {/* Show sources of the content */}
+                        {outputItem.sources && outputItem.sources.length > 0 && (
+                          <div className='p-2 flex items-center gap-1 text-sm'>
+                            <IonIcon icon={globeOutline}></IonIcon>
+                            Sources: 
+                            {outputItem.sources.map((source: any, sourceIndex: number) => (
+                              <a key={sourceIndex} href={source.url} target="_blank" rel="noopener noreferrer" className='ml-1 text-xs bg-[#f5e0ff] hover:underline px-1 rounded-3xl' onClick={(e) => e.stopPropagation()}>
+                                {source.title}
+                              </a>
+                            ))}
+                          </div>
+                        )}
                       </div>
                       {activeRefineOutput?.tabIndex === tabIndex && activeRefineOutput?.itemIndex === null && activeRefineOutput?.outputIndex === outputIndex && (
-                        <IonTextarea
-                          className='z-0 bottom-textarea rounded-xl mt-2 mb-2.5 text-black'
-                          aria-label="Custom textarea"
-                          placeholder="Write your question."
-                          autoGrow={true}
-                          counter={true}
-                          maxlength={6000}
-                          onIonInput={(e) => setActiveRefineInputValue(e.detail.value || '')}
-                        >
-                          <IonButton data-tooltip-id='tooltip' data-tooltip-content='Generate' onClick={() => { const params = {...outputItem.input_params, question: activeRefineInputValue}; handleButtonClick('chat_refine', tabIndex, '', params); setActiveRefineOutput(null); setActiveRefineInputValue(''); }} size="small" fill="clear" slot="end">
-                            <IonIcon className='text-primary' slot="icon-only" icon={send}></IonIcon>
-                          </IonButton>
-                        </IonTextarea>
+                        <div className='relative'>
+                          <IonTextarea
+                            className='z-0 bottom-textarea rounded-xl mt-2 mb-2.5 text-black'
+                            aria-label="Custom textarea"
+                            placeholder="Write your question."
+                            autoGrow={true}
+                            counter={true}
+                            maxlength={6000}
+                            onIonInput={(e) => setActiveRefineInputValue(e.detail.value || '')}
+                          >
+                            <IonButton data-tooltip-id='tooltip' data-tooltip-content='Generate' onClick={() => { const params = {...outputItem.input_params, question: activeRefineInputValue}; handleButtonClick('chat_refine', tabIndex, '', params); setActiveRefineOutput(null); setActiveRefineInputValue(''); }} size="small" fill="clear" slot="end">
+                              <IonIcon className='text-primary' slot="icon-only" icon={send}></IonIcon>
+                            </IonButton>
+                          </IonTextarea>
+                          <div className='flex items-center absolute bottom-0 left-0 z-10 w-full px-4 py-2'>
+                            <IonToggle
+                              data-tooltip-id="webSearch" data-tooltip-content="Search the web"
+                              class='float-right text-sm globe-toggle'
+                              enableOnOffLabels={true}
+                              checked={webSearchEnabled}
+                              onIonChange={(event) => changeWebSearch(event)}
+                            >
+                            </IonToggle>
+                            <Tooltip id="webSearch" />
+                          </div>
+                        </div>
                       )}
                       </React.Fragment>
                      );
@@ -1714,7 +1786,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
 
 
                   {(isRefineBox && isRefineDetails.tabIndex === tabIndex) && 
-                    <div className='mt-5 bottom-textarea rounded-xl'>
+                    <div className='relative mt-5 bottom-textarea rounded-xl'>
                       {isRefineType === 'edit_refine' &&
                         <div className='showSelectedText'>
                           <div>
@@ -1739,6 +1811,17 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
                           <IonIcon className='text-primary' slot="icon-only" icon={send}></IonIcon>
                         </IonButton>
                       </IonTextarea>
+                      <div className='flex items-center absolute bottom-0 left-0 z-10 w-full px-4 py-2'>
+                        <IonToggle
+                          data-tooltip-id="webSearch" data-tooltip-content="Search the web"
+                          class='float-right text-sm globe-toggle'
+                          enableOnOffLabels={true}
+                          checked={webSearchEnabled}
+                          onIonChange={(event) => changeWebSearch(event)}
+                        >
+                        </IonToggle>
+                        <Tooltip id="webSearch" />
+                      </div>
                     </div>
                   }
 

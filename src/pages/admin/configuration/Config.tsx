@@ -1,4 +1,4 @@
-import { IonButton, IonCard, IonCheckbox, IonCol, IonContent, IonGrid, IonIcon, IonInput, IonPage, IonPopover, IonProgressBar, IonRow, IonSelect, IonSelectOption, IonSpinner, IonSplitPane, IonToast } from '@ionic/react';
+import { IonAccordion, IonAccordionGroup, IonButton, IonCard, IonCheckbox, IonCol, IonContent, IonGrid, IonIcon, IonInput, IonItem, IonLabel, IonPage, IonPopover, IonProgressBar, IonRow, IonSelect, IonSelectOption, IonSpinner, IonSplitPane, IonToast } from '@ionic/react';
 import { useEffect, useState } from 'react';
 import AppHeader from '../../../components/header/Header';
 import Sidenav from '../../../components/sidenav/Sidenav';
@@ -29,6 +29,16 @@ interface ConfigAddModel {
     example_automatic_approval: boolean;
     automatic_feedback_enabled: boolean;
     edit_max_attempts: number;
+    provider: string;
+    enabled: boolean;
+    max_results: number;
+    allowed_use_cases_b2b: boolean;
+    allowed_use_cases_b2c: boolean;
+    web_search_generation_max_tokens: number;
+    web_search_llm_name: string;
+    no_cache: boolean;
+    web_search_reasoning_effort: string;
+    web_search_temperature: number;
 }
 
 const Config: React.FC = () => {
@@ -68,7 +78,7 @@ const Config: React.FC = () => {
       });
       
       const responseData = await response.json();
-    console.log("Success:", responseData);
+            console.log("Success:", responseData);
           
           // Find the active config and extract config_value
           const activeConfig = responseData.find((config: any) => config.status === 'active');
@@ -101,7 +111,18 @@ const Config: React.FC = () => {
         setValue("example_acceptance_threshold", configValue.example_validation.example_acceptance_threshold);
         setValue("example_automatic_approval", configValue.example_validation.example_automatic_approval);
         setValue("automatic_feedback_enabled", configValue.automatic_feedback_enabled);
+
+        setValue("provider", configValue.web_search.provider);
+        setValue("enabled", configValue.web_search.enabled);
+        setValue("max_results", configValue.web_search.max_results);
+        setValue("allowed_use_cases_b2b", Array.isArray(configValue.web_search.allowed_use_cases) && configValue.web_search.allowed_use_cases.includes('b2b'));
+        setValue("allowed_use_cases_b2c", Array.isArray(configValue.web_search.allowed_use_cases) && configValue.web_search.allowed_use_cases.includes('b2c'));
         
+        setValue("web_search_generation_max_tokens", configValue.web_search.model.generation_max_tokens);
+        setValue("web_search_llm_name", configValue.web_search.model.llm_name);
+        setValue("no_cache", configValue.web_search.model.no_cache);
+        setValue("web_search_reasoning_effort", configValue.web_search.model.reasoning_effort);
+        setValue("web_search_temperature", configValue.web_search.model.temperature);
         setConfigList(configValue);
         setLoading(false);
       }
@@ -143,8 +164,18 @@ const Config: React.FC = () => {
     payLoad.example_validation.example_acceptance_threshold = data.example_acceptance_threshold;
     payLoad.example_validation.example_automatic_approval = data.example_automatic_approval;
     payLoad.automatic_feedback_enabled = data.automatic_feedback_enabled;
-    
+    payLoad.web_search.provider = data.provider;
+    payLoad.web_search.enabled = data.enabled;
+    payLoad.web_search.max_results = data.max_results;    
+    payLoad.web_search.allowed_use_cases = [];
+    if (data.allowed_use_cases_b2b) payLoad.web_search.allowed_use_cases.push('b2b');
+    if (data.allowed_use_cases_b2c) payLoad.web_search.allowed_use_cases.push('b2c');
 
+    payLoad.web_search.model.generation_max_tokens = data.web_search_generation_max_tokens;
+    payLoad.web_search.model.llm_name = data.web_search_llm_name;
+    payLoad.web_search.model.no_cache = data.no_cache;
+    payLoad.web_search.model.reasoning_effort = data.web_search_reasoning_effort;
+    payLoad.web_search.model.temperature = data.web_search_temperature;
     console.log('payLoad', payLoad)
     handleConfigUpdate(payLoad);
   }
@@ -205,6 +236,10 @@ const Config: React.FC = () => {
   const isHistoryUnitTest = watch('history_unit_test');
   const isExampleAutomaticApproval = watch('example_automatic_approval');
   const isAutomaticFeedbackEnabled = watch('automatic_feedback_enabled');
+  const isWebSearchEnabled = watch('enabled');
+  const isAllowedUseCasesB2B = watch('allowed_use_cases_b2b');
+  const isAllowedUseCasesB2C = watch('allowed_use_cases_b2c');
+    const isNoCache = watch('no_cache');
   /* Handle form input field changes end */
 
   return (
@@ -521,6 +556,178 @@ const Config: React.FC = () => {
                                         This environment id specifies the target Contentful environment where all personalized content from Optimus will be sent. The value is case-sensitive.
                                     </IonContent>
                                 </IonPopover>
+                            </IonCol>
+                        </IonRow>
+
+                        <p className='font-bold text-lg text-black mb-2.5'>Web Search Settings:</p>
+                        <IonRow>
+                            <IonCol size="4">
+                                <IonInput className='mb-4 text-sm' label="Web search provider" labelPlacement="floating" fill="outline" placeholder="Enter Web Search Provider"
+                                    {...register("provider", {
+                                        validate: {},
+                                    })}
+                                    ><IonIcon id="web-search-provider" className="block absolute left-0 -top-1.5 z-10 cursor-pointer" slot="icon-only" icon={informationCircle}></IonIcon>
+                                </IonInput>
+                                <IonPopover className="rating-popover" size="auto" trigger="web-search-provider" triggerAction="hover">
+                                    <IonContent class="ion-padding">
+                                        This is web search provider used for retrieval augmented generation. The value is case-sensitive. If no provider is specified, web search will be disabled.
+                                    </IonContent>
+                                </IonPopover>
+                            </IonCol>
+                            <IonCol size="4">
+                                <IonInput type='number' step="0.1" className='mb-4 text-sm' label="Max Results" labelPlacement="floating" fill="outline" placeholder="Enter Max Results"
+                                    {...register("max_results", {
+                                        validate: {},
+                                    })}
+                                    ><IonIcon id="max-results" className="block absolute left-0 -top-1.5 z-10 cursor-pointer" slot="icon-only" icon={informationCircle}></IonIcon>
+                                </IonInput>
+                                <IonPopover className="rating-popover" size="auto" trigger="max-results" triggerAction="hover">
+                                    <IonContent class="ion-padding">
+                                        This is the maximum number of web search results to be returned by the web search provider and used for retrieval augmented generation.
+                                    </IonContent>
+                                </IonPopover>
+                            </IonCol>
+                            <IonCol size="4" className='flex items-center'>
+                                <IonCheckbox 
+                                {...register("enabled", {
+                                    validate: {},
+                                })}
+                                checked={isWebSearchEnabled as boolean}
+                                onIonChange={(event: any) => {
+                                    console.log('event', event.detail.checked);
+                                    setValue("enabled", event.detail.checked);
+                                }}
+                                className='mb-4 text-sm' labelPlacement="start"><IonIcon id="web-search-enabled" className=" z-10 cursor-pointer" icon={informationCircle}></IonIcon> Enable Web Search</IonCheckbox>
+                                <IonPopover className="rating-popover" size="auto" trigger="web-search-enabled" triggerAction="hover">
+                                    <IonContent class="ion-padding">
+                                        Whether to enable web search for retrieval augmented generation.
+                                    </IonContent>
+                                </IonPopover>
+                            </IonCol>
+                            
+                        </IonRow>
+                        <IonRow>
+                            <IonCol size="12" className='flex items-center'>
+                                <p className='font-bold text-xs mb-0 mr-4'>
+                                    <IonIcon id="b2c-use-case" className="z-10 cursor-pointer" icon={informationCircle}></IonIcon>
+                                    Allowed Use Cases: {isAllowedUseCasesB2C || isAllowedUseCasesB2B ?
+                                    `${isAllowedUseCasesB2C ? 'B2C ' : ''}${isAllowedUseCasesB2B ? 'B2B' : ''}`
+                                    :
+                                    'None'
+                                    }
+                                </p>
+                                <IonPopover className="rating-popover" size="auto" trigger="b2c-use-case" triggerAction="hover">
+                                    <IonContent class="ion-padding">
+                                        Enable Business-to-Consumer use cases.
+                                    </IonContent>
+                                </IonPopover>
+                                <IonCheckbox 
+                                {...register("allowed_use_cases_b2c", {
+                                    validate: {},
+                                })}
+                                checked={isAllowedUseCasesB2C as boolean}
+                                onIonChange={(event: any) => {
+                                    setValue("allowed_use_cases_b2c", event.detail.checked);
+                                }}
+                                className='mb-0 mr-4 text-sm' labelPlacement="start"> B2C</IonCheckbox>
+                                
+                                <IonCheckbox 
+                                {...register("allowed_use_cases_b2b", {
+                                    validate: {},
+                                })}
+                                checked={isAllowedUseCasesB2B}
+                                onIonChange={(event: any) => {
+                                    setValue("allowed_use_cases_b2b", event.detail.checked);
+                                }}
+                                className='mb-0 mr-4 text-sm' labelPlacement="start"> B2B</IonCheckbox>
+                                
+                            </IonCol>
+                        </IonRow>
+                        <IonRow>
+                            <IonCol size='12'>
+                                <IonCard>
+                                    <IonAccordionGroup>
+                                        <IonAccordion value="first">
+                                            <IonItem slot="header" color="light">
+                                                <IonLabel>Web Search Advanced configuration</IonLabel>
+                                            </IonItem>
+                                            <div className="ion-padding" slot="content">
+                                                <IonRow>
+                                                    <IonCol size="4">
+                                                        <IonInput type='number' step="0.1" className='mb-4 text-sm' label="Generation Max Tokens" labelPlacement="floating" fill="outline" placeholder="Enter Generation Max Tokens"
+                                                            {...register("web_search_generation_max_tokens", {
+                                                                validate: {},
+                                                            })}
+                                                            ><IonIcon id="generation-max-tokens" className="block absolute left-0 -top-1.5 z-10 cursor-pointer" slot="icon-only" icon={informationCircle}></IonIcon>
+                                                        </IonInput>
+                                                        <IonPopover className="rating-popover" size="auto" trigger="generation-max-tokens" triggerAction="hover">
+                                                            <IonContent class="ion-padding">
+                                                                Maximum number of tokens in the answer of the LLM. If the LLM attempts to generate more tokens, there may be a cut-off mid-response.
+                                                            </IonContent>
+                                                        </IonPopover>
+                                                    </IonCol>
+                                                    <IonCol size="4">
+                                                        <IonInput type='number' step="0.1" className='mb-4 text-sm' label="Temperature" labelPlacement="floating" fill="outline" placeholder="Enter Temperature"
+                                                            {...register("web_search_temperature", {
+                                                                validate: {},
+                                                            })}
+                                                            ><IonIcon id="temperature" className="block absolute left-0 -top-1.5 z-10 cursor-pointer" slot="icon-only" icon={informationCircle}></IonIcon>
+                                                        </IonInput>
+                                                        <IonPopover className="rating-popover" size="auto" trigger="temperature" triggerAction="hover">
+                                                            <IonContent class="ion-padding">
+                                                                Temperature is used to control the randomness of the output. When you set it higher, you'll get more random outputs. When you set it lower, towards 0, the values are more deterministic.
+                                                            </IonContent>
+                                                        </IonPopover>
+                                                    </IonCol>
+                                                    <IonCol size="4">
+                                                        <IonInput className='mb-4 text-sm' label="LLM Name" labelPlacement="floating" fill="outline" placeholder="Enter LLM Name"
+                                                            {...register("web_search_llm_name", {
+                                                                validate: {},
+                                                            })}
+                                                            ><IonIcon id="llm-name" className="block absolute left-0 -top-1.5 z-10 cursor-pointer" slot="icon-only" icon={informationCircle}></IonIcon>
+                                                        </IonInput>
+                                                        <IonPopover className="rating-popover" size="auto" trigger="llm-name" triggerAction="hover">
+                                                            <IonContent class="ion-padding">
+                                                                The name of the LLM used for copy generation. This should match the name of one of the LLMs configured in the system.
+                                                            </IonContent>
+                                                        </IonPopover>
+                                                    </IonCol>
+                                                    <IonCol size="4">
+                                                        <IonInput className='mb-4 text-sm' label="Reasoning Effort" labelPlacement="floating" fill="outline" placeholder="Enter Reasoning Effort"
+                                                            {...register("web_search_reasoning_effort", {
+                                                                validate: {},
+                                                            })}
+                                                            ><IonIcon id="reasoning-effort" className="block absolute left-0 -top-1.5 z-10 cursor-pointer" slot="icon-only" icon={informationCircle}></IonIcon>
+                                                        </IonInput>
+                                                        <IonPopover className="rating-popover" size="auto" trigger="reasoning-effort" triggerAction="hover">
+                                                            <IonContent class="ion-padding">
+                                                                The reasoning effort required for the LLM to generate copy. This should match the configuration in the system.
+                                                            </IonContent>
+                                                        </IonPopover>
+                                                    </IonCol>
+                                                    <IonCol size="4" className='flex items-center'>
+                                                        <IonCheckbox 
+                                                        {...register("no_cache", {
+                                                            validate: {},
+                                                        })}
+                                                        checked={isNoCache as boolean}
+                                                        onIonChange={(event: any) => {
+                                                            console.log('event', event.detail.checked);
+                                                            setValue("no_cache", event.detail.checked);
+                                                        }}
+                                                        className='mb-4 text-sm' labelPlacement="start"><IonIcon id="no-cache" className=" z-10 cursor-pointer" icon={informationCircle}></IonIcon> Automatic Approval of Validated Examples</IonCheckbox>
+                                                        <IonPopover className="rating-popover" size="auto" trigger="no-cache" triggerAction="hover">
+                                                            <IonContent class="ion-padding">
+                                                                Whether to disable caching of LLM answers. If checked, the system will not cache any LLM answers, which means that the same request may yield different answers if the LLM is non-deterministic (e.g. because of a temperature setting above 0). Additionally, it may increase response times and costs, since the LLM will be asked for an answer every time instead of retrieving it from the cache.
+                                                            </IonContent>
+                                                        </IonPopover>
+                                                    </IonCol>
+                                                    
+                                                </IonRow>
+                                            </div>
+                                        </IonAccordion>
+                                    </IonAccordionGroup>
+                                </IonCard>
                             </IonCol>
                         </IonRow>
                     </IonGrid>
