@@ -18,6 +18,7 @@ import ProductDropdown from '../../components/dropdown/productDropdown/ProductDr
 import { Tooltip } from 'react-tooltip';
 import template from '../../template.json'; // adjust path if needed
 import { v4 as uuidv4 } from 'uuid';
+import { useAuth } from '../../config/AuthContext';
 
 type Tab = {
   answer: string;
@@ -121,19 +122,19 @@ const B2C: React.FC = () => {
   const [isCreateAssembly, setIsCreateAssembly] = useState(false);
   const [contentError, setContentError] = useState("");
   const [contentName, setContentName] = useState("");
-  const [configData, setConfigData] = useState<any>('');
   const [isReminderModal, setIsReminderModal] = useState(false);
   const [reminderPrompt, setReminderPrompt] = useState('');
   const [loadingReminders, setLoadingReminders] = useState(false);
   const [remindersGenerated, setRemindersGenerated] = useState(false);
   const [webSearchEnabled, setWebSearchEnabled] = useState<boolean>(false);
+  const { configData, refreshConfig } = useAuth();
 
   useEffect(() => {
     let userLocalData:any = localStorage.getItem('user');
     let userData = JSON.parse(userLocalData);
     setUserName(userData.username);
     setTigaRoles(userData.tiga_roles || []);
-    // console.log('userData', userData);
+    console.log('configData', configData);
     
     getSegmentsData();
     getPurposesData();
@@ -1154,6 +1155,13 @@ const B2C: React.FC = () => {
     // console.log('contentfulCopy', contentfulCopy);
     // console.log('configData>>>', configData);
 
+    if (!configData?.contentful) {
+      setLoadingContentful(false);
+      setIsShowError(true);
+      setIsErrorMsg('Config not loaded yet. Please try again.');
+      return;
+    }
+
     const targetEnv = Object.entries(configData.contentful).map(([key, value]) => {
       // remove the "_env" part from the key
       const newKey = key.replace('_env', '');
@@ -1257,33 +1265,6 @@ const B2C: React.FC = () => {
     }
   };
   /* send To contentful end */
-
-  /* -------------get Config data start------------- */
-  const getConfigData = async () => {
-    try {
-      const urlData = apiUrl + '/config/';
-
-      const response = await fetch(urlData, {
-        method: 'GET',
-        headers: {
-          'access_token': `${NetworkInfo.ACCESSTOKEN}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      const responseData = await response.json();
-      // console.log("Success setConfigData:", responseData);
-
-      if (response.ok) {
-        setConfigData(responseData[0].config_value);
-      }
-      
-    } catch (error: any) {
-      // console.error("catch failed:", error);
-      setLoading(false);
-    }
-  };
-  /* get config data end */
 
   /* -------------handleEditingMode start------------- */
   const handleEditingMode = async (data: boolean): Promise<void> => {
@@ -1402,8 +1383,8 @@ const B2C: React.FC = () => {
 
 
   /* ---------------Contentful Copy Handling start -------------- */
-  const handleClickContentful = (e: React.MouseEvent<HTMLIonChipElement>) => {
-    getConfigData();
+  const handleClickContentful = async (e: React.MouseEvent<HTMLIonChipElement>) => {
+    await refreshConfig();
     // console.log('handleClickContentful', e);
     if (!(e.target as HTMLIonChipElement).disabled) {
       setIsContentfulModal(true);
@@ -1873,7 +1854,7 @@ const B2C: React.FC = () => {
                       <div>
                         <IonToggle
                           data-tooltip-id="webSearch" data-tooltip-content="Search the web"
-                          class='float-right text-sm globe-toggle'
+                          className={`${configData.web_search.enabled === false || !configData.web_search.allowed_use_cases?.includes('b2c') ? 'ion-hide ' : ''} float-right text-sm globe-toggle`}
                           enableOnOffLabels={true}
                           checked={webSearchEnabled}
                           onIonChange={(event) => changeWebSearch(event)}
@@ -1909,7 +1890,7 @@ const B2C: React.FC = () => {
               <IonRow>
                 <IonCol>
                   <div className="mx-2.5 mt-7">
-                    <Tabs tabs={tabs} regenarateItem={regenarateItem} discardEditedAnswer={discardEditedAnswer} genarateRefineCopy={genarateRefineCopy} contentfulData={sendTocontentful} isEditingMode={handleEditingMode} webSearchEnabled={webSearchEnabled} setWebSearchEnabled={setWebSearchEnabled}/>
+                    <Tabs tabs={tabs} regenarateItem={regenarateItem} discardEditedAnswer={discardEditedAnswer} genarateRefineCopy={genarateRefineCopy} contentfulData={sendTocontentful} isEditingMode={handleEditingMode} webSearchEnabled={webSearchEnabled} setWebSearchEnabled={setWebSearchEnabled} setTabFor={'b2c'}/>
                     <div className="text-right mt-3">
                       <IonChip onClick={() => handleFormSubmit(requestData)} className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Rewrite all suggestions</IonChip>
                       <IonChip data-tooltip-id="contentful" data-tooltip-content="Save all content before sending it to Contentful." disabled={isOpenEditing || contentfulCopy.length === 0} onClick={ handleClickContentful } className='!pointer-events-auto text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Send to contentful</IonChip>

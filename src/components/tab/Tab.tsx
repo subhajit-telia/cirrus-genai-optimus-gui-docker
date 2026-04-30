@@ -16,6 +16,7 @@ import '@mdxeditor/editor/style.css';
 import stringSimilarity from "string-similarity";
 import { marked } from "marked";
 import { v4 as uuidv4 } from 'uuid';
+import { useAuth } from '../../config/AuthContext';
 
 interface Tab {
   answer: string;
@@ -46,6 +47,7 @@ interface TabsProps {
   isEditingMode: (data: boolean) => void;
   webSearchEnabled: boolean;
   setWebSearchEnabled: (value: boolean) => void;
+  setTabFor: string;
 }
 
 interface Position {
@@ -69,7 +71,7 @@ interface FeedbackBox {
   comment: string
 }
 
-const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, genarateRefineCopy, contentfulData, isEditingMode, webSearchEnabled, setWebSearchEnabled }) => {
+const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, genarateRefineCopy, contentfulData, isEditingMode, webSearchEnabled, setWebSearchEnabled, setTabFor }) => {
   const [activeTab, setActiveTab] = useState(tabs[0].segment_id); // Set the first tab as active initially
   
   const [isSaveChanges, setIsSaveChanges] = useState(false);
@@ -111,6 +113,8 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
 
   const containerRefs = useRef<HTMLDivElement[]>([]);
   const [charMaps, setCharMaps] = useState<{ renderedIndex: number; markdownIndex: number }[][]>([]);
+  const { configData, refreshConfig } = useAuth();
+  
   const changeTab = (segment_id: string) => {
     setActiveTab(segment_id);
   };
@@ -1500,7 +1504,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
                               <div className='flex items-center absolute bottom-0 left-0 z-10 w-full px-4 py-2'>
                                 <IonToggle
                                   data-tooltip-id="webSearch" data-tooltip-content="Search the web"
-                                  class='float-right text-sm globe-toggle'
+                                  className={`${configData.web_search.enabled === false || !configData.web_search.allowed_use_cases?.includes(setTabFor) ? 'ion-hide ' : ''} float-right text-sm globe-toggle`}
                                   enableOnOffLabels={true}
                                   checked={webSearchEnabled}
                                   onIonChange={(event) => changeWebSearch(event)}
@@ -1547,7 +1551,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
                             <div className='flex items-center absolute bottom-0 left-0 z-10 w-full px-4 py-2'>
                               <IonToggle
                                 data-tooltip-id="webSearch" data-tooltip-content="Search the web"
-                                class='float-right text-sm globe-toggle'
+                                className={`${configData.web_search.enabled === false || !configData.web_search.allowed_use_cases?.includes(setTabFor) ? 'ion-hide ' : ''} float-right text-sm globe-toggle`}
                                 enableOnOffLabels={true}
                                 checked={webSearchEnabled}
                                 onIonChange={(event) => changeWebSearch(event)}
@@ -1765,7 +1769,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
                           <div className='flex items-center absolute bottom-0 left-0 z-10 w-full px-4 py-2'>
                             <IonToggle
                               data-tooltip-id="webSearch" data-tooltip-content="Search the web"
-                              class='float-right text-sm globe-toggle'
+                              className={`${configData.web_search.enabled === false || !configData.web_search.allowed_use_cases?.includes(setTabFor) ? 'ion-hide ' : ''} float-right text-sm globe-toggle`}
                               enableOnOffLabels={true}
                               checked={webSearchEnabled}
                               onIonChange={(event) => changeWebSearch(event)}
@@ -1814,7 +1818,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, regenarateItem, discardEditedAnswer, 
                       <div className='flex items-center absolute bottom-0 left-0 z-10 w-full px-4 py-2'>
                         <IonToggle
                           data-tooltip-id="webSearch" data-tooltip-content="Search the web"
-                          class='float-right text-sm globe-toggle'
+                          className={`${configData.web_search.enabled === false || !configData.web_search.allowed_use_cases?.includes(setTabFor) ? 'ion-hide ' : ''} float-right text-sm globe-toggle`}
                           enableOnOffLabels={true}
                           checked={webSearchEnabled}
                           onIonChange={(event) => changeWebSearch(event)}

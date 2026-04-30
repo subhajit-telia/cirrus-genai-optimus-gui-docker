@@ -126,11 +126,11 @@ const LoginButton = () => {
           localStorage.setItem('user', JSON.stringify(userData));
 
           if (userData.roles.admin === true && userData.roles.user === true) {
-            login('admin');
+            await login('admin');
           }else if (userData.roles.admin === true) {
-            login('admin');
+            await login('admin');
           }else if (userData.roles.user === true) {
-            login('user');
+            await login('user');
           }
           history.push('/b2c');
         }

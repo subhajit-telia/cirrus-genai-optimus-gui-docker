@@ -1,6 +1,6 @@
-import { IonButton, IonButtons, IonCheckbox, IonChip, IonCol, IonContent, IonFab, IonFabButton, IonFabList, IonFooter, IonGrid, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonModal, IonPage, IonProgressBar, IonRow, IonSkeletonText, IonSpinner, IonSplitPane, IonText, IonTextarea, IonTitle, IonToast, IonToggle, IonToolbar, ToggleCustomEvent } from '@ionic/react';
+import { IonButton, IonButtons, IonCheckbox, IonChip, IonCol, IonContent, IonFab, IonFabButton, IonFabList, IonFooter, IonGrid, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonModal, IonPage, IonProgressBar, IonRow, IonSkeletonText, IonSpinner, IonText, IonTextarea, IonTitle, IonToast, IonToggle, IonToolbar, ToggleCustomEvent } from '@ionic/react';
 import AppHeader from '../../components/header/Header';
-import { attach, closeCircle, closeCircleOutline, closeOutline, documentAttach, documentAttachOutline, globe, information, informationCircle, link } from 'ionicons/icons';
+import { attach, closeCircle, closeCircleOutline, closeOutline, documentAttach, documentAttachOutline, globe, globeOutline, information, informationCircle, link } from 'ionicons/icons';
 import { useEffect, useRef, useState } from 'react';
 import Tabs from '../../components/tab/Tab';
 import { useForm } from "react-hook-form";
@@ -18,7 +18,7 @@ import ProductDropdown from '../../components/dropdown/productDropdown/ProductDr
 import { Tooltip } from 'react-tooltip';
 import template from '../../template.json'; // adjust path if needed
 import { v4 as uuidv4 } from 'uuid';
-import HistoryBar from '../../components/historybar/Historybar';
+import { useAuth } from '../../config/AuthContext';
 
 type Tab = {
   answer: string;
@@ -96,7 +96,7 @@ const B2B: React.FC = () => {
   const [selectedPurpose, setSelectedPurpose] = useState<typeof purposes[0][]>([]);
   const [userName, setUserName] = useState('');
   const [tigaRoles, setTigaRoles] = useState([]);
-  const apiUrl = NetworkInfo.URL;
+  const apiUrl = window.RUNTIME_ENV?.REACT_APP_API_URL || NetworkInfo.URL;
   const [isOpenModal, setIsOpenModal] = useState(false);
   const [isOpenEditing, setIsOpenEditing] = useState(false);
   const [selectedDiv, setSelectedDiv] = useState<number | null>(null);
@@ -116,24 +116,25 @@ const B2B: React.FC = () => {
   const [knowledgeBaseEnabled, setKnowledgeBaseEnabled] = useState<boolean>(false);
   const [isKnowledgeBaseModal, setIsKnowledgeBaseModal] = useState(false);
   const [isKnowledgeBaseData, setKnowledgeBaseData] = useState<any[]>([]);
-  const [isReminderModal, setIsReminderModal] = useState(false);
-  const [reminderPrompt, setReminderPrompt] = useState('');
-  const [loadingReminders, setLoadingReminders] = useState(false);
-  const [remindersGenerated, setRemindersGenerated] = useState(false);
   const [isPersonalized, setIsPersonalized] = useState(false);
   const [isPersonalizedChanged, setIsPersonalizedChanged] = useState(false);
   const [isTroubleshooting, setIsTroubleshooting] = useState(false);
   const [isCreateAssembly, setIsCreateAssembly] = useState(false);
   const [contentError, setContentError] = useState("");
   const [contentName, setContentName] = useState("");
-  const [configData, setConfigData] = useState<any>('');
+  const [isReminderModal, setIsReminderModal] = useState(false);
+  const [reminderPrompt, setReminderPrompt] = useState('');
+  const [loadingReminders, setLoadingReminders] = useState(false);
+  const [remindersGenerated, setRemindersGenerated] = useState(false);
+  const [webSearchEnabled, setWebSearchEnabled] = useState<boolean>(false);
+  const { configData, refreshConfig } = useAuth();
 
   useEffect(() => {
     let userLocalData:any = localStorage.getItem('user');
     let userData = JSON.parse(userLocalData);
     setUserName(userData.username);
     setTigaRoles(userData.tiga_roles || []);
-    // console.log('userData', userData);
+    console.log('configData', configData);
     
     getSegmentsData();
     getPurposesData();
@@ -192,7 +193,7 @@ const B2B: React.FC = () => {
       }
       
     } catch (error: any) {
-      console.error("catch failed:", error);
+      // console.error("catch failed:", error);
       setLoadingSegments(false);
     }
   };
@@ -219,7 +220,7 @@ const B2B: React.FC = () => {
         setLoadingPurposes(false);
       }
     } catch (error: any) {
-      console.error("catch failed:", error);
+      // console.error("catch failed:", error);
       setLoadingPurposes(false);
     }
   };
@@ -246,7 +247,7 @@ const B2B: React.FC = () => {
         setLoadingProducts(false);
       }
     } catch (error: any) {
-      console.error("catch failed:", error);
+      // console.error("catch failed:", error);
       setLoadingProducts(false);
     }
   };
@@ -273,7 +274,7 @@ const B2B: React.FC = () => {
         setLoadingFormats(false);
       }
     } catch (error: any) {
-      console.error("catch failed:", error);
+      // console.error("catch failed:", error);
       setLoadingFormats(false);
     }
   };
@@ -313,6 +314,15 @@ const B2B: React.FC = () => {
     
   };
 
+  /* Normalize a raw API response object into a consistent output shape */
+  const normalizeOutput = (response: any) => ({
+    answer: DOMPurify.sanitize(response.answer),
+    input_params: response.input_params,
+    rating: response.rating ?? null,
+    timestamp: response.timestamp ?? Date.now(),
+    sources: response.web_search_result?.sources ?? response.sources ?? []
+  });
+
   /* -----------Handle form submit start----------- */
   let arrayTab: any;
   let arrayNoSegment: any;
@@ -321,6 +331,8 @@ const B2B: React.FC = () => {
     setCopyVersionIdHistory([]);
     setIsTroubleshooting(false);
     setFeedbackCopy([]);
+    setRemindersGenerated(false);
+    setReminderPrompt('');
     
     const formatIds = selectedFormats.map(f => f.format_id);
     const purposeId = selectedPurpose[0]?.purpose_id || null;
@@ -416,6 +428,7 @@ const B2B: React.FC = () => {
     data.attached_text = attachments || null;
     data.knowledge_base_docs = isKnowledgeBaseData.length === 0 ? null : isKnowledgeBaseData;
     data.use_case = 'b2b';
+    data.web_search_enabled = webSearchEnabled;
     try {
       const response = await fetch(formUrl, {
         method: HTTPMethod.POST,
@@ -433,17 +446,15 @@ const B2B: React.FC = () => {
         
         setNoSegmentArray(arrayNoSegment);
         setTabArray(arrayTab);
-        // console.log('tabs>>>', tabs);
+        console.log('tabs>>>', tabs);
         if (responseData.responses.length === 1) {
           if (arrayTab !== undefined) {
             arrayTab = arrayTab.map((segment: { segment_id: any; segment_name: any; data: any[] }) => {
               if (segment.segment_id === responseData.responses[0].input_params.segment_id) {
                 segment.data = segment.data.map((format: any) => {
-                  // Match by copy_id so reminder cards (format_id suffixed) are also updated correctly.
-                  // Also guard copy_variant so reminder regeneration never overwrites the base card.
                   const responseVariant = responseData.responses[0].input_params.copy_variant || 'base';
                   const cardBaseFormatId = (format.format_id || '').replace(/_reminder_.*$/, '');
-                  const cardVariant = format.copy_variant || format.input_params?.copy_variant || 'base';
+                  const cardVariant = format.input_params?.copy_variant || 'base';
                   const fmtMatch = (cardBaseFormatId === responseData.responses[0].input_params.format_id
                     || format.input_params?.copy_id === responseData.responses[0].input_params.copy_id)
                     && cardVariant === responseVariant;
@@ -454,12 +465,7 @@ const B2B: React.FC = () => {
                       input_params: responseData.responses[0].input_params,
                       outputs: [
                         ...(format.outputs || []),
-                        { 
-                          answer: DOMPurify.sanitize(responseData.responses[0].answer), 
-                          input_params: responseData.responses[0].input_params ,
-                          rating: null,
-                          timestamp: Date.now()
-                        }
+                        normalizeOutput(responseData.responses[0])
                       ]
                     };
                   }
@@ -471,11 +477,9 @@ const B2B: React.FC = () => {
             setTabs(arrayTab);
           } else {
             arrayNoSegment = arrayNoSegment.map((format: { format_id: any; outputs?: any[]; input_params?: any }) => {
-              // Also match reminder cards by copy_id, but guard copy_variant so reminder regeneration
-              // never overwrites the base card.
               const responseVariant = responseData.responses[0].input_params.copy_variant || 'base';
               const cardBaseFormatId = (format.format_id || '').replace(/_reminder_.*$/, '');
-              const cardVariant = (format as any).copy_variant || (format as any).input_params?.copy_variant || 'base';
+              const cardVariant = (format as any).input_params?.copy_variant || 'base';
               const fmtMatch = format.format_id === 'customPrompts'
                 || ((cardBaseFormatId === responseData.responses[0].input_params.format_id
                   || (format as any).input_params?.copy_id === responseData.responses[0].input_params.copy_id)
@@ -488,12 +492,7 @@ const B2B: React.FC = () => {
                   input_params: responseData.responses[0].input_params,
                   outputs: [
                     ...currentOutputs,
-                    { 
-                      answer: DOMPurify.sanitize(responseData.responses[0].answer), 
-                      input_params: responseData.responses[0].input_params ,
-                      rating: null,
-                      timestamp: Date.now()
-                    }
+                    normalizeOutput(responseData.responses[0])
                   ]
                 };
               }
@@ -519,7 +518,7 @@ const B2B: React.FC = () => {
         setIsErrorMsg(responseData.ErrorMessage || 'Something went wrong!');
       }
     } catch (error: any) {
-      console.error('Login failed:', error);
+      // console.error('Login failed:', error);
       setIsShowError(true);
       setIsErrorMsg('Something went wrong!');
       setLoading(false);
@@ -572,7 +571,8 @@ const B2B: React.FC = () => {
               // TO-DO-UPDATE-AFTER-BACKEND-FIX: Same as above — output's input_params.copy_variant may be wrong.
               input_params: backendResponse.input_params,
               rating: null,
-              timestamp: Date.now()
+              timestamp: Date.now(),
+              sources: backendResponse.web_search_result?.sources || []
             }]
           }
         };
@@ -582,7 +582,7 @@ const B2B: React.FC = () => {
         return null;
       }
     } catch (error: any) {
-      console.error('Reminder generation failed:', error);
+      // console.error('Reminder generation failed:', error);
       setIsShowError(true);
       setIsErrorMsg('Something went wrong generating a reminder!');
       return null;
@@ -590,6 +590,7 @@ const B2B: React.FC = () => {
   };
 
   const handleGenerateReminders = async () => {
+    setWebSearchEnabled(false);
     setIsReminderModal(false);
     setLoadingReminders(true);
     const cvmEligible = getCvmEligibleCopies();
@@ -620,6 +621,7 @@ const B2B: React.FC = () => {
         question: reminderPrompt || null,
         attached_text: null,
         knowledge_base_docs: null,
+        web_search_enabled: false
       };
 
       const result = await callReminderApi(reminderPayload, params.format_name || '');
@@ -631,14 +633,14 @@ const B2B: React.FC = () => {
               const withoutOldReminder = tab.data.filter(
                 (d: any) => !(
                   d.input_params?.copy_group_id === result.entry.input_params?.copy_group_id &&
-                  (d.copy_variant || d.input_params?.copy_variant || 'base') === 'reminder'
+                  (d.input_params?.copy_variant || 'base') === 'reminder'
                 )
               );
               // Insert reminder immediately after its parent base copy (same copy_group_id)
               const parentIdx = withoutOldReminder.findIndex(
                 (d: any) =>
                   d.input_params?.copy_group_id === result.entry.input_params?.copy_group_id &&
-                  (d.copy_variant || d.input_params?.copy_variant || 'base') === 'base'
+                  (d.input_params?.copy_variant || 'base') === 'base'
               );
               if (parentIdx === -1) {
                 return { ...tab, data: [...withoutOldReminder, result.entry] };
@@ -655,14 +657,14 @@ const B2B: React.FC = () => {
           workingTabs = workingTabs.filter(
             (d: any) => !(
               d.input_params?.copy_group_id === result.entry.input_params?.copy_group_id &&
-              (d.copy_variant || d.input_params?.copy_variant || 'base') === 'reminder'
+              (d.input_params?.copy_variant || 'base') === 'reminder'
             )
           );
           // Insert reminder immediately after its parent base copy (same copy_group_id)
           const parentIdx = workingTabs.findIndex(
             (d: any) =>
               d.input_params?.copy_group_id === result.entry.input_params?.copy_group_id &&
-              (d.copy_variant || d.input_params?.copy_variant || 'base') === 'base'
+              (d.input_params?.copy_variant || 'base') === 'base'
           );
           if (parentIdx === -1) {
             workingTabs = [...workingTabs, result.entry];
@@ -764,24 +766,19 @@ const B2B: React.FC = () => {
       });
   
       const responseData = await response.json();
-      // console.log('Success:', responseData);
   
       if (response.ok && !responseData.ErrorMessage) {
         setNoSegmentArray(arrayNoSegment);
         setTabArray(arrayTab);
-        // console.log('tabs>>>', tabs);
-        // console.log('arrayTab>>>', arrayTab);
-        // console.log('arrayNoSegment>>>', arrayNoSegment);
-
+  
         const backendResponse = responseData.responses[0];
         const responseFormatId = backendResponse.input_params.format_id;
         const responseCopyId = backendResponse.input_params.copy_id;
   
-        if (arrayTab !== undefined) {
+        if (arrayTab !== undefined && arrayTab.length > 0) {
           arrayTab = arrayTab.map((segment: { segment_id: any; segment_name: any; data: any[] }) => {
             segment.data = segment.data.map((format: any) => {
-              // Match by format_id AND copy_id to ensure we're updating the right copy.
-              // Also match reminder cards (format_id has _reminder_ suffix) by copy_id.
+              // Match by format_id AND copy_id — also match reminders by copy_id (their format_id has _reminder_ suffix)
               const formatMatches = format.format_id === responseFormatId || format.input_params?.copy_id === responseCopyId;
               const copyMatches = format.input_params?.copy_id === responseCopyId;
               
@@ -807,7 +804,7 @@ const B2B: React.FC = () => {
                       }
                       return output;
                     }),
-                    backendResponse
+                    normalizeOutput(backendResponse)
                   ];
                 } else {
                   // Just mark the discarded one
@@ -839,7 +836,6 @@ const B2B: React.FC = () => {
           setTabs(arrayTab);
         } else {
           arrayNoSegment = arrayNoSegment.map((format: { format_id: any; outputs: innerOutput[]; input_params?: any }) => {
-            // Also match reminder cards (format_id has _reminder_ suffix) by copy_id.
             const formatMatches = format.format_id === responseFormatId || format.input_params?.copy_id === responseCopyId || format.format_id === 'customPrompts';
             const copyMatches = format.input_params?.copy_id === responseCopyId;
             
@@ -865,7 +861,7 @@ const B2B: React.FC = () => {
                     }
                     return output;
                   }),
-                  backendResponse
+                  normalizeOutput(backendResponse)
                 ];
               } else {
                 // Just mark the discarded one
@@ -903,7 +899,7 @@ const B2B: React.FC = () => {
       }
       
     } catch (error: any) {
-      console.error('Login failed:', error);
+      // console.error('Login failed:', error);
       if (error.response) {
         setIsShowError(true);
         setIsErrorMsg(error.response || 'Something went wrong!');
@@ -939,21 +935,26 @@ const B2B: React.FC = () => {
       if (response.ok && !responseData.ErrorMessage) {
         setNoSegmentArray(arrayNoSegment);
         setTabArray(arrayTab);
-        // console.log('tabs>>>', tabs);
+        console.log('tabs>>>', tabs);
   
         if (arrayTab !== undefined) {
           arrayTab = arrayTab.map((segment: { segment_id: any; segment_name: any; data: any[] }) => {
             if (segment.segment_id === responseData.responses[0].input_params.segment_id) {
               segment.data = segment.data.map((format: any) => {
                 // Match by copy_id or by the copy_version_id that was sent to the edit endpoint.
+                // Matching by copy_version_id is the most reliable anchor: whichever card owns an
+                // output with that version_id is definitively the card being edited, even if the
+                // API returns a new copy_id (which it may do for edit_manual responses).
                 const responseCopyId = responseData.responses[0].input_params.copy_id;
-                if (format.input_params?.copy_id === responseCopyId
+                const fmtMatch = format.input_params?.copy_id === responseCopyId
                   || format.outputs?.some((o: any) =>
                       o.input_params?.copy_id === responseCopyId
                       || o.input_params?.copy_version_id === data.copy_version_id
-                  )) {
+                  );
+                if (fmtMatch) {
+                  const normalizedRefined = normalizeOutput(responseData.responses[0]);
                   let replaceOutput = format.outputs.map((output:innerOutput) => 
-                    output.input_params.copy_version_id === data.copy_version_id ? responseData.responses[0] : output
+                    output.input_params.copy_version_id === data.copy_version_id ? normalizedRefined : output
                   );
                   return {
                     ...format,
@@ -976,11 +977,11 @@ const B2B: React.FC = () => {
               || format.outputs?.some((o: any) =>
                   o.input_params?.copy_id === responseCopyId
                   || o.input_params?.copy_version_id === data.copy_version_id
-              )
-              || format.format_id === 'customPrompts';
+              );
             if (fmtMatch) {
+              const normalizedRefined = normalizeOutput(responseData.responses[0]);
               let replaceOutput = format.outputs.map((output:innerOutput) => 
-                output.input_params.copy_version_id === data.copy_version_id ? responseData.responses[0] : output
+                output.input_params.copy_version_id === data.copy_version_id ? normalizedRefined : output
               );
               return {
                 ...format,
@@ -1052,7 +1053,7 @@ const B2B: React.FC = () => {
         setIsErrorMsg(responseData.ErrorMessage || 'Something went wrong!');
       }
     } catch (error: any) {
-      console.error('Login failed:', error);
+      // console.error('Login failed:', error);
 
       if (error.response) {
         setIsShowError(true);
@@ -1096,8 +1097,11 @@ const B2B: React.FC = () => {
     const B2BFormats = template.B2B;
     const filtered = data
       .map((item: any) => {
+      // For reminders, match against the original format_id (strip _reminder_ suffix)
+      const rawFormatId = item.input_params.format_id || '';
+      const baseFormatId = rawFormatId.replace(/_reminder_.*$/, '');
       const format = B2BFormats.find(
-        (f) => f.format_id === item.input_params.format_id
+        (f) => f.format_id === baseFormatId
       );
 
       // If no match found or type_of_content is null → exclude
@@ -1118,7 +1122,31 @@ const B2B: React.FC = () => {
       })
       .filter(Boolean);
     // console.log('contentful filtered data', filtered);
-    setContentfulCopy(filtered)
+
+    // Deduplication is already handled in Tab.tsx (grouped by copy_group_id + copy_variant,
+    // latest timestamp wins). The filtered array here should already contain at most
+    // 1 active base + 1 active reminder per (format, segment) slot.
+
+    // Sort so each reminder always appears directly below its base copy.
+    // Group order is determined by first occurrence of each copy_group_id (chronological).
+    const groupOrder = new Map<string, number>();
+    let groupIdx = 0;
+    filtered.forEach((item: any) => {
+      const gid = item.input_params?.copy_group_id || '';
+      if (!groupOrder.has(gid)) groupOrder.set(gid, groupIdx++);
+    });
+    const sorted = [...filtered].sort((a: any, b: any) => {
+      const gA = a.input_params?.copy_group_id || '';
+      const gB = b.input_params?.copy_group_id || '';
+      const orderDiff = (groupOrder.get(gA) ?? 999) - (groupOrder.get(gB) ?? 999);
+      if (orderDiff !== 0) return orderDiff;
+      // Same group: base before reminder
+      const varA = a.input_params?.copy_variant || 'base';
+      const varB = b.input_params?.copy_variant || 'base';
+      if (varA === varB) return 0;
+      return varA === 'base' ? -1 : 1;
+    });
+    setContentfulCopy(sorted);
   }
 
   const handleContentfulFormSubmit = async (data:any) => {
@@ -1126,6 +1154,13 @@ const B2B: React.FC = () => {
     // console.log('handleContentfulFormSubmit', data);
     // console.log('contentfulCopy', contentfulCopy);
     // console.log('configData>>>', configData);
+
+    if (!configData?.contentful) {
+      setLoadingContentful(false);
+      setIsShowError(true);
+      setIsErrorMsg('Config not loaded yet. Please try again.');
+      return;
+    }
 
     const targetEnv = Object.entries(configData.contentful).map(([key, value]) => {
       // remove the "_env" part from the key
@@ -1152,18 +1187,13 @@ const B2B: React.FC = () => {
       }
       const copyVersionIdObj = { id: newId, parent_id };
       // console.log('formatName', formatName);
-      if (isPersonalizedChanged === isPersonalized) {
-        if (
-          formatName === "Sms" ||
-          formatName.startsWith("Email") || formatName.startsWith("Banner")
-        ) {
-          personalizedCopyVersionIds.push(copyVersionIdObj);
-        } else {
-          genericCopyVersionIds.push(copyVersionIdObj);
-        }
-      }else if (isPersonalized) {
+      // Route by each item's own type_of_content (set from template config by sendTocontentful).
+      // Handle both array ["personalized"] and plain string "personalized" forms.
+      const toc = item.type_of_content;
+      const isItemPersonalized = Array.isArray(toc) ? toc.includes('personalized') : toc === 'personalized';
+      if (isItemPersonalized) {
         personalizedCopyVersionIds.push(copyVersionIdObj);
-      }else {
+      } else {
         genericCopyVersionIds.push(copyVersionIdObj);
       }
     });
@@ -1182,7 +1212,7 @@ const B2B: React.FC = () => {
     if (genericCopyVersionIds.length > 0) {
       types.push("Generic");
     }
-    if (personalizedCopyVersionIds.length > 0 && isPersonalized) {
+    if (personalizedCopyVersionIds.length > 0) {
       types.push("Personalized");
     }
 
@@ -1224,7 +1254,7 @@ const B2B: React.FC = () => {
       }
     } catch (error: any) {
       setLoadingContentful(false);
-      console.error('Login failed:', error);
+      // console.error('Login failed:', error);
       if (error.response) {
         setIsShowError(true);
         setIsErrorMsg(error.response || 'Something went wrong!');
@@ -1235,33 +1265,6 @@ const B2B: React.FC = () => {
     }
   };
   /* send To contentful end */
-
-  /* -------------get Config data start------------- */
-  const getConfigData = async () => {
-    try {
-      const urlData = apiUrl + '/config/';
-
-      const response = await fetch(urlData, {
-        method: 'GET',
-        headers: {
-          'access_token': `${NetworkInfo.ACCESSTOKEN}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      const responseData = await response.json();
-      // console.log("Success setConfigData:", responseData);
-
-      if (response.ok) {
-        setConfigData(responseData[0].config_value);
-      }
-      
-    } catch (error: any) {
-      console.error("catch failed:", error);
-      setLoading(false);
-    }
-  };
-  /* get config data end */
 
   /* -------------handleEditingMode start------------- */
   const handleEditingMode = async (data: boolean): Promise<void> => {
@@ -1329,12 +1332,7 @@ const B2B: React.FC = () => {
                 input_params: selfLearningData.input_params,
                 outputs: [
                   ...(format.outputs || []),
-                  { 
-                    answer: DOMPurify.sanitize(selfLearningData.answer), 
-                    input_params: selfLearningData.input_params ,
-                    rating: null,
-                    timestamp: Date.now()
-                  }
+                  normalizeOutput(selfLearningData)
                 ]
               };
             }
@@ -1354,12 +1352,7 @@ const B2B: React.FC = () => {
             input_params: selfLearningData.input_params,
             outputs: [
               ...currentOutputs,
-              { 
-                answer: DOMPurify.sanitize(selfLearningData.answer), 
-                input_params: selfLearningData.input_params ,
-                rating: null,
-                timestamp: Date.now()
-              }
+              normalizeOutput(selfLearningData)
             ]
           };
         }
@@ -1383,13 +1376,15 @@ const B2B: React.FC = () => {
       const responseData = await response.json();
       // console.log('Success:', responseData);
     } catch (error: any) {
-      console.error('Login failed:', error);
+      // console.error('Login failed:', error);
     }
   };
   /* Self learning end */
 
-  const handleClickContentful = (e: React.MouseEvent<HTMLIonChipElement>) => {
-    getConfigData();
+
+  /* ---------------Contentful Copy Handling start -------------- */
+  const handleClickContentful = async (e: React.MouseEvent<HTMLIonChipElement>) => {
+    await refreshConfig();
     // console.log('handleClickContentful', e);
     if (!(e.target as HTMLIonChipElement).disabled) {
       setIsContentfulModal(true);
@@ -1400,15 +1395,17 @@ const B2B: React.FC = () => {
       (item) => item.input_params.format_name && item.input_params.format_name.startsWith('Email')
     ).length;
 
-    // Step 1: Filter only items with email format (strip _reminder_ suffix for reminder cards)
+    // Step 1: Filter all email copies (base + reminder)
     const emailItems = contentfulCopy.filter(item => {
       const rawFid = item.input_params.format_id || '';
       const baseFid = rawFid.replace(/_reminder_.*$/, '');
       return baseFid.startsWith("Email");
     });
     // console.log('emailItems:', emailItems);
+
     // Step 2: Group by (segment_id, base_format_id, copy_variant) — allows max 1 base + 1 reminder
-    // per unique (segment, format) combination. Email S base and Email M base are different formats.
+    // per unique (segment, format) combination. Email S base and Email M base are different formats
+    // so they must NOT be grouped together.
     const grouped = emailItems.reduce((acc, item) => {
       const segmentId = item.input_params.segment_id || 'noSegment';
       const variant = item.input_params.copy_variant || 'base';
@@ -1421,16 +1418,17 @@ const B2B: React.FC = () => {
       acc[key].push(item);
       return acc;
     }, {} as Record<string, typeof contentfulCopy>);
-    // console.log('grouped by segment+format+variant:', grouped);
+    // console.log('grouped by segment+variant:', grouped);
+
     const keyExists = Object.keys(grouped).some(k => k.startsWith('noSegment::'));
     // console.log('Key "noSegment" exists:', keyExists);
-    // Step 3: Check if any (segment, format, variant) group has more than 1 entry
-    const duplicates = Object.entries(grouped).filter(([_, items]: any) => items.length > 1);
 
+    // Step 3: Check if any (segment_id, copy_variant) group has more than 1 entry
+    const duplicates = Object.entries(grouped).filter(([_, items]: any) => items.length > 1);
     // console.log('duplicates:', duplicates);
 
     if (duplicates.length > 0) {
-      // console.log('Multiple copies of the same email format+variant found:', duplicates);
+      // console.log('Multiple Email formats found for same segment+variant:', emailCount);
       setIsShowError(true);
       setIsErrorMsg('Can only send one email format per variant (base/reminder) at a time.');
       setIsContentfulModal(false);
@@ -1469,7 +1467,7 @@ const B2B: React.FC = () => {
       }
     });
   };
-
+  /* Contentful Copy Handling end */
 
   /* -------------handle file upload start------------- */
   // Trigger file select dialog
@@ -1534,7 +1532,7 @@ const B2B: React.FC = () => {
           setIsErrorType('success');
         }
       }else {
-        console.error('File upload failed:', responseData);
+        // console.error('File upload failed:', responseData);
         setIsShowError(true);
         setIsErrorMsg(responseData.detail);
         setIsErrorType('error');
@@ -1545,7 +1543,7 @@ const B2B: React.FC = () => {
       
       console.log('Upload success:', responseData);
     } catch (err) {
-      console.error('Error uploading file:', err);
+      // console.error('Error uploading file:', err);
       setIsUploadAttachement(false);
 
       // setIsShowError(true);
@@ -1637,7 +1635,7 @@ const B2B: React.FC = () => {
           setIsErrorType('error');
         }
       } catch (error: any) {
-        console.error('Login failed:', error);
+        // console.error('Login failed:', error);
         if (error.response) {
           setIsShowError(true);
           setIsErrorMsg(error.response || 'Something went wrong!');
@@ -1649,29 +1647,31 @@ const B2B: React.FC = () => {
   };
   /* Set Knowledge Base Enabled end */
 
+  /* Web search start */
+  const changeWebSearch = (event: ToggleCustomEvent<{ checked: boolean }>) => {
+    setWebSearchEnabled(event.detail.checked);
+  };
+  /* Web search end */
+
   return (
     <IonPage>
-      <AppHeader />
-      <IonContent className="page-body ion-padding">
-        <div className="max-w-[80%] m-auto relative">
-          <div className="text-center relative">
-            {tabs.length > 0 && (
-              <IonChip
-                onClick={handleReset}
-                className="absolute left-0 top-1/2 translate-x-0 text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg"
-              >
-                Clear all
-              </IonChip>
-            )}
-            <img className="m-auto" src={optimusLogo} />
+      <AppHeader/>
+      <IonContent className='page-body'>
+        <div className='max-w-[80%] m-auto relative'>
+          <div className='text-center relative'>
+            {tabs.length > 0 &&
+              <IonChip onClick={handleReset} className='absolute left-0 top-1/2 translate-x-0 text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Clear all</IonChip>
+            }
+              <img className='m-auto' src={optimusLogo} />
             <p className="text-black">AI-assistance</p>
           </div>
-          <form className="w-full" onSubmit={handleSubmit(handleFormSubmit)}>
+          <form className='w-full' onSubmit={handleSubmit(handleFormSubmit)}>
+            
             <IonGrid>
               <IonRow>
                 <IonCol size="6" offset="6">
                   <IonToggle
-                    class="float-right text-sm"
+                    class='float-right text-sm'
                     enableOnOffLabels={true}
                     checked={knowledgeBaseEnabled}
                     onIonChange={(event) => changeKnowledgeBase(event)}
@@ -1685,11 +1685,9 @@ const B2B: React.FC = () => {
                   size-md={knowledgeBaseEnabled ? "3" : "4"}
                   size-sm="12"
                 >
-                  <div className="rounded-xl text-[#000] bg-white shadow-md">
-                    <div className="font-bold p-4 text-sm">
-                      I want to create a...
-                    </div>
-                    <div className="px-4 pb-3.5">
+                  <div className='rounded-xl text-[#000] bg-white shadow-md'>
+                    <div className='font-bold p-4 text-sm'>I want to create a...</div>
+                    <div className='px-4 pb-3.5'>
                       <SelectDropdown
                         options={formats}
                         selectedOptions={selectedFormats}
@@ -1698,14 +1696,11 @@ const B2B: React.FC = () => {
                         idKey="format_id"
                         nameKey="format_name"
                         tooltipKey="format_written_description"
-                        placeHolder="Select formats"
-                        label="Select desired format below"
+                        placeHolder='Select formats'
+                        label='Select desired format below'
                       />
                       {loadingFormats && (
-                        <IonProgressBar
-                          className="mt-0.5"
-                          type="indeterminate"
-                        ></IonProgressBar>
+                        <IonProgressBar className='mt-0.5' type="indeterminate"></IonProgressBar>
                       )}
                     </div>
                   </div>
@@ -1716,11 +1711,9 @@ const B2B: React.FC = () => {
                   size-md={knowledgeBaseEnabled ? "3" : "4"}
                   size-sm="12"
                 >
-                  <div className="rounded-xl text-[#000] bg-white shadow-md">
-                    <div className="font-bold p-4 text-sm">
-                      With the purpose...
-                    </div>
-                    <div className="px-4 pb-3.5">
+                  <div className='rounded-xl text-[#000] bg-white shadow-md'>
+                    <div className='font-bold p-4 text-sm'>With the purpose...</div>
+                    <div className='px-4 pb-3.5'>
                       <SelectDropdown
                         options={purposes}
                         selectedOptions={selectedPurpose}
@@ -1729,14 +1722,11 @@ const B2B: React.FC = () => {
                         idKey="purpose_id"
                         nameKey="purpose_name"
                         tooltipKey="purpose_written_description"
-                        placeHolder="Select purpose"
-                        label="Select desired purpose below"
+                        placeHolder='Select purpose'
+                        label='Select desired purpose below'
                       />
                       {loadingPurposes && (
-                        <IonProgressBar
-                          className="mt-0.5"
-                          type="indeterminate"
-                        ></IonProgressBar>
+                        <IonProgressBar className='mt-0.5' type="indeterminate"></IonProgressBar>
                       )}
                     </div>
                   </div>
@@ -1747,9 +1737,9 @@ const B2B: React.FC = () => {
                   size-md={knowledgeBaseEnabled ? "3" : "4"}
                   size-sm="12"
                 >
-                  <div className="rounded-xl text-[#000] bg-white shadow-md">
-                    <div className="font-bold p-4 text-sm">About...</div>
-                    <div className="px-4 pb-3.5">
+                  <div className='rounded-xl text-[#000] bg-white shadow-md'>
+                    <div className='font-bold p-4 text-sm'>About...</div>
+                    <div className='px-4 pb-3.5'>
                       <ProductDropdown
                         options={products}
                         selectedOptions={selectedProducts}
@@ -1759,42 +1749,33 @@ const B2B: React.FC = () => {
                         nameKey="product_name"
                         categoryKey="category"
                         tooltipKey="product_name"
-                        placeHolder="Select products"
-                        label="Which product/offer do you want to report on?"
+                        placeHolder='Select products'
+                        label='Which product/offer do you want to report on?'
                       />
                       {loadingPurposes && (
-                        <IonProgressBar
-                          className="mt-0.5"
-                          type="indeterminate"
-                        ></IonProgressBar>
+                        <IonProgressBar className='mt-0.5' type="indeterminate"></IonProgressBar>
                       )}
                     </div>
                   </div>
                 </IonCol>
                 {knowledgeBaseEnabled && (
-                  <IonCol size="12" size-lg="3" size-md="3" size-sm="12">
-                    <div className="rounded-xl text-[#000] bg-white shadow-md pb-px">
-                      <div className="font-bold p-4 text-sm">
-                        Using information from...
-                      </div>
-                      <div className="mx-4 mb-3.5 p-1.5 border border-[#ccc] rounded">
+                  <IonCol
+                    size="12"
+                    size-lg="3"
+                    size-md="3"
+                    size-sm="12"
+                  >
+                    <div className='rounded-xl text-[#000] bg-white shadow-md pb-px'>
+                      <div className='font-bold p-4 text-sm'>Using information from...</div>
+                      <div className='mx-4 mb-3.5 p-1.5 border border-[#ccc] rounded'>
                         {isKnowledgeBaseData.map((item, index) => (
-                          <IonChip
-                            key={index}
-                            onClick={() =>
-                              handleRemoveKnowledgeBase(item.kb_number)
-                            }
-                            className="py-1 px-2 text-[10px] min-h-5"
-                          >
+                          <IonChip key={index} onClick={() => handleRemoveKnowledgeBase(item.kb_number)} className='py-1 px-2 text-[10px] min-h-5'>
                             <IonLabel>{item.title}</IonLabel>
                             <IonIcon icon={closeCircle}></IonIcon>
                           </IonChip>
                         ))}
-                        <IonChip
-                          onClick={handleClickKnowledgeBase}
-                          className="py-1 px-2 text-[10px] min-h-5 bg-primary"
-                        >
-                          <IonLabel className="!text-white">ADD</IonLabel>
+                        <IonChip onClick={ handleClickKnowledgeBase } className='py-1 px-2 text-[10px] min-h-5 bg-primary'>
+                          <IonLabel className='!text-white'>ADD</IonLabel>
                         </IonChip>
                       </div>
                     </div>
@@ -1802,59 +1783,34 @@ const B2B: React.FC = () => {
                 )}
               </IonRow>
             </IonGrid>
-            {segments.length !== 0 && (
+            {
+              segments.length !== 0 &&
               <div>
-                <p className="text-center mt-2.5 text-black">
-                  I want to create versions for the following segments:
-                </p>
-                <div className="segments text-center mt-2.5">
+                <p className='text-center mt-2.5 text-black'>I want to create versions for the following segments:</p>
+                <div className='segments text-center mt-2.5'>
                   {segments.map((item, index) => (
-                    <IonChip
-                      key={index}
-                      onClick={() => onClickSegment(index)}
-                      className={`${item.isActive} text-center mx-2.5 min-h-6 py-0 bg-[#f5e0ff] text-[#4a2a59]`}
-                    >
-                      {item.segment_name}
-                    </IonChip>
+                    <IonChip key={index} onClick={() => onClickSegment(index)} className={`${item.isActive} text-center mx-2.5 min-h-6 py-0 bg-[#f5e0ff] text-[#4a2a59]`}>{item.segment_name}</IonChip>
                   ))}
                 </div>
               </div>
-            )}
-            {loadingSegments && (
-              <div className="segments flex max-sm:flex-col max-md:flex-col items-center justify-center mt-2.5">
-                <IonSkeletonText
-                  className="mx-2.5 min-h-6 py-0 bg-[#f5e0ff] rounded-xl"
-                  animated={true}
-                  style={{ width: "22%" }}
-                ></IonSkeletonText>
-                <IonSkeletonText
-                  className="mx-2.5 min-h-6 py-0 bg-[#f5e0ff] rounded-xl"
-                  animated={true}
-                  style={{ width: "22%" }}
-                ></IonSkeletonText>
-                <IonSkeletonText
-                  className="mx-2.5 min-h-6 py-0 bg-[#f5e0ff] rounded-xl"
-                  animated={true}
-                  style={{ width: "22%" }}
-                ></IonSkeletonText>
-                <IonSkeletonText
-                  className="mx-2.5 min-h-6 py-0 bg-[#f5e0ff] rounded-xl"
-                  animated={true}
-                  style={{ width: "22%" }}
-                ></IonSkeletonText>
-              </div>
-            )}
-
-            <IonGrid className="mt-7">
+            }
+            {loadingSegments &&
+            <div className='segments flex max-sm:flex-col max-md:flex-col items-center justify-center mt-2.5'>
+              <IonSkeletonText className='mx-2.5 min-h-6 py-0 bg-[#f5e0ff] rounded-xl' animated={true} style={{ width: '22%' }}></IonSkeletonText>
+              <IonSkeletonText className='mx-2.5 min-h-6 py-0 bg-[#f5e0ff] rounded-xl' animated={true} style={{ width: '22%' }}></IonSkeletonText>
+              <IonSkeletonText className='mx-2.5 min-h-6 py-0 bg-[#f5e0ff] rounded-xl' animated={true} style={{ width: '22%' }}></IonSkeletonText>
+              <IonSkeletonText className='mx-2.5 min-h-6 py-0 bg-[#f5e0ff] rounded-xl' animated={true} style={{ width: '22%' }}></IonSkeletonText>
+            </div>
+            }
+            
+            
+            
+            <IonGrid className='mt-7'>
               <IonRow>
                 <IonCol>
-                  <div
-                    className="relative"
-                    onDrop={handleDrop}
-                    onDragOver={handleDragOver}
-                  >
+                  <div className='relative' onDrop={handleDrop} onDragOver={handleDragOver}>
                     <IonTextarea
-                      className="bottom-textarea rounded-xl text-black"
+                      className='bottom-textarea rounded-xl text-black'
                       aria-label="Custom textarea"
                       placeholder="Write your own prompt."
                       autoGrow={true}
@@ -1863,137 +1819,94 @@ const B2B: React.FC = () => {
                       {...register("question", {
                         validate: {},
                       })}
-                    ></IonTextarea>
-                    <div className="flex items-center absolute bottom-0 left-0 z-10 w-full px-4 py-1">
-                      {isUploadAttachement && (
-                        <IonSpinner
-                          name="lines-small"
-                          color="primary"
-                        ></IonSpinner>
-                      )}
-                      {isUploadAttachement === false && attachments ? (
-                        <IonIcon
-                          onClick={handleIconClick}
-                          data-tooltip-id="attachment"
-                          data-tooltip-content="All text in the uploaded file will be processed."
-                          className="text-[20px] cursor-pointer"
-                          icon={documentAttach}
-                        ></IonIcon>
-                      ) : (
-                        isUploadAttachement === false &&
-                        !attachments && (
-                          <IonIcon
-                            onClick={handleIconClick}
-                            data-tooltip-id="attachment"
-                            data-tooltip-content="All text in the uploaded file will be processed."
-                            className="text-[20px] cursor-pointer"
-                            icon={attach}
-                          ></IonIcon>
+                    >
+                      
+                    </IonTextarea>
+                    <div className='flex items-center absolute bottom-0 left-0 z-10 w-full px-4 py-1'>
+                      
+                      <div className='flex items-center'>
+                        {isUploadAttachement &&
+                          <IonSpinner name="lines-small" color="primary"></IonSpinner>
+                        }
+                        {isUploadAttachement === false && attachments ?
+                          <IonIcon onClick={handleIconClick} data-tooltip-id="attachment" data-tooltip-content="All text in the uploaded file will be processed." className='text-[20px] cursor-pointer' icon={documentAttach}></IonIcon>
+                        : (isUploadAttachement === false && !attachments) &&
+                          <IonIcon onClick={handleIconClick} data-tooltip-id="attachment" data-tooltip-content="All text in the uploaded file will be processed." className='text-[20px] cursor-pointer' icon={attach}></IonIcon>
+                        }
+                        
+                        
+                        <Tooltip id="attachment" />
+                        {selectedFile ? (
+                          <div className='flex items-center px-4 text-[14px] cursor-pointer'>
+                            <span>{selectedFile.name}</span>
+                            <IonIcon onClick={handleRemoveFile} className='text-[20px] cursor-pointer' icon={closeCircleOutline}></IonIcon>
+                          </div>
                         )
-                      )}
-
-                      <Tooltip id="attachment" />
-                      {selectedFile ? (
-                        <div className="flex items-center px-4 text-[14px] cursor-pointer">
-                          <span>{selectedFile.name}</span>
-                          <IonIcon
-                            onClick={handleRemoveFile}
-                            className="text-[20px] cursor-pointer"
-                            icon={closeCircleOutline}
-                          ></IonIcon>
-                        </div>
-                      ) : (
-                        <input
-                          className="opacity-0 cursor-pointer"
-                          type="file"
-                          ref={fileInputRef}
-                          onChange={handleFileChange}
-                        />
-                      )}
+                        : 
+                          <input
+                            className='opacity-0 cursor-pointer w-[10px] h-px'
+                            type="file"
+                            ref={fileInputRef}
+                            onChange={handleFileChange}
+                          />
+                        }
+                      </div>
+                      <div>
+                        <IonToggle
+                          data-tooltip-id="webSearch" data-tooltip-content="Search the web"
+                          className={`${configData.web_search.enabled === false || !configData.web_search.allowed_use_cases?.includes('b2b') ? 'ion-hide ' : ''} float-right text-sm globe-toggle`}
+                          enableOnOffLabels={true}
+                          checked={webSearchEnabled}
+                          onIonChange={(event) => changeWebSearch(event)}
+                        >
+                        </IonToggle>
+                        <Tooltip id="webSearch" />
+                      </div>
                     </div>
                   </div>
                 </IonCol>
               </IonRow>
             </IonGrid>
-
-            <p className="p-4 italic mt-2.5">
-              Disclaimer: There may be risks associated with using AI-generated
-              content. All content produced by this tool, i.e. Optimus, is for
-              use at the user's discretion, and{" "}
-              <u>
-                the user is solely responsible for reviewing and approving any
-                text before sharing it externally.
-              </u>
-            </p>
-
-            <div className="text-center mt-6">
-              <IonButton type="submit" className="btn-primary" shape="round">
-                {loading && (
-                  <IonSpinner className="mr-2" name="bubbles"></IonSpinner>
-                )}
-                {tabs.length === 0 && !loading
-                  ? "Generate"
-                  : tabs.length !== 0 && loading
-                    ? "Generating..."
-                    : "Regenerate all"}
-              </IonButton>
-            </div>
+            
+            <p className='p-4 italic mt-2.5'>Disclaimer: There may be risks associated with using AI-generated content. All content produced by this tool, i.e. Optimus, is for use at the user's discretion, and <u>the user is solely responsible for reviewing and approving any text before sharing it externally.</u></p>
+            
+              <div className='text-center mt-6'>
+                <IonButton type='submit' className='btn-primary' shape="round">
+                {loading && <IonSpinner className='mr-2' name="bubbles"></IonSpinner>}
+                {tabs.length === 0 && !loading ?
+                  'Generate'
+                : tabs.length !== 0 && loading ?
+                  'Generating...'
+                :
+                  'Regenerate all'
+                }
+                </IonButton>
+              </div>
+                
           </form>
 
-          {tabs.length > 0 && (
+          {tabs.length > 0 &&
             <IonGrid>
               <IonRow>
                 <IonCol>
                   <div className="mx-2.5 mt-7">
-                    <Tabs
-                      tabs={tabs}
-                      regenarateItem={regenarateItem}
-                      discardEditedAnswer={discardEditedAnswer}
-                      genarateRefineCopy={genarateRefineCopy}
-                      contentfulData={sendTocontentful}
-                      isEditingMode={handleEditingMode}
-                    />
+                    <Tabs tabs={tabs} regenarateItem={regenarateItem} discardEditedAnswer={discardEditedAnswer} genarateRefineCopy={genarateRefineCopy} contentfulData={sendTocontentful} isEditingMode={handleEditingMode} webSearchEnabled={webSearchEnabled} setWebSearchEnabled={setWebSearchEnabled} setTabFor={'b2b'}/>
                     <div className="text-right mt-3">
-                      <IonChip
-                        onClick={() => handleFormSubmit(requestData)}
-                        className="text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg"
-                      >
-                        Rewrite all suggestions
-                      </IonChip>
-                      <IonChip
-                        data-tooltip-id="contentful"
-                        data-tooltip-content="Save all content before sending it to Contentful."
-                        disabled={isOpenEditing || contentfulCopy.length === 0}
-                        onClick={handleClickContentful}
-                        className="!pointer-events-auto text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg"
-                      >
-                        Send to contentful
-                      </IonChip>
-                      <IonChip
-                        disabled={isOpenEditing || loadingReminders || contentfulCopy.length === 0 || getCvmEligibleCopies().length === 0}
-                        onClick={() => setIsReminderModal(true)}
-                        className="!pointer-events-auto text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg"
-                      >
+                      <IonChip onClick={() => handleFormSubmit(requestData)} className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Rewrite all suggestions</IonChip>
+                      <IonChip data-tooltip-id="contentful" data-tooltip-content="Save all content before sending it to Contentful." disabled={isOpenEditing || contentfulCopy.length === 0} onClick={ handleClickContentful } className='!pointer-events-auto text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Send to contentful</IonChip>
+                      <IonChip disabled={isOpenEditing || loadingReminders || contentfulCopy.length === 0 || getCvmEligibleCopies().length === 0} onClick={() => setIsReminderModal(true)} className='!pointer-events-auto text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>
                         {loadingReminders && <IonSpinner name="bubbles" className='mr-1'></IonSpinner>}
                         {loadingReminders ? 'Generating Reminders...' : remindersGenerated ? 'Regenerate Reminders' : 'Generate Reminders'}
                       </IonChip>
-                      <IonChip
-                        onClick={() => exportToDoc(tabs)}
-                        className="text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg"
-                      >
-                        Save all suggestions to word.doc
-                      </IonChip>
+                      <IonChip onClick={() => exportToDoc(tabs)} className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Save all suggestions to word.doc</IonChip>
                       {/* <IonChip onClick={handleReset} className='text-sm ml-2.5 mr-0 min-h-6 py-0 bg-white text-primary border-primary border-2 font-semibold rounded-lg'>Create new task</IonChip> */}
-                      <Tooltip
-                        className={`${!isOpenEditing ? "hidden" : ""}`}
-                        id="contentful"
-                      />
+                      <Tooltip className={`${!isOpenEditing ? 'hidden' : ''}`} id="contentful" />
                     </div>
                   </div>
                 </IonCol>
               </IonRow>
             </IonGrid>
-          )}
+          }
         </div>
 
         <IonToast
@@ -2001,227 +1914,130 @@ const B2B: React.FC = () => {
           isOpen={isShowError}
           message={isErrorMsg}
           duration={5000}
-          onDidDismiss={() => {
-            (setIsErrorType(""), setIsShowError(false));
-          }}
+          onDidDismiss={() => {setIsErrorType(''), setIsShowError(false)}}
         ></IonToast>
 
         {/* self learning modal start */}
-        <IonModal
-          className="self-learning-modal"
-          isOpen={isOpenModal}
-          backdropDismiss={false}
-        >
-          {feedbackCopy.length !== 0 && (
+        <IonModal className='self-learning-modal' isOpen={isOpenModal}  backdropDismiss={false}>
+          {feedbackCopy.length !== 0 &&
             <>
               <IonHeader>
-                <IonToolbar className="text-center">
-                  <IonTitle className="font-bold">
-                    Which copy is better?
-                  </IonTitle>
-                  {feedbackCopy[currentIndex].responses[0].input_params
-                    .format_name && (
-                    <IonChip color="primary">
-                      <b>Format:</b>{" "}
-                      {
-                        feedbackCopy[currentIndex].responses[0].input_params
-                          .format_name
-                      }
+                <IonToolbar className='text-center'>
+                  <IonTitle className='font-bold'>Which copy is better?</IonTitle>
+                  {feedbackCopy[currentIndex].responses[0].input_params.format_name &&
+                    <IonChip color="primary"><b>Format:</b> {feedbackCopy[currentIndex].responses[0].input_params.format_name}</IonChip>
+                  }
+                  {feedbackCopy[currentIndex].responses[0].input_params.purpose_name &&
+                    <IonChip color="success"><b>Purpose:</b> {feedbackCopy[currentIndex].responses[0].input_params.purpose_name}</IonChip>
+                  }
+                  {feedbackCopy[currentIndex].responses[0].input_params.segment_name &&
+                    <IonChip color="warning"><b>Segment:</b> {feedbackCopy[currentIndex].responses[0].input_params.segment_name}</IonChip>
+                  }
+                  {feedbackCopy[currentIndex].responses[0].input_params.product_names && feedbackCopy[currentIndex].responses[0].input_params.product_names.map((item:string, index:number) => (
+                    <IonChip key={index} color="secondary"><b>Product {index + 1}:</b> {item}
                     </IonChip>
-                  )}
-                  {feedbackCopy[currentIndex].responses[0].input_params
-                    .purpose_name && (
-                    <IonChip color="success">
-                      <b>Purpose:</b>{" "}
-                      {
-                        feedbackCopy[currentIndex].responses[0].input_params
-                          .purpose_name
-                      }
-                    </IonChip>
-                  )}
-                  {feedbackCopy[currentIndex].responses[0].input_params
-                    .segment_name && (
-                    <IonChip color="warning">
-                      <b>Segment:</b>{" "}
-                      {
-                        feedbackCopy[currentIndex].responses[0].input_params
-                          .segment_name
-                      }
-                    </IonChip>
-                  )}
-                  {feedbackCopy[currentIndex].responses[0].input_params.product_names && feedbackCopy[
-                    currentIndex
-                  ].responses[0].input_params.product_names.map(
-                    (item: string, index: number) => (
-                      <IonChip key={index} color="secondary">
-                        <b>Product {index + 1}:</b> {item}
-                      </IonChip>
-                    ),
-                  )}
+                  ))}
                 </IonToolbar>
               </IonHeader>
               <div className="inner-content">
-                <IonGrid className="cursor-pointer">
+                <IonGrid className='cursor-pointer'>
                   <IonRow>
                     {feedbackCopy[currentIndex].responses.map(
-                      (feedbackItem: any, tabIndex: number) => (
-                        <IonCol key={tabIndex} size="6">
-                          <div
-                            onClick={() => {
-                              setSelectedDiv(tabIndex);
-                              setSelfLearningData(feedbackItem);
-                            }}
-                            className={`${selectedDiv === tabIndex ? "border-primary border-2" : ""} hover:border-primary bg-white mb-5 tab-body rounded-md relative`}
+                      (feedbackItem:any, tabIndex:number) => (
+                      <IonCol key={tabIndex} size="6">
+                        <div 
+                          onClick={() =>{
+                            setSelectedDiv(tabIndex); 
+                            setSelfLearningData(feedbackItem);
+                          }} 
+                          className={`${selectedDiv === tabIndex ? 'border-primary border-2' : ''} hover:border-primary bg-white mb-5 tab-body rounded-md relative`}
                           >
-                            {/* <h3 className='capitalize'>{feedbackItem.input_params.format_name}</h3> */}
-
-                            <div className="shadow-md rounded-md p-2 mb-1.5 relative">
-                              <ReactMarkdown
-                                remarkPlugins={[remarkGfm]}
-                                rehypePlugins={[rehypeRaw]}
-                                children={feedbackItem.answer}
-                              />
-                            </div>
+                          
+                          {/* <h3 className='capitalize'>{feedbackItem.input_params.format_name}</h3> */}
+                          
+                          <div className='shadow-md rounded-md p-2 mb-1.5 relative'>
+                            <ReactMarkdown 
+                            remarkPlugins={[remarkGfm]} 
+                            rehypePlugins={[rehypeRaw]} 
+                            children={feedbackItem.answer}
+                            />
                           </div>
-                        </IonCol>
-                      ),
-                    )}
+                        </div>
+                      </IonCol>
+                    ))}
                     <IonCol size="12" className="text-center">
-                      <IonButton
-                        disabled={selectedDiv === null}
-                        data-tooltip-id="feedbackCopy"
-                        data-tooltip-content="Please select the copy."
+                      <IonButton 
+                        disabled={selectedDiv === null} 
+                        data-tooltip-id="feedbackCopy" 
+                        data-tooltip-content="Please select the copy." 
                         onClick={() => submitSelfLearning()}
-                      >
-                        Submit Copy
-                      </IonButton>
+                        >
+                          Submit Copy
+                        </IonButton>
                       <Tooltip id="feedbackCopy" />
                     </IonCol>
                   </IonRow>
                 </IonGrid>
               </div>
             </>
-          )}
+          }
         </IonModal>
         {/* self learning modal end */}
 
         {/* send to contentful start */}
-        <IonModal
-          id="example-modal"
-          isOpen={isContentfulModal}
-          onWillDismiss={() => {
-            setIsContentfulModal(false);
-            setIsCreateAssembly(false);
-            setIsTroubleshooting(false);
-          }}
-        >
+        <IonModal id="example-modal" isOpen={isContentfulModal} onWillDismiss={() => {setIsContentfulModal(false); setIsCreateAssembly(false); setIsTroubleshooting(false);}}>
           <IonHeader>
             <IonToolbar>
-              <IonTitle className="text-sm font-bold">
-                Send to Contentful
-              </IonTitle>
+              <IonTitle className='text-sm font-bold'>Send to Contentful</IonTitle>
               <IonButtons slot="end">
-                <IonButton
-                  size="small"
-                  shape="round"
-                  onClick={() => setIsContentfulModal(false)}
-                >
+                <IonButton size="small" shape="round" onClick={() => setIsContentfulModal(false)}>
                   <IonIcon slot="icon-only" icon={closeOutline}></IonIcon>
                 </IonButton>
               </IonButtons>
             </IonToolbar>
           </IonHeader>
           <div className="ion-padding inner-content">
-            {!isTroubleshooting && (
-              <p className="text-sm text-center pb-8 tex">
-                Add an internal name to be added to the copies. Optimus will
-                automatically apply the correct attributes based on the format.
-                {isPersonalized ? (
-                  <IonIcon
-                    data-tooltip-id="contentfulInfo"
-                    data-tooltip-content="Example: If you enter 'Black Week 25 BB 100/100', Optimus might generate 'B2B - Xsell - Black Week 25 BB 100/100 - Seniors - SMS', depending on the format."
-                    icon={informationCircle}
-                  ></IonIcon>
-                ) : (
-                  <IonIcon
-                    data-tooltip-id="contentfulInfo"
-                    data-tooltip-content="Example: If you enter 'mobilabonnemang', Optimus might generate 'B2B - Mobilabonnmemang - FAQ', depending on the format."
-                    icon={informationCircle}
-                  ></IonIcon>
-                )}
+            {!isTroubleshooting &&
+              <p className='text-sm text-center pb-8 tex'>Add an internal name to be added to the copies. Optimus will automatically apply the correct attributes based on the format. 
+                {isPersonalized ? 
+                  <IonIcon data-tooltip-id="contentfulInfo" data-tooltip-content="Example: If you enter 'Black Week 25 BB 100/100', Optimus might generate 'B2B - Xsell - Black Week 25 BB 100/100 - Seniors - SMS', depending on the format." icon={informationCircle}></IonIcon>
+                : 
+                  <IonIcon data-tooltip-id="contentfulInfo" data-tooltip-content="Example: If you enter 'mobilabonnemang', Optimus might generate 'B2B - Mobilabonnmemang - FAQ', depending on the format." icon={informationCircle}></IonIcon> 
+                }
               </p>
-            )}
-            {isTroubleshooting && (
-              <p className="text-sm text-center pb-8 tex">
-                Add the specific readableID to be added to the copies.{" "}
-                <IonIcon
-                  data-tooltip-id="contentfulInfo"
-                  data-tooltip-content="Example: 'b2x-tsf-common-installationGuideForSpecificRouter'"
-                  icon={informationCircle}
-                ></IonIcon>
-              </p>
-            )}
-
+            }
+            {isTroubleshooting &&
+              <p className='text-sm text-center pb-8 tex'>Add the specific readableID to be added to the copies. <IonIcon data-tooltip-id="contentfulInfo" data-tooltip-content="Example: 'b2x-tsf-common-installationGuideForSpecificRouter'" icon={informationCircle}></IonIcon></p>
+            }
+            
             <Tooltip id="contentfulInfo" />
-            <form
-              onSubmit={handleSubmit(handleContentfulFormSubmit)}
-              className="w-full"
-            >
-              <IonInput
-                className={`mb-4 text-sm ${!contentError && "ion-valid"} ${contentError && "ion-invalid"}`}
-                label={` ${isTroubleshooting ? "Readable ID" : "Internal Name"}`}
-                labelPlacement="floating"
-                fill="outline"
-                placeholder={`Please add an ${isTroubleshooting ? "Readable ID" : "Internal name"}`}
+            <form onSubmit={handleSubmit(handleContentfulFormSubmit)} className="w-full">
+              <IonInput className={`mb-4 text-sm ${!contentError && 'ion-valid'} ${contentError && 'ion-invalid'}`} label={` ${isTroubleshooting ? "Readable ID" : "Internal Name"}`} labelPlacement="floating" fill="outline" placeholder={`Please add an ${isTroubleshooting ? "Readable ID" : "Internal name"}`}
                 value={contentName}
                 onIonInput={handleContentfulChange}
                 onIonBlur={handleContentfulBlur}
                 // helperText={contentError}
               ></IonInput>
-              <div
-                className={`flex ${isCreateAssembly ? "justify-between" : "justify-end"}`}
-              >
-                {isCreateAssembly && (
-                  <IonCheckbox
-                    className="text-sm"
-                    labelPlacement="end"
-                    onIonChange={(event) =>
-                      setValue("createAssembly", event.detail.checked)
-                    }
-                  >
-                    Create an Assembly
-                  </IonCheckbox>
-                )}
-                <IonToggle
-                  className="text-sm"
+              <div className={`flex ${isCreateAssembly ? 'justify-between' : 'justify-end'}`}>
+                {isCreateAssembly &&
+                  <IonCheckbox className='text-sm' labelPlacement="end"
+                    onIonChange={(event) => setValue("createAssembly", event.detail.checked)}
+                  >Create an Assembly</IonCheckbox>
+              }
+                <IonToggle 
+                  className='text-sm'
                   checked={isPersonalized}
                   onIonChange={(e) => setIsPersonalized(e.detail.checked)}
-                >
-                  {isPersonalized ? "Personalized" : "Generic"}
-                </IonToggle>
+                >{isPersonalized ? 'Personalized' : 'Generic'}</IonToggle>
               </div>
-
-              <div className="text-center mt-4">
-                <IonText className="block text-sm mb-4">{`A total ${contentfulCopy.length} copies will be sent to contentful.`}</IonText>
-                <IonButton
-                  disabled={loadingContentful}
-                  size="small"
-                  type="submit"
-                  className="btn-primary"
-                  shape="round"
-                >
-                  {loadingContentful && (
-                    <IonSpinner className="mr-2" name="bubbles"></IonSpinner>
-                  )}
+              
+              <div className='text-center mt-4'>
+                <IonText className='block text-sm mb-4'>{`A total ${contentfulCopy.length} copies will be sent to contentful.`}</IonText>
+                <IonButton disabled={loadingContentful} size='small' type='submit' className='btn-primary' shape="round">
+                  {loadingContentful && <IonSpinner className='mr-2' name="bubbles"></IonSpinner>}
                   Save
                 </IonButton>
-                <IonButton
-                  onClick={() => setIsContentfulModal(false)}
-                  size="small"
-                  type="reset"
-                  fill="outline"
-                  shape="round"
-                >
+                <IonButton onClick={() => setIsContentfulModal(false)} size='small' type='reset' fill='outline' shape="round">
                   Cancel
                 </IonButton>
               </div>
@@ -2234,7 +2050,7 @@ const B2B: React.FC = () => {
         <IonModal id="example-modal" isOpen={isReminderModal} onWillDismiss={() => setIsReminderModal(false)}>
           <IonHeader>
             <IonToolbar>
-              <IonTitle className="text-sm font-bold">Generate Reminders</IonTitle>
+              <IonTitle className='text-sm font-bold'>Generate Reminders</IonTitle>
               <IonButtons slot="end">
                 <IonButton size="small" shape="round" onClick={() => setIsReminderModal(false)}>
                   <IonIcon slot="icon-only" icon={closeOutline}></IonIcon>
@@ -2243,9 +2059,9 @@ const B2B: React.FC = () => {
             </IonToolbar>
           </IonHeader>
           <div className="ion-padding inner-content">
-            <p className="text-sm text-center pb-4">Generate reminder copies for all CVM-eligible formats (SMS &amp; Email) in the current session. You can optionally add a custom prompt to guide the tone or content of the reminders.</p>
+            <p className='text-sm text-center pb-4'>Generate reminder copies for all CVM-eligible formats (SMS &amp; Email) in the current session. You can optionally add a custom prompt to guide the tone or content of the reminders.</p>
             <IonTextarea
-              className="bottom-textarea rounded-xl text-black mb-4"
+              className='bottom-textarea rounded-xl text-black mb-4'
               placeholder="e.g. add urgency, mention the offer expires in one week..."
               autoGrow={true}
               counter={true}
@@ -2253,12 +2069,12 @@ const B2B: React.FC = () => {
               value={reminderPrompt}
               onIonInput={(e) => setReminderPrompt(e.detail.value || '')}
             ></IonTextarea>
-            <IonText className="block text-sm text-center mb-4">{`${getCvmEligibleCopies().length} reminder(s) will be generated.`}</IonText>
-            <div className="text-center mt-4">
-              <IonButton size="small" onClick={handleGenerateReminders} className="btn-primary" shape="round">
+            <IonText className='block text-sm text-center mb-4'>{`${getCvmEligibleCopies().length} reminder(s) will be generated.`}</IonText>
+            <div className='text-center mt-4'>
+              <IonButton size='small' onClick={handleGenerateReminders} className='btn-primary' shape="round">
                 Generate
               </IonButton>
-              <IonButton onClick={() => setIsReminderModal(false)} size="small" fill="outline" shape="round">
+              <IonButton onClick={() => setIsReminderModal(false)} size='small' fill='outline' shape="round">
                 Cancel
               </IonButton>
             </div>
@@ -2267,62 +2083,32 @@ const B2B: React.FC = () => {
         {/* Reminder modal end */}
 
         {/* Knowledge Base start */}
-        <IonModal
-          id="example-modal"
-          isOpen={isKnowledgeBaseModal}
-          onWillDismiss={() => setIsKnowledgeBaseModal(false)}
-        >
+        <IonModal id="example-modal" isOpen={isKnowledgeBaseModal} onWillDismiss={() => setIsKnowledgeBaseModal(false)}>
           <IonHeader>
             <IonToolbar>
-              <IonTitle className="text-sm font-bold">
-                Add Knowledge Base page to Optimus
-              </IonTitle>
+              <IonTitle className='text-sm font-bold'>Add Knowledge Base page to Optimus</IonTitle>
               <IonButtons slot="end">
-                <IonButton
-                  size="small"
-                  shape="round"
-                  onClick={() => setIsKnowledgeBaseModal(false)}
-                >
+                <IonButton size="small" shape="round" onClick={() => setIsKnowledgeBaseModal(false)}>
                   <IonIcon slot="icon-only" icon={closeOutline}></IonIcon>
                 </IonButton>
               </IonButtons>
             </IonToolbar>
           </IonHeader>
           <div className="ion-padding inner-content">
-            <form
-              onSubmit={handleSubmit(handleKnowledgeBaseForm)}
-              className="w-full"
-            >
-              <IonInput
-                className="mb-4 text-sm"
-                label="Page Number"
-                labelPlacement="floating"
-                fill="outline"
-                placeholder="e.g. KB0123456"
+            
+            <form onSubmit={handleSubmit(handleKnowledgeBaseForm)} className="w-full">
+              <IonInput className='mb-4 text-sm' label="Page Number" labelPlacement="floating" fill="outline" placeholder="e.g. KB0123456"
                 {...register("kb_number", {
                   validate: {},
                 })}
                 required
               ></IonInput>
-              <div className="text-center mt-4">
-                <IonButton
-                  size="small"
-                  type="submit"
-                  className="btn-primary"
-                  shape="round"
-                >
-                  {loading && (
-                    <IonSpinner className="mr-2" name="bubbles"></IonSpinner>
-                  )}
+              <div className='text-center mt-4'>
+                <IonButton size='small' type='submit' className='btn-primary' shape="round">
+                  {loading && <IonSpinner className='mr-2' name="bubbles"></IonSpinner>}
                   Add
                 </IonButton>
-                <IonButton
-                  onClick={() => setIsKnowledgeBaseModal(false)}
-                  size="small"
-                  type="reset"
-                  fill="outline"
-                  shape="round"
-                >
+                <IonButton onClick={() => setIsKnowledgeBaseModal(false)} size='small' type='reset' fill='outline' shape="round">
                   Cancel
                 </IonButton>
               </div>

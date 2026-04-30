@@ -28,8 +28,8 @@ const Login: React.FC = () => {
     
   }, []);
 
-  const handleLogin = (_role:string) => {
-    login(_role);
+  const handleLogin = async (_role:string) => {
+    await login(_role);
     history.push('/b2c');
     
   };
@@ -65,13 +65,13 @@ const Login: React.FC = () => {
           localStorage.setItem('user', JSON.stringify(responseData));
           setIsShowError(true);
           if (responseData.roles.admin === true && responseData.roles.user === true) {
-            handleLogin('admin');
+            await handleLogin('admin');
             setIsErrorMsg('Logged in as admin');
           }else if (responseData.roles.admin === true) {
-            handleLogin('admin');
+            await handleLogin('admin');
             setIsErrorMsg('Logged in as admin');
           }else if (responseData.roles.user === true) {
-            handleLogin('user');
+            await handleLogin('user');
             setIsErrorMsg('Logged in as user');
           }else {
             setIsErrorMsg('Please check your credential.');

@@ -6,6 +6,7 @@ import { HTTPMethod, NetworkInfo } from '../../../routes/network';
 import { useForm } from 'react-hook-form';
 import { filter, informationCircle, informationCircleOutline } from 'ionicons/icons';
 import { getValue } from '@mdxeditor/editor';
+import { useAuth } from '../../../config/AuthContext';
 
 interface ConfigAddModel {
     llm_name: string;
@@ -49,6 +50,7 @@ const Config: React.FC = () => {
   const apiUrl = `${NetworkInfo.URL}`;
   const [isShowError, setIsShowError] = useState(false);
   const [isErrorMsg, setIsErrorMsg] = useState('');
+    const { refreshConfig } = useAuth();
 
   const reasoningEfforts = [
     { id: 1, data: 'none'},
@@ -208,7 +210,8 @@ const Config: React.FC = () => {
         setIsShowError(true);
         setIsErrorMsg(responseData.message || 'Configuration updated successfully');
         setLoadingForm(false);
-        getConfigData();
+                await refreshConfig();
+                getConfigData();
       }
       
     } catch (error: any) {
