@@ -1652,7 +1652,7 @@ const B2C: React.FC = () => {
     setWebSearchEnabled(event.detail.checked);
   };
   /* Web search end */
-
+ 
   return (
     <IonPage>
       <AppHeader/>
